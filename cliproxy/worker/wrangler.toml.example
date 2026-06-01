@@ -1,0 +1,6 @@
+name = "kanami-cliproxy-proxy"
+main = "cloudflare-worker.js"
+compatibility_date = "2026-06-01"
+
+[vars]
+BACKEND_ORIGIN = "https://replace-with-your-backend-origin.example"

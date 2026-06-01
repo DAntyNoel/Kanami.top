@@ -8,3 +8,16 @@ node_modules/
 chatbot/env
 chatbot/*.log
 chatbot/worker/wrangler.toml
+
+# CLIProxyAPI deployment
+cliproxy/env
+cliproxy/*.log
+cliproxy/logs/
+cliproxy/auths/
+cliproxy/config.yaml
+cliproxy/api-keys.txt
+cliproxy/codex-auth.json
+cliproxy/worker/wrangler.toml
+cliproxy/cloudflare/.env
+cliproxy/cloudflare/secrets/*
+!cliproxy/cloudflare/secrets/.gitkeep
