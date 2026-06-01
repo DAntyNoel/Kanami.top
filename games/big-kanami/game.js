@@ -4,6 +4,7 @@ const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
 const nextCanvas = document.querySelector("#next-ball");
 const nextCtx = nextCanvas.getContext("2d");
+const levelListEl = document.querySelector("#level-list");
 const scoreEl = document.querySelector("#score");
 const bestEl = document.querySelector("#best");
 const messageEl = document.querySelector("#message");
@@ -11,13 +12,13 @@ const restartButton = document.querySelector("#restart");
 const dropButton = document.querySelector("#drop");
 
 const width = 420;
-const height = 640;
+const height = 600;
 const bottle = {
   left: 34,
   right: 386,
-  lipY: 108,
-  floorY: 616,
-  gameOverY: 132
+  lipY: 98,
+  floorY: 576,
+  gameOverY: 122
 };
 const bestKey = "kanami-big-kanami-best";
 
@@ -49,6 +50,10 @@ function preloadImages() {
   levels.forEach((level) => {
     const image = new Image();
     image.src = level.image;
+    image.onload = () => {
+      renderNext();
+      renderLevelGuide();
+    };
     imageCache.set(level.image, image);
   });
 }
@@ -88,9 +93,11 @@ function createWorld() {
   engine.gravity.y = 0.88;
   runner = Runner.create();
 
-  const leftWall = makeWall(20, 380, 30, 500);
-  const rightWall = makeWall(400, 380, 30, 500);
-  const floor = makeWall(width / 2, 632, 380, 34);
+  const wallHeight = bottle.floorY - bottle.lipY + 28;
+  const wallY = bottle.lipY + wallHeight / 2 - 8;
+  const leftWall = makeWall(20, wallY, 30, wallHeight);
+  const rightWall = makeWall(400, wallY, 30, wallHeight);
+  const floor = makeWall(width / 2, bottle.floorY + 16, 380, 34);
 
   World.add(engine.world, [leftWall, rightWall, floor]);
   Events.on(engine, "collisionStart", handleCollisions);
@@ -294,13 +301,33 @@ function drawAim() {
   ctx.lineTo(x, bottle.floorY - 8);
   ctx.stroke();
   ctx.setLineDash([]);
-  drawBall(ctx, nextLevel, x, bottle.lipY - 30, 0.7, false);
+  drawBall(ctx, nextLevel, x, bottle.lipY - radius - 8, 1, false);
   ctx.restore();
 }
 
 function renderNext() {
   nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
-  drawBall(nextCtx, nextLevel, 29, 29, Math.min(0.92, 23 / levels[nextLevel].radius), false);
+  drawBall(nextCtx, nextLevel, 33, 33, Math.min(1, 29 / levels[nextLevel].radius), false);
+}
+
+function renderLevelGuide() {
+  if (!levelListEl) return;
+  const cards = levels.map((level, index) => {
+    const card = document.createElement("div");
+    card.className = "level-card";
+
+    const preview = document.createElement("canvas");
+    preview.width = 72;
+    preview.height = 72;
+    const previewCtx = preview.getContext("2d");
+    drawBall(previewCtx, index, 36, 36, Math.min(1, 29 / level.radius), false);
+
+    const label = document.createElement("span");
+    label.textContent = level.name;
+    card.append(preview, label);
+    return card;
+  });
+  levelListEl.replaceChildren(...cards);
 }
 
 function render() {
@@ -338,6 +365,7 @@ function restart() {
   dropButton.disabled = false;
   messageEl.textContent = "移动鼠标或手指选择杯口位置，点击舞台或按空格投下。香奈美准备好啦。";
   renderNext();
+  renderLevelGuide();
   cancelAnimationFrame(animationFrame);
   render();
 }

@@ -102,7 +102,7 @@ h1 {
 
 .next-wrap {
   display: grid;
-  grid-template-columns: auto 58px;
+  grid-template-columns: auto 66px;
   align-items: center;
   gap: 10px;
 }
@@ -112,8 +112,55 @@ h1 {
 }
 
 #next-ball {
+  width: 66px;
+  height: 66px;
+}
+
+.ball-book {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px;
+}
+
+.ball-book-title {
+  color: var(--ink);
+  font-size: 0.88rem;
+  font-weight: 900;
+}
+
+.level-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
+  gap: 10px;
+  min-width: 0;
+  padding: 2px 2px 6px;
+}
+
+.level-card {
+  display: grid;
+  place-items: center;
+  min-height: 104px;
+  padding: 8px 6px;
+  border: 1px solid rgba(36, 37, 56, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.level-card canvas {
   width: 58px;
   height: 58px;
+}
+
+.level-card span {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
 }
 
 button {
@@ -140,7 +187,7 @@ button:disabled {
 #game {
   display: block;
   width: 100%;
-  aspect-ratio: 420 / 640;
+  aspect-ratio: 420 / 600;
   border: 1px solid rgba(36, 37, 56, 0.16);
   border-radius: 8px;
   background:
@@ -180,6 +227,7 @@ button:disabled {
   }
 
   .next-wrap,
+  .ball-book,
   .hud button,
   .controls button,
   .controls p {
@@ -187,8 +235,12 @@ button:disabled {
   }
 
   .next-wrap {
-    grid-template-columns: auto 58px;
+    grid-template-columns: auto 66px;
     justify-content: start;
+  }
+
+  .ball-book {
+    grid-template-columns: 1fr;
   }
 
   .controls {
