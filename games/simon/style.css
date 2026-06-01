@@ -110,6 +110,11 @@ h1 {
   cursor: pointer;
 }
 
+.hud button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
 .pads {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

@@ -10,6 +10,7 @@ const keys = ["q", "w", "a", "s"];
 let sequence = [];
 let playerIndex = 0;
 let acceptingInput = false;
+let playToken = 0;
 
 function bestRound() {
   return Number(localStorage.getItem(bestKey) || "0");
@@ -46,35 +47,45 @@ function wait(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-async function playSequence() {
+async function playSequence(token) {
   acceptingInput = false;
+  startButton.disabled = true;
   messageEl.textContent = "香奈美正在亮灯，先认真听完这一小节。";
   await wait(420);
   for (const index of sequence) {
+    if (token !== playToken) return;
     flash(index);
     await wait(470);
   }
+  if (token !== playToken) return;
   playerIndex = 0;
   acceptingInput = true;
+  startButton.disabled = false;
   messageEl.textContent = "轮到你啦，照着刚才的顺序点亮舞台。";
 }
 
-function nextRound() {
+function nextRound(token = playToken) {
+  if (token !== playToken) return;
   sequence.push(Math.floor(Math.random() * pads.length));
   updateHud();
-  playSequence();
+  playSequence(token);
 }
 
 function start() {
+  playToken += 1;
   sequence = [];
   playerIndex = 0;
   startButton.textContent = "重开";
+  startButton.disabled = false;
   messageEl.textContent = "第一小节要来啦。";
-  nextRound();
+  nextRound(playToken);
 }
 
 function fail() {
+  playToken += 1;
   acceptingInput = false;
+  startButton.disabled = false;
+  startButton.textContent = "再来";
   const round = Math.max(0, sequence.length - 1);
   if (round > bestRound()) localStorage.setItem(bestKey, String(round));
   updateHud();
@@ -94,7 +105,8 @@ function press(index) {
     updateHud();
     acceptingInput = false;
     messageEl.textContent = "完美跟上！香奈美再加一盏灯。";
-    window.setTimeout(nextRound, 760);
+    const token = playToken;
+    window.setTimeout(() => nextRound(token), 760);
   }
 }
 

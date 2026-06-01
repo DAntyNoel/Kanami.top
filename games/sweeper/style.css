@@ -81,7 +81,7 @@ h1 {
 
 .hud {
   display: grid;
-  grid-template-columns: 1fr 1fr auto auto;
+  grid-template-columns: repeat(3, 1fr) auto auto;
   align-items: center;
   gap: 10px;
   padding: 12px;
@@ -163,7 +163,11 @@ h1 {
 
 @media (max-width: 560px) {
   .hud {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .hud button {
+    grid-column: span 3;
   }
 
   .board {

@@ -3,15 +3,18 @@ const mineCount = 10;
 const boardEl = document.querySelector("#board");
 const flagsEl = document.querySelector("#flags");
 const timerEl = document.querySelector("#timer");
+const bestEl = document.querySelector("#best");
 const modeButton = document.querySelector("#mode");
 const restartButton = document.querySelector("#restart");
 const messageEl = document.querySelector("#message");
+const bestKey = "kanami-sweeper-best";
 
 let board = [];
 let openCount = 0;
 let flags = 0;
 let flagMode = false;
 let gameOver = false;
+let minesReady = false;
 let startedAt = 0;
 let timerId = 0;
 let longPressTimer = 0;
@@ -41,12 +44,15 @@ function makeBoard() {
     flagged: false,
     count: 0
   })));
+}
 
+function placeMines(safeRow, safeCol) {
+  const safeCells = new Set([[safeRow, safeCol], ...neighbors(safeRow, safeCol)].map(([row, col]) => `${row}:${col}`));
   let placed = 0;
   while (placed < mineCount) {
     const row = Math.floor(Math.random() * size);
     const col = Math.floor(Math.random() * size);
-    if (!board[row][col].mine) {
+    if (!board[row][col].mine && !safeCells.has(`${row}:${col}`)) {
       board[row][col].mine = true;
       placed += 1;
     }
@@ -55,10 +61,35 @@ function makeBoard() {
   board.flat().forEach((cell) => {
     cell.count = neighbors(cell.row, cell.col).filter(([row, col]) => board[row][col].mine).length;
   });
+  minesReady = true;
+}
+
+function elapsedSeconds() {
+  return startedAt ? Math.floor((Date.now() - startedAt) / 1000) : 0;
+}
+
+function formatSeconds(seconds) {
+  if (!seconds) return "--";
+  const minutes = Math.floor(seconds / 60);
+  const rest = String(seconds % 60).padStart(2, "0");
+  return minutes ? `${minutes}:${rest}` : `${rest}s`;
+}
+
+function bestTime() {
+  return Number(localStorage.getItem(bestKey) || "0");
+}
+
+function updateBest(time) {
+  const currentBest = bestTime();
+  if (time && (!currentBest || time < currentBest)) {
+    localStorage.setItem(bestKey, String(time));
+  }
+  bestEl.textContent = formatSeconds(bestTime());
 }
 
 function updateHud() {
   flagsEl.textContent = String(mineCount - flags);
+  bestEl.textContent = formatSeconds(bestTime());
   modeButton.textContent = flagMode ? "旗帜" : "翻开";
   modeButton.setAttribute("aria-pressed", String(flagMode));
 }
@@ -136,7 +167,9 @@ function finish(win) {
   gameOver = true;
   window.clearInterval(timerId);
   if (win) {
-    messageEl.textContent = "全部安全格都揭开啦！香奈美的舞台顺利开演。";
+    const time = elapsedSeconds();
+    updateBest(time);
+    messageEl.textContent = `全部安全格都揭开啦！用时 ${formatSeconds(time)}，香奈美的舞台顺利开演。`;
   } else {
     revealAll();
     messageEl.textContent = "星光炸点被踩到了。香奈美把舞台重新整理好，我们再试一次。";
@@ -150,6 +183,10 @@ function checkWin() {
 
 function toggleFlag(row, col) {
   if (gameOver) return;
+  if (!minesReady) {
+    messageEl.textContent = "先翻开一格吧，香奈美会保证第一步安全。";
+    return;
+  }
   startTimer();
   const cell = board[row][col];
   if (cell.open) return;
@@ -165,6 +202,9 @@ function handleCell(row, col) {
   if (flagMode) {
     toggleFlag(row, col);
     return;
+  }
+  if (!minesReady) {
+    placeMines(row, col);
   }
   startTimer();
   const cell = board[row][col];
@@ -185,11 +225,13 @@ function restart() {
   flags = 0;
   flagMode = false;
   gameOver = false;
+  minesReady = false;
   startedAt = 0;
   timerEl.textContent = "0";
-  messageEl.textContent = "默认是翻开模式；手机上可以切换旗帜模式，或长按格子插旗。";
+  messageEl.textContent = "第一格一定安全；手机上可以切换旗帜模式，或长按格子插旗。";
   makeBoard();
   render();
+  updateBest();
 }
 
 modeButton.addEventListener("click", () => {
