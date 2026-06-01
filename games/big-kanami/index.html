@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>合成大奈美</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="../../res/images/favicon.png" />
+</head>
+<body>
+  <main class="game-shell">
+    <nav class="topbar" aria-label="Game navigation">
+      <a href="../../index.html">返回 Kanami.top</a>
+      <a href="CREDITS.md">致谢</a>
+    </nav>
+
+    <section class="hero">
+      <p class="eyebrow">KANAMI GAME</p>
+      <h1>合成大奈美</h1>
+      <p>从杯口放下一颗香奈美小球吧。相同的球碰在一起就会合体，香奈美要慢慢变成超大奈美啦。</p>
+    </section>
+
+    <section class="panel hud">
+      <div><span>分数</span><strong id="score">0</strong></div>
+      <div><span>最佳</span><strong id="best">0</strong></div>
+      <div class="next-wrap">
+        <span>下一颗</span>
+        <canvas id="next-ball" width="58" height="58" aria-label="Next Kanami ball"></canvas>
+      </div>
+      <button id="restart" type="button">重开</button>
+    </section>
+
+    <section class="stage-wrap" aria-label="合成大奈美 game board">
+      <canvas id="game" width="420" height="640"></canvas>
+    </section>
+
+    <section class="panel controls">
+      <button id="drop" type="button">投下</button>
+      <p id="message" aria-live="polite">移动鼠标或手指选择杯口位置，点击舞台或按空格投下。香奈美准备好啦。</p>
+    </section>
+  </main>
+
+  <script src="../../vendor/matter.min.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
