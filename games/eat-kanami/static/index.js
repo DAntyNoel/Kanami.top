@@ -13,7 +13,7 @@ const MODE_NORMAL = 1, MODE_ENDLESS = 2, MODE_PRACTICE = 3;
         const lang = LANGUAGES.find(l => l.regex.test(navigator.language)).lang
         
         return $.ajax({
-            url: `/EatKanami/static/i18n/${lang}.json`,
+            url: `./static/i18n/${lang}.json`,
             dataType: 'json',
             method: 'GET',
             async: false,
