@@ -1,0 +1,47 @@
+.stamps {
+    width: 100%;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    padding: 30px 20px;
+}
+
+.stamps-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+  
+.btn-small {
+    padding: 0.4rem 1rem;
+    font-size: 1.3rem;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #f7c8e0, #b7d5ff);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+  
+.btn-small:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(255,200,230,0.7);
+}
+  
+.stamps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, 200px); 
+    gap: 15px;
+    justify-content: center; 
+}
+  
+.stamps-grid img {
+    width: 200px;       
+    height: 200px;     
+    object-fit: contain;
+    border-radius: 10px;
+    transition: transform 0.3s ease;
+}
+  
+.stamps-grid img:hover {
+    transform: scale(1.1);
+}
