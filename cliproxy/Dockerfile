@@ -29,6 +29,7 @@ ENV TZ=Asia/Shanghai
 
 RUN cp /usr/share/zoneinfo/${TZ} /etc/localtime \
   && echo "${TZ}" > /etc/timezone \
+  && sed -i 's/\r$//' /CLIProxyAPI/start_script.sh \
   && chmod +x /CLIProxyAPI/start_script.sh
 
 CMD ["./start_script.sh"]
