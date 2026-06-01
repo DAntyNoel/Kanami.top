@@ -1,6 +1,7 @@
 import http from "node:http";
 import { config } from "./env.js";
 import { getKanamiPrompt } from "./prompt.js";
+import { isApiKeyRequired, providerHeaders, resolveProvider } from "./provider.js";
 import { tryServeStatic } from "./static.js";
 
 const rateBuckets = new Map();
@@ -94,17 +95,6 @@ function providerMessages(messages) {
   ];
 }
 
-function providerUrl() {
-  return `${config.baseUrl}/chat/completions`;
-}
-
-function providerHeaders() {
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${config.apiKey}`
-  };
-}
-
 function sseHeaders(res) {
   res.writeHead(200, {
     "Content-Type": "text/event-stream; charset=utf-8",
@@ -125,15 +115,24 @@ function extractDelta(payload) {
 }
 
 async function streamChat(req, res, messages) {
+  const provider = await resolveProvider({ forceLocalProbe: true });
+  if (isApiKeyRequired(provider)) {
+    json(res, 500, {
+      error: "MISSING_API_KEY",
+      message: "后台还没有配置 API_KEY，香奈美现在还不能开麦。"
+    });
+    return;
+  }
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), config.requestTimeoutMs);
   req.on("close", () => controller.abort());
 
   sseHeaders(res);
-  sseEvent(res, "meta", { model: config.model });
+  sseEvent(res, "meta", { model: config.model, provider: provider.source });
 
   try {
-    const response = await fetch(providerUrl(), {
+    const response = await fetch(`${provider.baseUrl}/chat/completions`, {
       method: "POST",
       headers: providerHeaders(),
       signal: controller.signal,
@@ -192,11 +191,20 @@ async function streamChat(req, res, messages) {
 }
 
 async function completeChat(res, messages) {
+  const provider = await resolveProvider({ forceLocalProbe: true });
+  if (isApiKeyRequired(provider)) {
+    json(res, 500, {
+      error: "MISSING_API_KEY",
+      message: "后台还没有配置 API_KEY，香奈美现在还不能开麦。"
+    });
+    return;
+  }
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), config.requestTimeoutMs);
 
   try {
-    const response = await fetch(providerUrl(), {
+    const response = await fetch(`${provider.baseUrl}/chat/completions`, {
       method: "POST",
       headers: providerHeaders(),
       signal: controller.signal,
@@ -221,7 +229,8 @@ async function completeChat(res, messages) {
     const payload = await response.json();
     json(res, 200, {
       message: payload.choices?.[0]?.message?.content ?? "",
-      model: payload.model ?? config.model
+      model: payload.model ?? config.model,
+      provider: provider.source
     });
   } catch (error) {
     json(res, 504, {
@@ -238,14 +247,6 @@ async function handleChat(req, res) {
     json(res, 429, {
       error: "RATE_LIMITED",
       message: "香奈美有点喘不过气啦，稍等一下再和我说话吧。"
-    });
-    return;
-  }
-
-  if (!config.apiKey) {
-    json(res, 500, {
-      error: "MISSING_API_KEY",
-      message: "后台还没有配置 API_KEY，香奈美现在还不能开麦。"
     });
     return;
   }
@@ -277,20 +278,30 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === "GET" && url.pathname === "/health") {
+    const provider = await resolveProvider({ forceLocalProbe: true });
     json(res, 200, {
       ok: true,
       model: config.model,
       prompt: "kanami-prompt.md",
-      apiConfigured: Boolean(config.apiKey)
+      apiConfigured: Boolean(config.apiKey) || provider.source === "local-cliproxy",
+      provider: provider.source,
+      localCliProxy: {
+        configured: Boolean(config.localCliProxyPort),
+        available: provider.localAvailable,
+        host: config.localCliProxyHost,
+        port: config.localCliProxyPort || null
+      }
     });
     return;
   }
 
   if (req.method === "GET" && url.pathname === "/api/config") {
+    const provider = await resolveProvider();
     json(res, 200, {
       model: config.model,
       maxMessageChars: config.maxMessageChars,
-      stream: true
+      stream: true,
+      provider: provider.source
     });
     return;
   }

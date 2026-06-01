@@ -56,7 +56,8 @@ async function checkHealth() {
   try {
     const response = await fetch("/health", { cache: "no-store" });
     const payload = await response.json();
-    setStatus(payload.apiConfigured ? `后台已连接 · ${payload.model}` : "后台缺少 API_KEY");
+    const providerLabel = payload.provider === "local-cliproxy" ? "本地代理" : "BASE URL";
+    setStatus(payload.apiConfigured ? `${providerLabel}已连接 · ${payload.model}` : "后台缺少 API_KEY");
   } catch {
     setStatus("后台暂时离线");
   }

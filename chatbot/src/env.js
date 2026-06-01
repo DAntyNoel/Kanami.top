@@ -50,6 +50,7 @@ function envValue(fileEnv, key, fallback = "") {
 
 function numberValue(fileEnv, key, fallback, { min, max } = {}) {
   const raw = envValue(fileEnv, key, String(fallback));
+  if (raw === "") return fallback;
   const value = Number(raw);
   if (!Number.isFinite(value)) return fallback;
   if (min !== undefined && value < min) return fallback;
@@ -84,6 +85,10 @@ export const config = {
   host: envValue(fileEnv, "HOST", "127.0.0.1"),
   port: numberValue(fileEnv, "PORT", 8787, { min: 1, max: 65535 }),
   baseUrl: normalizeBaseUrl(envValue(fileEnv, "BASE_URL", "https://api.openai.com/v1")),
+  localCliProxyPort: numberValue(fileEnv, "LOCAL_CLIPROXY_PORT", 0, { min: 1, max: 65535 }),
+  localCliProxyHost: envValue(fileEnv, "LOCAL_CLIPROXY_HOST", "127.0.0.1"),
+  localCliProxyProbeMs: numberValue(fileEnv, "LOCAL_CLIPROXY_PROBE_MS", 350, { min: 50, max: 5000 }),
+  localCliProxyCacheMs: numberValue(fileEnv, "LOCAL_CLIPROXY_CACHE_MS", 2500, { min: 0, max: 60000 }),
   apiKey: envValue(fileEnv, "API_KEY", ""),
   model: envValue(fileEnv, "MODEL", "gpt-4o-mini"),
   temperature: numberValue(fileEnv, "TEMPERATURE", 0.86, { min: 0, max: 2 }),

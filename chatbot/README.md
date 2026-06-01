@@ -14,11 +14,18 @@ cp env.example env
 
 ```ini
 BASE_URL=https://api.openai.com/v1
+LOCAL_CLIPROXY_PORT=12702
 API_KEY=sk-your-key
 MODEL=gpt-4o-mini
 PORT=8787
 HOST=127.0.0.1
 ```
+
+如果 `LOCAL_CLIPROXY_PORT` 配置了端口，后端会在每次对话前先探测
+`127.0.0.1:<LOCAL_CLIPROXY_PORT>`。端口可连接时优先使用
+`http://127.0.0.1:<LOCAL_CLIPROXY_PORT>/v1`；不可连接时再回退到
+`BASE_URL`。本地 CLI proxy 可用时不强制要求 `API_KEY`，回退到
+`BASE_URL` 时仍需要配置 `API_KEY`。
 
 3. 启动：
 
