@@ -21,3 +21,5 @@ cliproxy/worker/wrangler.toml
 cliproxy/cloudflare/.env
 cliproxy/cloudflare/secrets/*
 !cliproxy/cloudflare/secrets/.gitkeep
+cliproxy/secrets/*
+!cliproxy/secrets/.gitkeep

@@ -7,7 +7,8 @@
 - `cliproxyapi/`：CLIProxyAPI 上游 submodule。
 - `Dockerfile`：从 submodule 构建核心 Go 服务，并使用本站的启动脚本生成运行配置。
 - `start_script.sh`：启动前根据环境变量和密钥文件生成 `config.yaml`。
-- `cloudflare/`：本地 Docker + Cloudflare Tunnel 的运行方式。
+- `docker-compose.yml`：本地 Docker + Cloudflare Tunnel 的唯一运行方式。
+- `secrets/`：本地密钥文件目录，只保留 `.gitkeep`。
 - `worker/`：Cloudflare Worker 转发方式，结构参考 `chatbot/worker`。
 
 ## 本地运行
@@ -21,13 +22,15 @@ git submodule update --init --recursive cliproxy/cliproxyapi
 2. 准备本地配置：
 
 ```bash
-cp cliproxy/env.example cliproxy/env
+cp cliproxy/.env.example cliproxy/.env
 ```
 
-3. 编辑 `cliproxy/env`，至少设置：
+3. 编辑 `cliproxy/.env`，至少设置：
 
 ```ini
+# 宿主机暴露端口；容器内部固定监听 8317，以匹配 Cloudflare Tunnel ingress。
 PORT=8317
+TUNNEL_TOKEN=replace-with-cloudflare-tunnel-token
 MANAGEMENT_PASSWORD=replace-with-management-password
 API_KEYS=replace-with-client-api-key
 CODEX_AUTH_REQUIRED=false
@@ -47,19 +50,17 @@ curl -i http://127.0.0.1:8317/v1/models \
   -H "Authorization: Bearer replace-with-client-api-key"
 ```
 
-## Cloudflare Tunnel
+## Docker + Cloudflare Tunnel
 
 本地或目标主机运行 Docker Compose：
 
 ```bash
 cd cliproxy
-cp cloudflare/.env.example cloudflare/.env
-mkdir -p cloudflare/secrets
-printf '%s\n' 'replace-with-client-api-key' > cloudflare/secrets/api-keys.txt
-docker compose --env-file cloudflare/.env -f cloudflare/docker-compose.yml up -d --build
+cp .env.example .env
+docker compose --env-file .env -f docker-compose.yml up -d --build
 ```
 
-`cloudflare/.env`、`cloudflare/secrets/*`、`env`、真实 API key、OAuth auth JSON 和运行日志都不提交。
+`.env`、`secrets/*`、真实 API key、OAuth auth JSON 和运行日志都不提交。
 
 ## Cloudflare Worker
 

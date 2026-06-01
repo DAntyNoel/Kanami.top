@@ -2,17 +2,17 @@
 set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-PROJECT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+PROJECT_DIR="$SCRIPT_DIR"
 
 cd "$PROJECT_DIR"
 
-if [ ! -f "cloudflare/.env" ]; then
-  echo "Missing cloudflare/.env. Copy cloudflare/.env.example and fill in the real values first." >&2
+if [ ! -f ".env" ]; then
+  echo "Missing .env. Copy .env.example and fill in the real values first." >&2
   exit 1
 fi
 
 compose() {
-  docker compose --env-file cloudflare/.env -f cloudflare/docker-compose.yml "$@"
+  docker compose --env-file .env -f docker-compose.yml "$@"
 }
 
 RUNNING_CONTAINERS=$(compose ps -q)

@@ -5,7 +5,7 @@ services:
     image: ${CLI_PROXY_IMAGE:-kanami-cliproxy:latest}
     pull_policy: build
     build:
-      context: ..
+      context: .
       dockerfile: Dockerfile
       args:
         VERSION: ${VERSION:-dev}
@@ -13,26 +13,28 @@ services:
         BUILD_DATE: ${BUILD_DATE:-unknown}
     container_name: kanami-cliproxy-api
     environment:
-      PORT: ${PORT:-8317}
+      PORT: 8317
       AUTH_DIR: /root/.cli-proxy-api
       API_KEYS_FILE: /CLIProxyAPI/api-keys.txt
+      API_KEYS: ${API_KEYS:-}
+      CLIENT_API_KEY: ${CLIENT_API_KEY:-}
       MANAGEMENT_PASSWORD: ${MANAGEMENT_PASSWORD:-}
       PROXY_URL: ${PROXY_URL:-}
       CODEX_AUTH_AUTO_RESTORE: "false"
       CODEX_AUTH_REQUIRED: "false"
       DEPLOY: ${DEPLOY:-cloud}
     ports:
-      - "127.0.0.1:8317:8317"
+      - "127.0.0.1:${PORT:-8317}:8317"
     volumes:
       - cli-proxy-auth:/root/.cli-proxy-api
-      - ../logs:/CLIProxyAPI/logs
+      - ./logs:/CLIProxyAPI/logs
       - ./secrets/api-keys.txt:/CLIProxyAPI/api-keys.txt:ro
     restart: unless-stopped
 
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: kanami-cliproxy-cloudflared
-    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN:?Set TUNNEL_TOKEN in cloudflare/.env}
+    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN:?Set TUNNEL_TOKEN in cliproxy/.env}
     depends_on:
       - cli-proxy-api
     restart: unless-stopped

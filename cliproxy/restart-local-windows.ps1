@@ -1,16 +1,16 @@
 $ErrorActionPreference = "Stop"
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ProjectDir = Split-Path -Parent $ScriptDir
+$ProjectDir = $ScriptDir
 
 Set-Location $ProjectDir
 
-if (-not (Test-Path "cloudflare\.env")) {
-    Write-Error "Missing cloudflare\.env. Copy cloudflare\.env.example and fill in the real values first."
+if (-not (Test-Path ".env")) {
+    Write-Error "Missing .env. Copy .env.example and fill in the real values first."
     exit 1
 }
 
-$ComposeArgs = @("--env-file", "cloudflare\.env", "-f", "cloudflare\docker-compose.yml")
+$ComposeArgs = @("--env-file", ".env", "-f", "docker-compose.yml")
 $RunningContainersRaw = docker compose @ComposeArgs ps -q
 if ($LASTEXITCODE -ne 0) {
     throw "docker compose ps failed with exit code $LASTEXITCODE"
