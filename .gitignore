@@ -2,3 +2,9 @@ test*
 debug*
 
 **/_*
+
+*.env
+node_modules/
+chatbot/env
+chatbot/*.log
+chatbot/worker/wrangler.toml

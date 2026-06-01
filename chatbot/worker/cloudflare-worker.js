@@ -1,0 +1,101 @@
+const DEFAULT_BACKEND_ORIGIN = "https://replace-with-your-tunnel.example.com";
+
+function offlineHtml() {
+  return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>香奈美正在准备中</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      color: #2f2634;
+      font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      background:
+        linear-gradient(110deg, rgba(255,255,255,.9), rgba(255,238,247,.78)),
+        radial-gradient(circle at 20% 20%, rgba(238,138,180,.28), transparent 34%),
+        linear-gradient(135deg, #f7c8e0, #b7d5ff);
+    }
+    main {
+      width: min(680px, 100%);
+      padding: 44px;
+      border: 1px solid rgba(255,255,255,.76);
+      border-radius: 8px;
+      background: rgba(255,255,255,.88);
+      box-shadow: 0 24px 70px rgba(47,38,52,.22);
+    }
+    p:first-child {
+      margin: 0 0 10px;
+      color: #d7aa48;
+      font-size: .78rem;
+      font-weight: 800;
+    }
+    h1 {
+      margin: 0 0 16px;
+      font-size: clamp(2rem, 7vw, 4rem);
+      line-height: 1.02;
+    }
+    p:last-child {
+      margin: 0;
+      color: #685f70;
+      font-size: 1.05rem;
+      line-height: 1.75;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p>KANAMI IS OFFLINE</p>
+    <h1>后台的舞台灯暂时暗下来了。</h1>
+    <p>香奈美正在重新接上声音通道，等服务恢复后再回到这里，我会继续听你说话的。</p>
+  </main>
+</body>
+</html>`;
+}
+
+function offlineResponse(status = 503) {
+  return new Response(offlineHtml(), {
+    status,
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store"
+    }
+  });
+}
+
+function buildBackendRequest(request, backendOrigin) {
+  const incoming = new URL(request.url);
+  const target = new URL(incoming.pathname + incoming.search, backendOrigin);
+  const headers = new Headers(request.headers);
+  headers.set("X-Forwarded-Host", incoming.host);
+  headers.set("X-Forwarded-Proto", incoming.protocol.replace(":", ""));
+
+  return new Request(target, {
+    method: request.method,
+    headers,
+    body: request.body,
+    redirect: "manual"
+  });
+}
+
+export default {
+  async fetch(request, env) {
+    const backendOrigin = env.BACKEND_ORIGIN || DEFAULT_BACKEND_ORIGIN;
+
+    try {
+      const response = await fetch(buildBackendRequest(request, backendOrigin));
+      if (response.status >= 500 && request.method === "GET") {
+        return offlineResponse(response.status);
+      }
+      return response;
+    } catch {
+      return offlineResponse();
+    }
+  }
+};

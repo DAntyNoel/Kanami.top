@@ -1,0 +1,12 @@
+name = "kanami-chatbot-proxy"
+main = "cloudflare-worker.js"
+compatibility_date = "2026-06-01"
+
+# 部署时复制为 wrangler.toml，并把 route 绑定到 chat.kanami.top。
+# BACKEND_ORIGIN 建议填 Cloudflare Tunnel 或其它内网穿透后的 HTTPS 地址。
+routes = [
+  { pattern = "chat.kanami.top/*", zone_name = "kanami.top" }
+]
+
+[vars]
+BACKEND_ORIGIN = "https://replace-with-your-tunnel.example.com"
