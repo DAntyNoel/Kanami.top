@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catch Kanami</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="../../res/images/favicon.png" />
+</head>
+<body>
+  <main class="game-shell">
+    <nav class="topbar" aria-label="Game navigation">
+      <a href="../../index.html">返回 Kanami.top</a>
+      <a href="CREDITS.md">致谢</a>
+    </nav>
+
+    <section class="hero">
+      <p class="eyebrow">KANAMI GAME</p>
+      <h1>Catch Kanami</h1>
+      <p>舞台灯亮起的时候，点中香奈美的位置。看到干扰光可要忍住，香奈美正在考验你的反应哦。</p>
+    </section>
+
+    <section class="panel hud">
+      <div><span>分数</span><strong id="score">0</strong></div>
+      <div><span>时间</span><strong id="time">30</strong></div>
+      <div><span>最佳</span><strong id="best">0</strong></div>
+      <button id="start" type="button">开始</button>
+    </section>
+
+    <section class="stage" id="stage" aria-label="Catch Kanami board"></section>
+    <section class="panel message" id="message" aria-live="polite">准备好了就点开始，香奈美会在灯光里闪现。</section>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>

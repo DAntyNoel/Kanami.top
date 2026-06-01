@@ -1,0 +1,186 @@
+:root {
+  --ink: #2b2932;
+  --muted: #66606c;
+  --paper: rgba(255, 255, 255, 0.94);
+  --line: rgba(43, 41, 50, 0.14);
+  --board: #81c7c0;
+  --rose: #f58bac;
+  --amber: #f5c65f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.82)),
+    url("../../res/images/lovekanami.jpg") center / cover fixed;
+  touch-action: manipulation;
+}
+
+button,
+a {
+  font: inherit;
+}
+
+.game-shell {
+  width: min(760px, calc(100% - 28px));
+  margin: 0 auto;
+  padding: 22px 0 34px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 26px;
+}
+
+.topbar a {
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 800;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #2f8178;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+h1 {
+  margin: 0;
+  font-size: 4rem;
+  line-height: 1;
+}
+
+.hero p:last-child {
+  max-width: 650px;
+  margin: 14px 0 18px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.panel {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 18px 40px rgba(43, 41, 50, 0.13);
+}
+
+.hud {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+}
+
+.hud span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.hud strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 1.35rem;
+}
+
+button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0 18px;
+  color: #25212a;
+  background: linear-gradient(135deg, var(--amber), var(--rose));
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.board-wrap {
+  margin-top: 16px;
+  touch-action: none;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  width: min(100%, 560px);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(129, 199, 192, 0.78);
+  border: 1px solid rgba(43, 41, 50, 0.12);
+  box-shadow: 0 20px 46px rgba(43, 41, 50, 0.18);
+}
+
+.cell {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.42);
+  color: #2f2b34;
+  font-weight: 900;
+  text-align: center;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.tile {
+  padding: 6px;
+  box-shadow: inset 0 -8px 18px rgba(43, 41, 50, 0.08);
+}
+
+.value-2 { background: #fff4c7; font-size: 1.6rem; }
+.value-4 { background: #ffd8a8; font-size: 1.35rem; }
+.value-8 { background: #ffb0a6; font-size: 1rem; }
+.value-16 { background: #f58bac; color: white; font-size: 0.95rem; }
+.value-32 { background: #a3d8f4; font-size: 0.9rem; }
+.value-64 { background: #81c7c0; color: white; font-size: 0.9rem; }
+.value-128,
+.value-256,
+.value-512,
+.value-1024,
+.value-2048 { background: #6f5f90; color: white; font-size: 0.82rem; }
+
+.message {
+  margin-top: 16px;
+  padding: 14px 16px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+@media (max-width: 560px) {
+  .board {
+    gap: 7px;
+    padding: 7px;
+  }
+
+  .hud {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .hud button {
+    grid-column: 1 / -1;
+  }
+
+  h1 {
+    font-size: 2.3rem;
+  }
+}

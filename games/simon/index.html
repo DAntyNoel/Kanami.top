@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stage Simon</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="../../res/images/favicon.png" />
+</head>
+<body>
+  <main class="game-shell">
+    <nav class="topbar" aria-label="Game navigation">
+      <a href="../../index.html">返回 Kanami.top</a>
+      <a href="CREDITS.md">致谢</a>
+    </nav>
+
+    <section class="hero">
+      <p class="eyebrow">KANAMI GAME</p>
+      <h1>Stage Simon</h1>
+      <p>记住舞台灯的顺序，再照着点一遍。香奈美会一轮一轮加长旋律。</p>
+    </section>
+
+    <section class="panel hud">
+      <div><span>回合</span><strong id="round">0</strong></div>
+      <div><span>最佳</span><strong id="best">0</strong></div>
+      <button id="start" type="button">开始</button>
+    </section>
+
+    <section class="pads" id="pads" aria-label="Stage Simon pads">
+      <button class="pad pad-a" type="button" data-pad="0" aria-label="粉色舞台灯"></button>
+      <button class="pad pad-b" type="button" data-pad="1" aria-label="蓝色舞台灯"></button>
+      <button class="pad pad-c" type="button" data-pad="2" aria-label="金色舞台灯"></button>
+      <button class="pad pad-d" type="button" data-pad="3" aria-label="绿色舞台灯"></button>
+    </section>
+
+    <section class="panel message" id="message" aria-live="polite">按开始，香奈美先唱第一小节。</section>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>

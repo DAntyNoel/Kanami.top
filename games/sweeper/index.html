@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kanami Sweeper</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="../../res/images/favicon.png" />
+</head>
+<body>
+  <main class="game-shell">
+    <nav class="topbar" aria-label="Game navigation">
+      <a href="../../index.html">返回 Kanami.top</a>
+      <a href="CREDITS.md">致谢</a>
+    </nav>
+
+    <section class="hero">
+      <p class="eyebrow">KANAMI GAME</p>
+      <h1>Kanami Sweeper</h1>
+      <p>舞台上藏着星光炸点。安全揭开格子，给危险位置插上旗，香奈美就能顺利开演。</p>
+    </section>
+
+    <section class="panel hud">
+      <div><span>旗帜</span><strong id="flags">10</strong></div>
+      <div><span>时间</span><strong id="timer">0</strong></div>
+      <button id="mode" type="button" aria-pressed="false">翻开</button>
+      <button id="restart" type="button">重开</button>
+    </section>
+
+    <section class="board" id="board" aria-label="Kanami sweeper board"></section>
+    <section class="panel message" id="message" aria-live="polite">默认是翻开模式；手机上可以切换旗帜模式，或长按格子插旗。</section>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>

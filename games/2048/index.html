@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kanami 2048</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="../../res/images/favicon.png" />
+</head>
+<body>
+  <main class="game-shell">
+    <nav class="topbar" aria-label="Game navigation">
+      <a href="../../index.html">返回 Kanami.top</a>
+      <a href="CREDITS.md">致谢</a>
+    </nav>
+
+    <section class="hero">
+      <p class="eyebrow">KANAMI GAME</p>
+      <h1>Kanami 2048</h1>
+      <p>把相同的应援元素合在一起。滑到更大的舞台，香奈美就能唱得更远。</p>
+    </section>
+
+    <section class="panel hud">
+      <div><span>分数</span><strong id="score">0</strong></div>
+      <div><span>最佳</span><strong id="best">0</strong></div>
+      <button id="restart" type="button">重开</button>
+    </section>
+
+    <section class="board-wrap">
+      <div class="board" id="board" aria-label="Kanami 2048 board"></div>
+    </section>
+
+    <section class="panel message" id="message" aria-live="polite">用方向键或滑动来移动方块，香奈美会帮你记录最佳分数。</section>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>

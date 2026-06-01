@@ -1,0 +1,177 @@
+:root {
+  --ink: #29313b;
+  --muted: #626b75;
+  --paper: rgba(255, 255, 255, 0.93);
+  --line: rgba(41, 49, 59, 0.14);
+  --sky: #75c9e6;
+  --leaf: #72d38d;
+  --pink: #f690b6;
+  --gold: #f6d26e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.82)),
+    url("../../res/images/backgrounds/Soda.png") center / cover fixed;
+}
+
+button,
+a {
+  font: inherit;
+}
+
+.game-shell {
+  width: min(820px, calc(100% - 28px));
+  margin: 0 auto;
+  padding: 22px 0 34px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 26px;
+}
+
+.topbar a {
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 800;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #2f8178;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+h1 {
+  margin: 0;
+  font-size: 4rem;
+  line-height: 1;
+}
+
+.hero p:last-child {
+  max-width: 650px;
+  margin: 14px 0 18px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.panel {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 18px 40px rgba(41, 49, 59, 0.13);
+}
+
+.hud {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+}
+
+.hud span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.hud strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 1.35rem;
+}
+
+.hud button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0 16px;
+  color: #24303a;
+  background: linear-gradient(135deg, var(--gold), var(--leaf));
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.hud button[aria-pressed="true"] {
+  background: linear-gradient(135deg, var(--pink), var(--sky));
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+  width: min(100%, 620px);
+  margin: 16px auto 0;
+  padding: 8px;
+  border-radius: 8px;
+  background: rgba(117, 201, 230, 0.46);
+  border: 1px solid var(--line);
+  box-shadow: 0 20px 46px rgba(41, 49, 59, 0.16);
+}
+
+.cell {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  min-width: 0;
+  border: 0;
+  border-radius: 7px;
+  background: linear-gradient(145deg, rgba(246, 210, 110, 0.95), rgba(246, 144, 182, 0.82));
+  color: #27313c;
+  font-weight: 900;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cell.is-open {
+  background: rgba(255, 255, 255, 0.82);
+  cursor: default;
+}
+
+.cell.is-flagged {
+  background: linear-gradient(145deg, rgba(117, 201, 230, 0.96), rgba(114, 211, 141, 0.88));
+}
+
+.cell.is-mine {
+  background: linear-gradient(145deg, #ff9fa5, #f6d26e);
+}
+
+.message {
+  margin-top: 16px;
+  padding: 14px 16px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+@media (max-width: 560px) {
+  .hud {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .board {
+    gap: 4px;
+    padding: 6px;
+  }
+
+  h1 {
+    font-size: 2.3rem;
+  }
+}
