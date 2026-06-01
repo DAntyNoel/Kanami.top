@@ -114,6 +114,44 @@ function extractDelta(payload) {
   return choice?.delta?.content ?? choice?.message?.content ?? "";
 }
 
+function chatPayload(messages, stream) {
+  return JSON.stringify({
+    model: config.model,
+    messages: providerMessages(messages),
+    temperature: config.temperature,
+    stream
+  });
+}
+
+async function fetchProviderChat(provider, messages, stream, signal) {
+  return fetch(`${provider.baseUrl}/chat/completions`, {
+    method: "POST",
+    headers: providerHeaders(),
+    signal,
+    body: chatPayload(messages, stream)
+  });
+}
+
+async function streamCompleteFallback(res, provider, messages, signal, upstreamDetail = "") {
+  const response = await fetchProviderChat(provider, messages, false, signal);
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => "");
+    sseEvent(res, "error", {
+      message: "香奈美这边的麦克风暂时没接好，等一下再喊我可以吗？",
+      status: response.status,
+      detail: (errorText || upstreamDetail).slice(0, 500)
+    });
+    return false;
+  }
+
+  const payload = await response.json();
+  const message = payload.choices?.[0]?.message?.content ?? "";
+  if (message) sseEvent(res, "token", { delta: message });
+  sseEvent(res, "done", { ok: true, fallback: "non-stream" });
+  return true;
+}
+
 async function streamChat(req, res, messages) {
   const provider = await resolveProvider({ forceLocalProbe: true });
   if (isApiKeyRequired(provider)) {
@@ -132,25 +170,11 @@ async function streamChat(req, res, messages) {
   sseEvent(res, "meta", { model: config.model, provider: provider.source });
 
   try {
-    const response = await fetch(`${provider.baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: providerHeaders(),
-      signal: controller.signal,
-      body: JSON.stringify({
-        model: config.model,
-        messages: providerMessages(messages),
-        temperature: config.temperature,
-        stream: true
-      })
-    });
+    const response = await fetchProviderChat(provider, messages, true, controller.signal);
 
     if (!response.ok || !response.body) {
       const errorText = await response.text().catch(() => "");
-      sseEvent(res, "error", {
-        message: "香奈美这边的麦克风暂时没接好，等一下再喊我可以吗？",
-        status: response.status,
-        detail: errorText.slice(0, 500)
-      });
+      await streamCompleteFallback(res, provider, messages, controller.signal, errorText);
       return;
     }
 
@@ -204,17 +228,7 @@ async function completeChat(res, messages) {
   const timeout = setTimeout(() => controller.abort(), config.requestTimeoutMs);
 
   try {
-    const response = await fetch(`${provider.baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: providerHeaders(),
-      signal: controller.signal,
-      body: JSON.stringify({
-        model: config.model,
-        messages: providerMessages(messages),
-        temperature: config.temperature,
-        stream: false
-      })
-    });
+    const response = await fetchProviderChat(provider, messages, false, controller.signal);
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => "");

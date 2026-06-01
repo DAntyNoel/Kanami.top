@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT_DIR = path.resolve(new URL("../..", import.meta.url).pathname);
+const ROOT_DIR = path.resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const CHATBOT_DIR = path.join(ROOT_DIR, "chatbot");
 const ENV_FILES = [path.join(CHATBOT_DIR, "env"), path.join(CHATBOT_DIR, ".env")];
 
