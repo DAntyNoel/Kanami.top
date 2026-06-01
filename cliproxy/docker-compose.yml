@@ -8,6 +8,9 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
+        GO_BUILDER_IMAGE: ${GO_BUILDER_IMAGE:-golang:1.26-alpine}
+        RUNTIME_IMAGE: ${RUNTIME_IMAGE:-alpine:3.23}
+        GOPROXY: ${GOPROXY:-https://proxy.golang.org,direct}
         VERSION: ${VERSION:-dev}
         COMMIT: ${COMMIT:-none}
         BUILD_DATE: ${BUILD_DATE:-unknown}
@@ -32,7 +35,7 @@ services:
     restart: unless-stopped
 
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    image: ${CLOUDFLARED_IMAGE:-cloudflare/cloudflared:latest}
     container_name: kanami-cliproxy-cloudflared
     command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN:?Set TUNNEL_TOKEN in cliproxy/.env}
     depends_on:

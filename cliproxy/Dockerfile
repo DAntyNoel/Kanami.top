@@ -1,6 +1,12 @@
-FROM golang:1.26-alpine AS builder
+ARG GO_BUILDER_IMAGE=golang:1.26-alpine
+ARG RUNTIME_IMAGE=alpine:3.23
+
+FROM ${GO_BUILDER_IMAGE} AS builder
 
 WORKDIR /app
+
+ARG GOPROXY=https://proxy.golang.org,direct
+ENV GOPROXY=${GOPROXY}
 
 COPY cliproxyapi/go.mod cliproxyapi/go.sum ./
 RUN go mod download
@@ -13,7 +19,7 @@ ARG BUILD_DATE=unknown
 
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w -X 'main.Version=${VERSION}' -X 'main.Commit=${COMMIT}' -X 'main.BuildDate=${BUILD_DATE}'" -o ./CLIProxyAPI ./cmd/server/
 
-FROM alpine:3.23
+FROM ${RUNTIME_IMAGE}
 
 RUN apk add --no-cache ca-certificates tzdata
 

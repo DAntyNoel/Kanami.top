@@ -39,8 +39,7 @@ CODEX_AUTH_REQUIRED=false
 4. 构建并启动：
 
 ```bash
-docker build -t kanami-cliproxy ./cliproxy
-docker run --rm --env-file cliproxy/env -p 127.0.0.1:8317:8317 kanami-cliproxy
+bash cliproxy/restart-local-mac.sh
 ```
 
 健康检查可用：
@@ -61,6 +60,15 @@ docker compose --env-file .env -f docker-compose.yml up -d --build
 ```
 
 `.env`、`secrets/*`、真实 API key、OAuth auth JSON 和运行日志都不提交。
+
+如果构建时卡在 `failed to fetch anonymous token` 或 `i/o timeout`，说明 Docker Hub 基础镜像拉取失败。可以在 `cliproxy/.env` 中临时启用镜像源：
+
+```ini
+GO_BUILDER_IMAGE=docker.1ms.run/library/golang:1.26-alpine
+RUNTIME_IMAGE=docker.1ms.run/library/alpine:3.23
+CLOUDFLARED_IMAGE=docker.1ms.run/cloudflare/cloudflared:latest
+GOPROXY=https://goproxy.cn,direct
+```
 
 ## Cloudflare Worker
 

@@ -31,6 +31,16 @@ if ($RunningContainers.Count -gt 0) {
 Write-Host "Starting local Cloudflare Docker services in detached mode..."
 docker compose @ComposeArgs up -d --build --force-recreate
 if ($LASTEXITCODE -ne 0) {
+    Write-Host ""
+    Write-Host "Docker build/start failed. If the error mentions docker.io, failed to fetch"
+    Write-Host "anonymous token, or i/o timeout, Docker Hub is not reachable from this machine."
+    Write-Host "Set these optional values in cliproxy/.env and retry:"
+    Write-Host ""
+    Write-Host "GO_BUILDER_IMAGE=docker.1ms.run/library/golang:1.26-alpine"
+    Write-Host "RUNTIME_IMAGE=docker.1ms.run/library/alpine:3.23"
+    Write-Host "CLOUDFLARED_IMAGE=docker.1ms.run/cloudflare/cloudflared:latest"
+    Write-Host "GOPROXY=https://goproxy.cn,direct"
+    Write-Host ""
     throw "docker compose up failed with exit code $LASTEXITCODE"
 }
 
