@@ -11,6 +11,15 @@ if (-not (Test-Path ".env")) {
 }
 
 $ComposeArgs = @("--env-file", ".env", "-f", "docker-compose.yml")
+
+$CliProxyImage = "kanami-cliproxy:latest"
+$CliProxyImageLine = Get-Content ".env" |
+    Where-Object { $_ -match "^\s*CLI_PROXY_IMAGE\s*=" -and $_ -notmatch "^\s*#" } |
+    Select-Object -Last 1
+if ($CliProxyImageLine) {
+    $CliProxyImage = ($CliProxyImageLine -replace "^\s*CLI_PROXY_IMAGE\s*=\s*", "").Trim().Trim('"').Trim("'")
+}
+
 $RunningContainersRaw = docker compose @ComposeArgs ps -q
 if ($LASTEXITCODE -ne 0) {
     throw "docker compose ps failed with exit code $LASTEXITCODE"
@@ -29,7 +38,18 @@ if ($RunningContainers.Count -gt 0) {
 }
 
 Write-Host "Starting local Cloudflare Docker services in detached mode..."
-docker compose @ComposeArgs up -d --build --force-recreate
+docker image inspect $CliProxyImage *> $null
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "Found local Docker image: $CliProxyImage"
+    Write-Host "Starting without rebuilding CLIProxyAPI..."
+    $UpArgs = @("up", "-d", "--no-build", "--force-recreate")
+} else {
+    Write-Host "Missing local Docker image: $CliProxyImage"
+    Write-Host "Building CLIProxyAPI before start..."
+    $UpArgs = @("up", "-d", "--build", "--force-recreate")
+}
+
+docker compose @ComposeArgs @UpArgs
 if ($LASTEXITCODE -ne 0) {
     Write-Host ""
     Write-Host "Docker build/start failed. If the error mentions docker.io, failed to fetch"
