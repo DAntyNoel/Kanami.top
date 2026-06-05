@@ -57,6 +57,9 @@ $StartUsageKeeper = $env:START_USAGE_KEEPER
 if (-not $StartUsageKeeper) {
     $StartUsageKeeper = Get-DotEnvValue "START_USAGE_KEEPER"
 }
+if (-not $StartUsageKeeper) {
+    $StartUsageKeeper = "true"
+}
 
 $RunningContainersRaw = docker compose @ComposeArgs ps -q
 if ($LASTEXITCODE -ne 0) {
@@ -120,6 +123,6 @@ if (Test-Truthy $StartUsageKeeper) {
         throw "usage keeper docker compose ps failed with exit code $LASTEXITCODE"
     }
 } else {
-    Write-Host "CPA Usage Keeper not started. Set START_USAGE_KEEPER=true or run:"
+    Write-Host "CPA Usage Keeper not started because START_USAGE_KEEPER is false. To start it manually, run:"
     Write-Host "  docker compose --env-file .env -f docker-compose.usage-keeper.yml up -d"
 }

@@ -84,31 +84,32 @@ docker compose --env-file .env -f docker-compose.usage-keeper.yml up -d
 默认访问地址：
 
 ```text
-http://127.0.0.1:18080
+http://127.0.0.1:12704
 ```
 
 默认登录密码复用 `MANAGEMENT_PASSWORD`。如需单独设置，在 `cliproxy/.env` 中加入：
 
 ```ini
 USAGE_KEEPER_PASSWORD=replace-with-usage-dashboard-password
-USAGE_KEEPER_PORT=18080
+USAGE_KEEPER_PORT=12704
 ```
 
-如果希望 `restart-local-mac.sh` / `restart-local-windows.ps1` 在重启主服务后也顺手启动 Usage Keeper，可以在 `.env` 中加入：
+`restart-local-mac.sh` / `restart-local-windows.ps1` 默认会在重启主服务后同时启动 Usage Keeper。`USAGE_KEEPER_PORT` 从 `cliproxy/.env` 读取，用来修改暴露到宿主机的端口：
 
 ```ini
 START_USAGE_KEEPER=true
+USAGE_KEEPER_PORT=12704
 REDIS_USAGE_QUEUE_RETENTION_SECONDS=3600
 ```
 
-也可以只在单次命令中启用：
+如果某次只想重启主服务、不启动 Usage Keeper，可以临时关闭：
 
 ```bash
-START_USAGE_KEEPER=true bash cliproxy/restart-local-mac.sh
+START_USAGE_KEEPER=false bash cliproxy/restart-local-mac.sh
 ```
 
 ```powershell
-$env:START_USAGE_KEEPER = "true"
+$env:START_USAGE_KEEPER = "false"
 .\cliproxy\restart-local-windows.ps1
 ```
 

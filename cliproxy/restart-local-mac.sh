@@ -50,6 +50,7 @@ cli_proxy_image() {
 }
 
 START_USAGE_KEEPER="${START_USAGE_KEEPER:-$(env_value "START_USAGE_KEEPER")}"
+START_USAGE_KEEPER="${START_USAGE_KEEPER:-true}"
 
 RUNNING_CONTAINERS=$(compose ps -q)
 
@@ -96,6 +97,6 @@ if truthy "$START_USAGE_KEEPER"; then
   usage_keeper_compose up -d
   usage_keeper_compose ps
 else
-  echo "CPA Usage Keeper not started. Set START_USAGE_KEEPER=true or run:"
+  echo "CPA Usage Keeper not started because START_USAGE_KEEPER is false. To start it manually, run:"
   echo "  docker compose --env-file .env -f docker-compose.usage-keeper.yml up -d"
 fi
