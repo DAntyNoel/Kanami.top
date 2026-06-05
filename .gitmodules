@@ -1,4 +1,4 @@
 [submodule "cliproxy/cliproxyapi"]
 	path = cliproxy/cliproxyapi
-	url = https://github.com/router-for-me/CLIProxyAPI.git
+	url = https://github.com/DAntyNoel/CLIProxyAPI.git
 	branch = main
