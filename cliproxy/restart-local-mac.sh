@@ -15,19 +15,41 @@ compose() {
   docker compose --env-file .env -f docker-compose.yml "$@"
 }
 
-cli_proxy_image() {
-  image=$(awk -F= '
+usage_keeper_compose() {
+  docker compose --env-file .env -f docker-compose.usage-keeper.yml "$@"
+}
+
+env_value() {
+  key="$1"
+  awk -v key="$key" -F= '
     /^[[:space:]]*(#|$)/ { next }
-    /^[[:space:]]*CLI_PROXY_IMAGE[[:space:]]*=/ {
-      value = $0
-      sub(/^[^=]*=/, "", value)
-      gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
-      gsub(/^["'\''"]|["'\''"]$/, "", value)
+    {
+      name = $1
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", name)
+      if (name == key) {
+        value = $0
+        sub(/^[^=]*=/, "", value)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+        gsub(/^["'\''"]|["'\''"]$/, "", value)
+      }
     }
     END { print value }
-  ' .env)
+  ' .env
+}
+
+truthy() {
+  case "$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')" in
+    1|true|yes|y|on) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+cli_proxy_image() {
+  image=$(env_value "CLI_PROXY_IMAGE")
   printf '%s\n' "${image:-kanami-cliproxy:latest}"
 }
+
+START_USAGE_KEEPER="${START_USAGE_KEEPER:-$(env_value "START_USAGE_KEEPER")}"
 
 RUNNING_CONTAINERS=$(compose ps -q)
 
@@ -67,3 +89,13 @@ EOF
   exit 1
 fi
 compose ps
+
+if truthy "$START_USAGE_KEEPER"; then
+  echo "Starting CPA Usage Keeper in detached mode..."
+  echo "Command: docker compose --env-file .env -f docker-compose.usage-keeper.yml up -d"
+  usage_keeper_compose up -d
+  usage_keeper_compose ps
+else
+  echo "CPA Usage Keeper not started. Set START_USAGE_KEEPER=true or run:"
+  echo "  docker compose --env-file .env -f docker-compose.usage-keeper.yml up -d"
+fi

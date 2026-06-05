@@ -94,6 +94,24 @@ USAGE_KEEPER_PASSWORD=replace-with-usage-dashboard-password
 USAGE_KEEPER_PORT=18080
 ```
 
+如果希望 `restart-local-mac.sh` / `restart-local-windows.ps1` 在重启主服务后也顺手启动 Usage Keeper，可以在 `.env` 中加入：
+
+```ini
+START_USAGE_KEEPER=true
+REDIS_USAGE_QUEUE_RETENTION_SECONDS=3600
+```
+
+也可以只在单次命令中启用：
+
+```bash
+START_USAGE_KEEPER=true bash cliproxy/restart-local-mac.sh
+```
+
+```powershell
+$env:START_USAGE_KEEPER = "true"
+.\cliproxy\restart-local-windows.ps1
+```
+
 Usage Keeper 的 SQLite、备份和日志保存在 `cliproxy/keeper/`，该目录只提交 `.gitkeep`，实际运行数据不提交。
 
 ## Cloudflare Worker

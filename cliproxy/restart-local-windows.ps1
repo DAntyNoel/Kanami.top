@@ -11,13 +11,51 @@ if (-not (Test-Path ".env")) {
 }
 
 $ComposeArgs = @("--env-file", ".env", "-f", "docker-compose.yml")
+$UsageKeeperComposeArgs = @("--env-file", ".env", "-f", "docker-compose.usage-keeper.yml")
+
+function Get-DotEnvValue {
+    param([Parameter(Mandatory = $true)][string]$Name)
+
+    $Line = Get-Content ".env" |
+        Where-Object {
+            $_ -match "^\s*$([regex]::Escape($Name))\s*=" -and
+            $_ -notmatch "^\s*#"
+        } |
+        Select-Object -Last 1
+
+    if (-not $Line) {
+        return ""
+    }
+
+    return ($Line -replace "^\s*$([regex]::Escape($Name))\s*=\s*", "").Trim().Trim('"').Trim("'")
+}
+
+function Test-Truthy {
+    param([string]$Value)
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return $false
+    }
+
+    switch ($Value.Trim().ToLowerInvariant()) {
+        "1" { return $true }
+        "true" { return $true }
+        "yes" { return $true }
+        "y" { return $true }
+        "on" { return $true }
+        default { return $false }
+    }
+}
 
 $CliProxyImage = "kanami-cliproxy:latest"
-$CliProxyImageLine = Get-Content ".env" |
-    Where-Object { $_ -match "^\s*CLI_PROXY_IMAGE\s*=" -and $_ -notmatch "^\s*#" } |
-    Select-Object -Last 1
-if ($CliProxyImageLine) {
-    $CliProxyImage = ($CliProxyImageLine -replace "^\s*CLI_PROXY_IMAGE\s*=\s*", "").Trim().Trim('"').Trim("'")
+$CliProxyImageValue = Get-DotEnvValue "CLI_PROXY_IMAGE"
+if ($CliProxyImageValue) {
+    $CliProxyImage = $CliProxyImageValue
+}
+
+$StartUsageKeeper = $env:START_USAGE_KEEPER
+if (-not $StartUsageKeeper) {
+    $StartUsageKeeper = Get-DotEnvValue "START_USAGE_KEEPER"
 }
 
 $RunningContainersRaw = docker compose @ComposeArgs ps -q
@@ -67,4 +105,21 @@ if ($LASTEXITCODE -ne 0) {
 docker compose @ComposeArgs ps
 if ($LASTEXITCODE -ne 0) {
     throw "docker compose ps failed with exit code $LASTEXITCODE"
+}
+
+if (Test-Truthy $StartUsageKeeper) {
+    Write-Host "Starting CPA Usage Keeper in detached mode..."
+    Write-Host "Command: docker compose --env-file .env -f docker-compose.usage-keeper.yml up -d"
+    docker compose @UsageKeeperComposeArgs up -d
+    if ($LASTEXITCODE -ne 0) {
+        throw "usage keeper docker compose up failed with exit code $LASTEXITCODE"
+    }
+
+    docker compose @UsageKeeperComposeArgs ps
+    if ($LASTEXITCODE -ne 0) {
+        throw "usage keeper docker compose ps failed with exit code $LASTEXITCODE"
+    }
+} else {
+    Write-Host "CPA Usage Keeper not started. Set START_USAGE_KEEPER=true or run:"
+    Write-Host "  docker compose --env-file .env -f docker-compose.usage-keeper.yml up -d"
 }

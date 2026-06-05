@@ -15,6 +15,7 @@ CODEX_AUTH_SOURCE="${CODEX_AUTH_SOURCE:-}"
 CODEX_AUTH_AUTO_RESTORE="${CODEX_AUTH_AUTO_RESTORE:-true}"
 CODEX_AUTH_REQUIRED="${CODEX_AUTH_REQUIRED:-true}"
 PROXY_URL="${PROXY_URL:-}"
+REDIS_USAGE_QUEUE_RETENTION_SECONDS="${REDIS_USAGE_QUEUE_RETENTION_SECONDS:-3600}"
 SCRIPT_DIR="$(CDPATH= cd "$(dirname "$0")" && pwd)"
 
 quote_yaml() {
@@ -144,6 +145,7 @@ auth-dir: "$AUTH_DIR"
 ${API_KEYS_BLOCK}
 logging-to-file: false
 usage-statistics-enabled: true
+redis-usage-queue-retention-seconds: ${REDIS_USAGE_QUEUE_RETENTION_SECONDS}
 proxy-url: $(quote_yaml "$PROXY_URL")
 EOF
 
