@@ -13,6 +13,8 @@ chatbot/worker/wrangler.toml
 cliproxy/env
 cliproxy/*.log
 cliproxy/logs/
+cliproxy/keeper/*
+!cliproxy/keeper/.gitkeep
 cliproxy/auths/
 cliproxy/config.yaml
 cliproxy/api-keys.txt

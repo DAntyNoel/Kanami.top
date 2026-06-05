@@ -1,0 +1,32 @@
+name: kanami-cliproxy-usage
+
+services:
+  cpa-usage-keeper:
+    image: ${CPA_USAGE_KEEPER_IMAGE:-ghcr.io/willxup/cpa-usage-keeper:latest}
+    container_name: kanami-cpa-usage-keeper
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      CPA_BASE_URL: http://kanami-cliproxy-api:8317
+      CPA_MANAGEMENT_KEY: ${MANAGEMENT_PASSWORD:?Set MANAGEMENT_PASSWORD in cliproxy/.env}
+      REDIS_QUEUE_ADDR: kanami-cliproxy-api:8317
+      AUTH_ENABLED: ${USAGE_KEEPER_AUTH_ENABLED:-true}
+      LOGIN_PASSWORD: ${USAGE_KEEPER_PASSWORD:-${MANAGEMENT_PASSWORD:?Set MANAGEMENT_PASSWORD in cliproxy/.env}}
+      APP_PORT: 8080
+      APP_BASE_PATH: ${USAGE_KEEPER_BASE_PATH:-}
+      WORK_DIR: /data
+      LOG_LEVEL: ${USAGE_KEEPER_LOG_LEVEL:-info}
+      LOG_FILE_ENABLED: ${USAGE_KEEPER_LOG_FILE_ENABLED:-true}
+      BACKUP_ENABLED: ${USAGE_KEEPER_BACKUP_ENABLED:-true}
+      BACKUP_RETENTION_DAYS: ${USAGE_KEEPER_BACKUP_RETENTION_DAYS:-14}
+    ports:
+      - "127.0.0.1:${USAGE_KEEPER_PORT:-18080}:8080"
+    volumes:
+      - ./keeper:/data
+    networks:
+      - cliproxy
+
+networks:
+  cliproxy:
+    name: kanami-cliproxy_default
+    external: true

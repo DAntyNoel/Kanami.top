@@ -70,6 +70,32 @@ CLOUDFLARED_IMAGE=docker.1ms.run/cloudflare/cloudflared:latest
 GOPROXY=https://goproxy.cn,direct
 ```
 
+## CPA Usage Keeper
+
+CLIProxyAPI v6.10.0 之后本体不再预置完整数据统计。本站使用独立的 CPA Usage Keeper 做 SQLite 持久化和可视化，并且用单独的 Compose 文件旁路部署，避免重建或重启现有 `cli-proxy-api` 与 `cloudflared` 容器。
+
+前提：主服务已按 `docker-compose.yml` 运行，且 `cliproxy/.env` 中设置了 `MANAGEMENT_PASSWORD`。
+
+```bash
+cd cliproxy
+docker compose --env-file .env -f docker-compose.usage-keeper.yml up -d
+```
+
+默认访问地址：
+
+```text
+http://127.0.0.1:18080
+```
+
+默认登录密码复用 `MANAGEMENT_PASSWORD`。如需单独设置，在 `cliproxy/.env` 中加入：
+
+```ini
+USAGE_KEEPER_PASSWORD=replace-with-usage-dashboard-password
+USAGE_KEEPER_PORT=18080
+```
+
+Usage Keeper 的 SQLite、备份和日志保存在 `cliproxy/keeper/`，该目录只提交 `.gitkeep`，实际运行数据不提交。
+
 ## Cloudflare Worker
 
 如果使用 Worker 做域名转发：
