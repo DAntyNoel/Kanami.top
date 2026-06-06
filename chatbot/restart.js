@@ -172,7 +172,7 @@ function startDetached({ label, command, args, stdoutFile, stderrFile, pidFile }
 }
 
 function healthUrl() {
-  const port = numberValue("PORT", 8787, { min: 1, max: 65535 });
+  const port = numberValue("PORT", 12703, { min: 1, max: 65535 });
   const bindHost = envValue("HOST", "127.0.0.1");
   const host = ["", "0.0.0.0", "::"].includes(bindHost) ? "127.0.0.1" : bindHost;
   const urlHost = host.includes(":") && !host.startsWith("[") ? `[${host}]` : host;

@@ -17,7 +17,7 @@ BASE_URL=https://api.openai.com/v1
 LOCAL_CLIPROXY_PORT=12702
 API_KEY=sk-your-key
 MODEL=gpt-4o-mini
-PORT=8787
+PORT=12703
 HOST=127.0.0.1
 TUNNEL_TOKEN=replace-with-cloudflare-tunnel-token
 START_TUNNEL=true
@@ -35,7 +35,7 @@ START_TUNNEL=true
 npm start
 ```
 
-打开 `http://127.0.0.1:8787/start`。
+打开 `http://127.0.0.1:12703/start`。
 
 如果需要同时重启本地后端和 Cloudflare Tunnel，可以在 Windows 或 macOS 直接运行同一个脚本：
 
@@ -74,19 +74,15 @@ cp wrangler.toml.example wrangler.toml
 wrangler deploy
 ```
 
-`BACKEND_ORIGIN` 建议使用 Cloudflare Tunnel 暴露出的 HTTPS 地址，例如：
-
-```bash
-cloudflared tunnel --url http://127.0.0.1:8787
-```
-
 如果使用 Cloudflare 后台创建的 Tunnel token，把 token 写入 `chatbot/.env` 的 `TUNNEL_TOKEN`，之后执行 `npm run restart` 即可重启后端和 tunnel connector。
 
 Cloudflare 后台需要同时配置两层入口：
 
-- Tunnel Public Hostname：子域 `chat-backend`，域 `kanami.top`，路径留空，服务 URL `http://127.0.0.1:8787`。
+- Tunnel Public Hostname：子域 `chat-backend`，域 `kanami.top`，路径留空，服务 URL `http://127.0.0.1:12703`。
 - Worker 公开入口：把 `chat.kanami.top/*` 绑定到 `kanami-chatbot-proxy`，并确保 `chat.kanami.top` 有可解析的、已代理到 Cloudflare 的 DNS 记录，或直接使用 Worker Custom Domain `chat.kanami.top`。
 
-如果 `chat-backend.kanami.top/start` 返回 502，优先检查本机 `http://127.0.0.1:8787/health` 是否可访问，以及 `chatbot/.env` 里的 `PORT` 是否仍为 `8787`。
+不要在 Tunnel Public Hostname 里再添加 `chat.kanami.top`，否则它会绕过 Worker，离线兜底和统一转发逻辑都不会经过 `kanami-chatbot-proxy`。
+
+如果 `chat-backend.kanami.top/start` 返回 502，优先检查本机 `http://127.0.0.1:12703/health` 是否可访问，以及 `chatbot/.env` 里的 `PORT` 是否仍为 `12703`。
 
 真实 `env`、`.env`、`wrangler.toml` 和密钥文件不要提交。

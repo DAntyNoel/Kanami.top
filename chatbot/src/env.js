@@ -84,7 +84,7 @@ export const paths = {
 
 export const config = {
   host: envValue(fileEnv, "HOST", "127.0.0.1"),
-  port: numberValue(fileEnv, "PORT", 8787, { min: 1, max: 65535 }),
+  port: numberValue(fileEnv, "PORT", 12703, { min: 1, max: 65535 }),
   baseUrl: normalizeBaseUrl(envValue(fileEnv, "BASE_URL", "https://api.openai.com/v1")),
   localCliProxyPort: numberValue(fileEnv, "LOCAL_CLIPROXY_PORT", 0, { min: 1, max: 65535 }),
   localCliProxyHost: envValue(fileEnv, "LOCAL_CLIPROXY_HOST", "127.0.0.1"),
