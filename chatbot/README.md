@@ -45,6 +45,14 @@ npm run restart
 
 脚本会读取 `chatbot/env` 或 `chatbot/.env`，先停止上次由脚本启动的进程，再启动 Node 后端；当 `TUNNEL_TOKEN` 存在且 `START_TUNNEL` 不为 `false` 时，会同时启动 `cloudflared tunnel run --token ...`。运行日志和 pid 文件保存在 `chatbot/.run/`。
 
+关闭后台：
+
+```bash
+npm run stop
+```
+
+该脚本会停止由 `npm run restart` 启动的 Node 后端和 Cloudflare Tunnel connector。
+
 ## 接口
 
 - `GET /start`：聊天页面。

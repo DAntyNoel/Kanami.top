@@ -6,9 +6,10 @@
   "description": "香奈美本地 AI 对话后端，通过 Cloudflare 转发访问。",
   "scripts": {
     "start": "node src/server.js",
+    "stop": "node stop.js",
     "restart": "node restart.js",
     "dev": "node --watch src/server.js",
-    "check": "node --check restart.js && node --check src/server.js && node --check src/env.js && node --check src/provider.js && node --check src/prompt.js && node --check src/static.js && node --check public/app.js && node --check worker/cloudflare-worker.js"
+    "check": "node --check stop.js && node --check restart.js && node --check src/server.js && node --check src/env.js && node --check src/provider.js && node --check src/prompt.js && node --check src/static.js && node --check public/app.js && node --check worker/cloudflare-worker.js"
   },
   "engines": {
     "node": ">=18.18"
