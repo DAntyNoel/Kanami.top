@@ -61,6 +61,19 @@ if (-not $StartUsageKeeper) {
     $StartUsageKeeper = "true"
 }
 
+$StartKeeperTunnel = $env:START_KEEPER_TUNNEL
+if (-not $StartKeeperTunnel) {
+    $StartKeeperTunnel = Get-DotEnvValue "START_KEEPER_TUNNEL"
+}
+if (-not $StartKeeperTunnel) {
+    $StartKeeperTunnel = "true"
+}
+
+$KeeperTunnelToken = $env:KEEPER_TUNNEL_TOKEN
+if (-not $KeeperTunnelToken) {
+    $KeeperTunnelToken = Get-DotEnvValue "KEEPER_TUNNEL_TOKEN"
+}
+
 $RunningContainersRaw = docker compose @ComposeArgs ps -q
 if ($LASTEXITCODE -ne 0) {
     throw "docker compose ps failed with exit code $LASTEXITCODE"
@@ -112,8 +125,17 @@ if ($LASTEXITCODE -ne 0) {
 
 if (Test-Truthy $StartUsageKeeper) {
     Write-Host "Restarting CPA Usage Keeper in detached mode..."
-    Write-Host "Command: docker compose --env-file .env -f docker-compose.usage-keeper.yml up -d --force-recreate"
-    docker compose @UsageKeeperComposeArgs up -d --force-recreate
+    $UsageKeeperRunArgs = @($UsageKeeperComposeArgs)
+    if ((Test-Truthy $StartKeeperTunnel) -and -not [string]::IsNullOrWhiteSpace($KeeperTunnelToken)) {
+        Write-Host "Keeper Cloudflare Tunnel token found; restarting keeper and tunnel connector."
+        Write-Host "Command: docker compose --env-file .env -f docker-compose.usage-keeper.yml --profile keeper-tunnel up -d --force-recreate"
+        $UsageKeeperRunArgs += @("--profile", "keeper-tunnel")
+    } else {
+        Write-Host "Keeper Cloudflare Tunnel not started; token missing or START_KEEPER_TUNNEL is false."
+        Write-Host "Command: docker compose --env-file .env -f docker-compose.usage-keeper.yml up -d --force-recreate"
+    }
+
+    docker compose @UsageKeeperRunArgs up -d --force-recreate
     if ($LASTEXITCODE -ne 0) {
         throw "usage keeper docker compose up failed with exit code $LASTEXITCODE"
     }

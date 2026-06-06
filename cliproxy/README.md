@@ -102,6 +102,21 @@ USAGE_KEEPER_PORT=12704
 REDIS_USAGE_QUEUE_RETENTION_SECONDS=3600
 ```
 
+如果要把 Usage Keeper 暴露到 Cloudflare 公网，在 Cloudflare 后台创建 tunnel 后，把 Docker 运行命令中的 token 写入 `cliproxy/.env`：
+
+```ini
+KEEPER_TUNNEL_TOKEN=replace-with-cloudflare-tunnel-token
+START_KEEPER_TUNNEL=true
+```
+
+之后运行任一 restart 脚本时，会同时重启 Keeper 和它的 cloudflared connector。手动启动 tunnel 版命令为：
+
+```bash
+docker compose --env-file .env -f docker-compose.usage-keeper.yml --profile keeper-tunnel up -d --force-recreate
+```
+
+如果 Cloudflare 的 public hostname 是在后台配置的，服务地址建议填 `http://kanami-cpa-usage-keeper:8080`。如果要转发宿主机端口，则填 `http://host.docker.internal:12704`。
+
 如果某次只想重启主服务、不启动 Usage Keeper，可以临时关闭：
 
 ```bash

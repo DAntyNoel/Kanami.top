@@ -26,6 +26,25 @@ services:
     networks:
       - cliproxy
 
+  keeper-cloudflared:
+    image: ${CLOUDFLARED_IMAGE:-cloudflare/cloudflared:latest}
+    container_name: kanami-cpa-usage-keeper-cloudflared
+    command:
+      - tunnel
+      - --no-autoupdate
+      - run
+      - --token
+      - ${KEEPER_TUNNEL_TOKEN:-}
+    depends_on:
+      - cpa-usage-keeper
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - cliproxy
+    profiles:
+      - keeper-tunnel
+    restart: unless-stopped
+
 networks:
   cliproxy:
     name: kanami-cliproxy_default

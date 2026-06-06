@@ -51,6 +51,9 @@ cli_proxy_image() {
 
 START_USAGE_KEEPER="${START_USAGE_KEEPER:-$(env_value "START_USAGE_KEEPER")}"
 START_USAGE_KEEPER="${START_USAGE_KEEPER:-true}"
+START_KEEPER_TUNNEL="${START_KEEPER_TUNNEL:-$(env_value "START_KEEPER_TUNNEL")}"
+START_KEEPER_TUNNEL="${START_KEEPER_TUNNEL:-true}"
+KEEPER_TUNNEL_TOKEN="${KEEPER_TUNNEL_TOKEN:-$(env_value "KEEPER_TUNNEL_TOKEN")}"
 
 RUNNING_CONTAINERS=$(compose ps -q)
 
@@ -93,8 +96,15 @@ compose ps
 
 if truthy "$START_USAGE_KEEPER"; then
   echo "Restarting CPA Usage Keeper in detached mode..."
-  echo "Command: docker compose --env-file .env -f docker-compose.usage-keeper.yml up -d --force-recreate"
-  usage_keeper_compose up -d --force-recreate
+  if truthy "$START_KEEPER_TUNNEL" && [ -n "$KEEPER_TUNNEL_TOKEN" ]; then
+    echo "Keeper Cloudflare Tunnel token found; restarting keeper and tunnel connector."
+    echo "Command: docker compose --env-file .env -f docker-compose.usage-keeper.yml --profile keeper-tunnel up -d --force-recreate"
+    usage_keeper_compose --profile keeper-tunnel up -d --force-recreate
+  else
+    echo "Keeper Cloudflare Tunnel not started; token missing or START_KEEPER_TUNNEL is false."
+    echo "Command: docker compose --env-file .env -f docker-compose.usage-keeper.yml up -d --force-recreate"
+    usage_keeper_compose up -d --force-recreate
+  fi
   usage_keeper_compose ps
 else
   echo "CPA Usage Keeper not started because START_USAGE_KEEPER is false. To start it manually, run:"
