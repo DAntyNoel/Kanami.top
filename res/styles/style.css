@@ -88,6 +88,18 @@ p {
     box-shadow: 0 0 20px rgba(255, 200, 230, 0.7);
 }
 
+.services-lead {
+    margin-bottom: 22px;
+}
+
+.service-card {
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(183, 213, 255, 0.36));
+}
+
+.service-card .game-card-action {
+    overflow-wrap: anywhere;
+}
+
 .game-lead {
     margin-bottom: 22px;
 }
