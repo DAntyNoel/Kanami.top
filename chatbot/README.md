@@ -82,4 +82,11 @@ cloudflared tunnel --url http://127.0.0.1:8787
 
 如果使用 Cloudflare 后台创建的 Tunnel token，把 token 写入 `chatbot/.env` 的 `TUNNEL_TOKEN`，之后执行 `npm run restart` 即可重启后端和 tunnel connector。
 
+Cloudflare 后台需要同时配置两层入口：
+
+- Tunnel Public Hostname：子域 `chat-backend`，域 `kanami.top`，路径留空，服务 URL `http://127.0.0.1:8787`。
+- Worker 公开入口：把 `chat.kanami.top/*` 绑定到 `kanami-chatbot-proxy`，并确保 `chat.kanami.top` 有可解析的、已代理到 Cloudflare 的 DNS 记录，或直接使用 Worker Custom Domain `chat.kanami.top`。
+
+如果 `chat-backend.kanami.top/start` 返回 502，优先检查本机 `http://127.0.0.1:8787/health` 是否可访问，以及 `chatbot/.env` 里的 `PORT` 是否仍为 `8787`。
+
 真实 `env`、`.env`、`wrangler.toml` 和密钥文件不要提交。

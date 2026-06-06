@@ -9,4 +9,4 @@ routes = [
 ]
 
 [vars]
-BACKEND_ORIGIN = "https://replace-with-your-tunnel.example.com"
+BACKEND_ORIGIN = "https://chat-backend.kanami.top"
