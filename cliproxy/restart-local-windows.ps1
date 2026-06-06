@@ -111,9 +111,9 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 if (Test-Truthy $StartUsageKeeper) {
-    Write-Host "Starting CPA Usage Keeper in detached mode..."
-    Write-Host "Command: docker compose --env-file .env -f docker-compose.usage-keeper.yml up -d"
-    docker compose @UsageKeeperComposeArgs up -d
+    Write-Host "Restarting CPA Usage Keeper in detached mode..."
+    Write-Host "Command: docker compose --env-file .env -f docker-compose.usage-keeper.yml up -d --force-recreate"
+    docker compose @UsageKeeperComposeArgs up -d --force-recreate
     if ($LASTEXITCODE -ne 0) {
         throw "usage keeper docker compose up failed with exit code $LASTEXITCODE"
     }
@@ -124,5 +124,5 @@ if (Test-Truthy $StartUsageKeeper) {
     }
 } else {
     Write-Host "CPA Usage Keeper not started because START_USAGE_KEEPER is false. To start it manually, run:"
-    Write-Host "  docker compose --env-file .env -f docker-compose.usage-keeper.yml up -d"
+    Write-Host "  docker compose --env-file .env -f docker-compose.usage-keeper.yml up -d --force-recreate"
 }

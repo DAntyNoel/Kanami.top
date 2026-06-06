@@ -92,11 +92,11 @@ fi
 compose ps
 
 if truthy "$START_USAGE_KEEPER"; then
-  echo "Starting CPA Usage Keeper in detached mode..."
-  echo "Command: docker compose --env-file .env -f docker-compose.usage-keeper.yml up -d"
-  usage_keeper_compose up -d
+  echo "Restarting CPA Usage Keeper in detached mode..."
+  echo "Command: docker compose --env-file .env -f docker-compose.usage-keeper.yml up -d --force-recreate"
+  usage_keeper_compose up -d --force-recreate
   usage_keeper_compose ps
 else
   echo "CPA Usage Keeper not started because START_USAGE_KEEPER is false. To start it manually, run:"
-  echo "  docker compose --env-file .env -f docker-compose.usage-keeper.yml up -d"
+  echo "  docker compose --env-file .env -f docker-compose.usage-keeper.yml up -d --force-recreate"
 fi

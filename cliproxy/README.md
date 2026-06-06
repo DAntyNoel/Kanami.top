@@ -78,7 +78,7 @@ CLIProxyAPI v6.10.0 之后本体不再预置完整数据统计。本站使用独
 
 ```bash
 cd cliproxy
-docker compose --env-file .env -f docker-compose.usage-keeper.yml up -d
+docker compose --env-file .env -f docker-compose.usage-keeper.yml up -d --force-recreate
 ```
 
 默认访问地址：
