@@ -19,6 +19,8 @@ API_KEY=sk-your-key
 MODEL=gpt-4o-mini
 PORT=8787
 HOST=127.0.0.1
+TUNNEL_TOKEN=replace-with-cloudflare-tunnel-token
+START_TUNNEL=true
 ```
 
 如果 `LOCAL_CLIPROXY_PORT` 配置了端口，后端会在每次对话前先探测
@@ -34,6 +36,14 @@ npm start
 ```
 
 打开 `http://127.0.0.1:8787/start`。
+
+如果需要同时重启本地后端和 Cloudflare Tunnel，可以在 Windows 或 macOS 直接运行同一个脚本：
+
+```bash
+npm run restart
+```
+
+脚本会读取 `chatbot/env` 或 `chatbot/.env`，先停止上次由脚本启动的进程，再启动 Node 后端；当 `TUNNEL_TOKEN` 存在且 `START_TUNNEL` 不为 `false` 时，会同时启动 `cloudflared tunnel run --token ...`。运行日志和 pid 文件保存在 `chatbot/.run/`。
 
 ## 接口
 
@@ -54,7 +64,7 @@ npm start
 
 ## Cloudflare 转发
 
-`worker/cloudflare-worker.js` 会把 `chat.kanami.top/*` 转发到 `BACKEND_ORIGIN`。如果本地后端、隧道或上游服务不可用，Worker 会直接返回香奈美口吻的自定义错误界面，避免用户看到默认 Cloudflare 错误页。
+`worker/cloudflare-worker.js` 会把 `chat.kanami.top/*` 转发到 `BACKEND_ORIGIN`。如果本地后端、隧道或上游服务不可用，Worker 会把普通页面访问重定向到 `/offline`，并由 Worker 自己返回香奈美口吻的离线页面；`/api/*` 和 `/health` 等非页面请求会返回 JSON 503，避免前端拿到不可解析的 HTML。
 
 部署时：
 
@@ -69,5 +79,7 @@ wrangler deploy
 ```bash
 cloudflared tunnel --url http://127.0.0.1:8787
 ```
+
+如果使用 Cloudflare 后台创建的 Tunnel token，把 token 写入 `chatbot/.env` 的 `TUNNEL_TOKEN`，之后执行 `npm run restart` 即可重启后端和 tunnel connector。
 
 真实 `env`、`.env`、`wrangler.toml` 和密钥文件不要提交。

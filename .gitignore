@@ -6,6 +6,7 @@ debug*
 *.env
 node_modules/
 chatbot/env
+chatbot/.run/
 chatbot/*.log
 chatbot/worker/wrangler.toml
 
