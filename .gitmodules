@@ -2,3 +2,6 @@
 	path = cliproxy/cliproxyapi
 	url = https://github.com/DAntyNoel/CLIProxyAPI.git
 	branch = main
+[submodule "KanamiBot"]
+	path = KanamiBot
+	url = https://github.com/DAntyNoel/KanamiBot.git
