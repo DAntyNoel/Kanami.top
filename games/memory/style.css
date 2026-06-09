@@ -21,7 +21,7 @@ body {
   color: var(--ink);
   background:
     linear-gradient(rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.72)),
-    url("../../res/images/backgrounds/Soda.png") center / cover fixed;
+    var(--page-background-image, url("../../res/images/backgrounds/Soda.png")) center / cover fixed;
 }
 
 button,
@@ -123,7 +123,7 @@ button {
 
 .board {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(var(--memory-board-columns, 4), 1fr);
   gap: 10px;
 }
 
@@ -204,6 +204,7 @@ button {
   }
 
   .board {
+    grid-template-columns: repeat(var(--memory-mobile-board-columns, 4), 1fr);
     gap: 7px;
   }
 

@@ -20,7 +20,7 @@ body {
   color: var(--ink);
   background:
     linear-gradient(rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.82)),
-    url("../../res/images/backgrounds/Soda.png") center / cover fixed;
+    var(--page-background-image, url("../../res/images/backgrounds/Soda.png")) center / cover fixed;
 }
 
 button,
@@ -116,7 +116,7 @@ h1 {
 
 .board {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(var(--sweeper-board-columns, 8), 1fr);
   gap: 6px;
   width: min(100%, 620px);
   margin: 16px auto 0;
@@ -134,7 +134,7 @@ h1 {
   min-width: 0;
   border: 0;
   border-radius: 7px;
-  background: linear-gradient(145deg, rgba(246, 210, 110, 0.95), rgba(246, 144, 182, 0.82));
+  background: var(--sweeper-closed-bg, linear-gradient(145deg, rgba(246, 210, 110, 0.95), rgba(246, 144, 182, 0.82)));
   color: #27313c;
   font-weight: 900;
   cursor: pointer;
@@ -142,16 +142,16 @@ h1 {
 }
 
 .cell.is-open {
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--sweeper-open-bg, rgba(255, 255, 255, 0.82));
   cursor: default;
 }
 
 .cell.is-flagged {
-  background: linear-gradient(145deg, rgba(117, 201, 230, 0.96), rgba(114, 211, 141, 0.88));
+  background: var(--sweeper-flagged-bg, linear-gradient(145deg, rgba(117, 201, 230, 0.96), rgba(114, 211, 141, 0.88)));
 }
 
 .cell.is-mine {
-  background: linear-gradient(145deg, #ff9fa5, #f6d26e);
+  background: var(--sweeper-mine-bg, linear-gradient(145deg, #ff9fa5, #f6d26e));
 }
 
 .message {

@@ -1,21 +1,13 @@
-const assets = [
-  "../../res/images/stamps/001.png",
-  "../../res/images/stamps/002.jpg",
-  "../../res/images/stamps/003.jpg",
-  "../../res/images/stamps/004.png",
-  "../../res/images/stamps/005.jpg",
-  "../../res/images/backgrounds/Soda.png",
-  "../../res/images/backgrounds/Be-Shinning.png",
-  "../../res/images/lovekanami.jpg"
-];
-
 const board = document.querySelector("#board");
 const movesEl = document.querySelector("#moves");
 const timerEl = document.querySelector("#timer");
 const bestEl = document.querySelector("#best");
 const messageEl = document.querySelector("#message");
 const restartButton = document.querySelector("#restart");
-const bestKey = "kanami-memory-best";
+const config = window.KANAMI_MEMORY_CONFIG;
+const tuning = config.tuning;
+const cards = config.cardTemplates.map((template, index) => normalizeCard(template, index));
+const bestKey = tuning.storage.bestKey;
 
 let deck = [];
 let firstCard = null;
@@ -25,6 +17,40 @@ let moves = 0;
 let matches = 0;
 let startedAt = 0;
 let timerId = 0;
+
+function normalizeCard(template, index) {
+  const text = template.text || {};
+  const asset = template.asset || {};
+  const name = text.name || `香奈美卡片 ${index + 1}`;
+
+  return {
+    id: template.id || `memory-card-${index}`,
+    name,
+    alt: text.alt || `${tuning.card.altPrefix}：${name}`,
+    image: asset.image
+  };
+}
+
+function applyTuning() {
+  document.documentElement.style.setProperty("--memory-board-columns", String(tuning.board.columns));
+  document.documentElement.style.setProperty(
+    "--memory-mobile-board-columns",
+    String(tuning.board.mobileColumns || tuning.board.columns)
+  );
+  if (tuning.theme?.pageBackgroundImage) {
+    document.documentElement.style.setProperty(
+      "--page-background-image",
+      `url("${tuning.theme.pageBackgroundImage}")`
+    );
+  }
+}
+
+function preloadAssets() {
+  cards.forEach((card) => {
+    const image = new Image();
+    image.src = card.image;
+  });
+}
 
 function shuffle(items) {
   const copy = [...items];
@@ -57,7 +83,7 @@ function tick() {
 function startTimer() {
   if (startedAt) return;
   startedAt = Date.now();
-  timerId = window.setInterval(tick, 500);
+  timerId = window.setInterval(tick, tuning.timing.timerTickMs);
 }
 
 function makeCard(card, index) {
@@ -66,11 +92,11 @@ function makeCard(card, index) {
   button.type = "button";
   button.dataset.id = card.id;
   button.dataset.index = String(index);
-  button.setAttribute("aria-label", "翻开一张香奈美卡片");
+  button.setAttribute("aria-label", `翻开${card.name}`);
   button.innerHTML = `
     <span class="card-inner">
-      <span class="face front">K</span>
-      <span class="face back"><img src="${card.src}" alt="香奈美卡片图案"></span>
+      <span class="face front">${tuning.card.frontText}</span>
+      <span class="face back"><img src="${card.image}" alt="${card.alt}"></span>
     </span>
   `;
   button.addEventListener("click", () => flipCard(button));
@@ -84,7 +110,7 @@ function flipCard(cardEl) {
 
   if (!firstCard) {
     firstCard = cardEl;
-    messageEl.textContent = "第一张记住了吗？香奈美等你翻第二张。";
+    messageEl.textContent = tuning.text.firstPick;
     return;
   }
 
@@ -97,18 +123,18 @@ function flipCard(cardEl) {
     firstCard.classList.add("is-matched");
     secondCard.classList.add("is-matched");
     matches += 1;
-    messageEl.textContent = "配对成功，香奈美的应援力增加了。";
+    messageEl.textContent = tuning.text.matched;
     resetTurn();
-    if (matches === assets.length) finishGame();
+    if (matches === cards.length) finishGame();
     return;
   }
 
-  messageEl.textContent = "没关系，香奈美刚刚也偷偷记住位置了。";
+  messageEl.textContent = tuning.text.mismatched;
   window.setTimeout(() => {
     firstCard.classList.remove("is-flipped");
     secondCard.classList.remove("is-flipped");
     resetTurn();
-  }, 760);
+  }, tuning.timing.mismatchHideDelayMs);
 }
 
 function resetTurn() {
@@ -123,15 +149,15 @@ function finishGame() {
   if (!best || moves < best.moves || (moves === best.moves && time < best.time)) {
     localStorage.setItem(bestKey, JSON.stringify({ moves, time }));
     updateBest();
-    messageEl.textContent = `全部配对成功！${moves} 步 ${formatTime(time)}，这是新的最佳记录。`;
+    messageEl.textContent = tuning.text.newBest(moves, formatTime(time));
   } else {
-    messageEl.textContent = `全部配对成功！${moves} 步 ${formatTime(time)}，香奈美已经把掌声送到啦。`;
+    messageEl.textContent = tuning.text.finished(moves, formatTime(time));
   }
 }
 
 function restart() {
   window.clearInterval(timerId);
-  deck = shuffle(assets.flatMap((src, id) => [{ src, id }, { src, id }]));
+  deck = shuffle(cards.flatMap((card) => [{ ...card }, { ...card }]));
   firstCard = null;
   secondCard = null;
   locked = false;
@@ -141,10 +167,12 @@ function restart() {
   timerId = 0;
   movesEl.textContent = "0";
   timerEl.textContent = "00:00";
-  messageEl.textContent = "香奈美已经洗好牌啦，第一张由你来翻。";
+  messageEl.textContent = tuning.text.ready;
   board.replaceChildren(...deck.map(makeCard));
   updateBest();
 }
 
 restartButton.addEventListener("click", restart);
+applyTuning();
+preloadAssets();
 restart();

@@ -1,5 +1,3 @@
-const size = 8;
-const mineCount = 10;
 const boardEl = document.querySelector("#board");
 const flagsEl = document.querySelector("#flags");
 const timerEl = document.querySelector("#timer");
@@ -7,9 +5,15 @@ const bestEl = document.querySelector("#best");
 const modeButton = document.querySelector("#mode");
 const restartButton = document.querySelector("#restart");
 const messageEl = document.querySelector("#message");
-const bestKey = "kanami-sweeper-best";
+const config = window.KANAMI_SWEEPER_CONFIG;
+const tuning = config.tuning;
+const rows = tuning.board.rows;
+const columns = tuning.board.columns;
+const mineCount = tuning.board.mineCount;
+const bestKey = tuning.storage.bestKey;
 
 let board = [];
+let activeMineCount = mineCount;
 let openCount = 0;
 let flags = 0;
 let flagMode = false;
@@ -27,7 +31,7 @@ function neighbors(row, col) {
       if (!dr && !dc) continue;
       const nextRow = row + dr;
       const nextCol = col + dc;
-      if (nextRow >= 0 && nextRow < size && nextCol >= 0 && nextCol < size) {
+      if (nextRow >= 0 && nextRow < rows && nextCol >= 0 && nextCol < columns) {
         cells.push([nextRow, nextCol]);
       }
     }
@@ -35,8 +39,23 @@ function neighbors(row, col) {
   return cells;
 }
 
+function applyTuning() {
+  document.documentElement.style.setProperty("--sweeper-board-columns", String(columns));
+  if (tuning.theme?.pageBackgroundImage) {
+    document.documentElement.style.setProperty(
+      "--page-background-image",
+      `url("${tuning.theme.pageBackgroundImage}")`
+    );
+  }
+  Object.entries(config.tileTemplates || {}).forEach(([key, template]) => {
+    if (template.asset?.background) {
+      document.documentElement.style.setProperty(`--sweeper-${key}-bg`, template.asset.background);
+    }
+  });
+}
+
 function makeBoard() {
-  board = Array.from({ length: size }, (_, row) => Array.from({ length: size }, (_, col) => ({
+  board = Array.from({ length: rows }, (_, row) => Array.from({ length: columns }, (_, col) => ({
     row,
     col,
     mine: false,
@@ -47,11 +66,15 @@ function makeBoard() {
 }
 
 function placeMines(safeRow, safeCol) {
-  const safeCells = new Set([[safeRow, safeCol], ...neighbors(safeRow, safeCol)].map(([row, col]) => `${row}:${col}`));
+  const safeArea = tuning.board.firstClickSafeNeighbors
+    ? [[safeRow, safeCol], ...neighbors(safeRow, safeCol)]
+    : [[safeRow, safeCol]];
+  const safeCells = new Set(safeArea.map(([row, col]) => `${row}:${col}`));
+  activeMineCount = Math.min(mineCount, rows * columns - safeCells.size);
   let placed = 0;
-  while (placed < mineCount) {
-    const row = Math.floor(Math.random() * size);
-    const col = Math.floor(Math.random() * size);
+  while (placed < activeMineCount) {
+    const row = Math.floor(Math.random() * rows);
+    const col = Math.floor(Math.random() * columns);
     if (!board[row][col].mine && !safeCells.has(`${row}:${col}`)) {
       board[row][col].mine = true;
       placed += 1;
@@ -88,7 +111,7 @@ function updateBest(time) {
 }
 
 function updateHud() {
-  flagsEl.textContent = String(mineCount - flags);
+  flagsEl.textContent = String(activeMineCount - flags);
   bestEl.textContent = formatSeconds(bestTime());
   modeButton.textContent = flagMode ? "旗帜" : "翻开";
   modeButton.setAttribute("aria-pressed", String(flagMode));
@@ -99,7 +122,7 @@ function startTimer() {
   startedAt = Date.now();
   timerId = window.setInterval(() => {
     timerEl.textContent = String(Math.floor((Date.now() - startedAt) / 1000));
-  }, 1000);
+  }, tuning.timing.timerTickMs);
 }
 
 function render() {
@@ -114,13 +137,13 @@ function render() {
       button.classList.add("is-open");
       if (cell.mine) {
         button.classList.add("is-mine");
-        button.textContent = "★";
+        button.textContent = tuning.symbols.mine;
       } else {
         button.textContent = cell.count ? String(cell.count) : "";
       }
     } else if (cell.flagged) {
       button.classList.add("is-flagged");
-      button.textContent = "旗";
+      button.textContent = tuning.symbols.flag;
     }
     button.addEventListener("click", () => {
       if (suppressTap) {
@@ -138,7 +161,7 @@ function render() {
       longPressTimer = window.setTimeout(() => {
         suppressTap = true;
         toggleFlag(cell.row, cell.col);
-      }, 520);
+      }, tuning.timing.longPressMs);
     }, { passive: true });
     button.addEventListener("touchend", () => window.clearTimeout(longPressTimer), { passive: true });
     return button;
@@ -169,31 +192,31 @@ function finish(win) {
   if (win) {
     const time = elapsedSeconds();
     updateBest(time);
-    messageEl.textContent = `全部安全格都揭开啦！用时 ${formatSeconds(time)}，香奈美的舞台顺利开演。`;
+    messageEl.textContent = tuning.text.win(formatSeconds(time));
   } else {
     revealAll();
-    messageEl.textContent = "星光炸点被踩到了。香奈美把舞台重新整理好，我们再试一次。";
+    messageEl.textContent = tuning.text.lose;
   }
   render();
 }
 
 function checkWin() {
-  if (openCount === size * size - mineCount) finish(true);
+  if (openCount === rows * columns - activeMineCount) finish(true);
 }
 
 function toggleFlag(row, col) {
   if (gameOver) return;
   if (!minesReady) {
-    messageEl.textContent = "先翻开一格吧，香奈美会保证第一步安全。";
+    messageEl.textContent = tuning.text.firstSafe;
     return;
   }
   startTimer();
   const cell = board[row][col];
   if (cell.open) return;
-  if (!cell.flagged && flags >= mineCount) return;
+  if (!cell.flagged && flags >= activeMineCount) return;
   cell.flagged = !cell.flagged;
   flags += cell.flagged ? 1 : -1;
-  messageEl.textContent = cell.flagged ? "这里先插旗，香奈美记住这个危险点。" : "旗帜收回，继续确认舞台。";
+  messageEl.textContent = cell.flagged ? tuning.text.flagOn : tuning.text.flagOff;
   render();
 }
 
@@ -214,7 +237,7 @@ function handleCell(row, col) {
     return;
   }
   reveal(row, col);
-  messageEl.textContent = cell.count ? "周围有星光炸点，小心推进。" : "这里很安全，香奈美帮你展开一片区域。";
+  messageEl.textContent = cell.count ? tuning.text.risky : tuning.text.safe;
   render();
   checkWin();
 }
@@ -226,9 +249,10 @@ function restart() {
   flagMode = false;
   gameOver = false;
   minesReady = false;
+  activeMineCount = mineCount;
   startedAt = 0;
   timerEl.textContent = "0";
-  messageEl.textContent = "第一格一定安全；手机上可以切换旗帜模式，或长按格子插旗。";
+  messageEl.textContent = tuning.text.ready;
   makeBoard();
   render();
   updateBest();
@@ -239,4 +263,5 @@ modeButton.addEventListener("click", () => {
   updateHud();
 });
 restartButton.addEventListener("click", restart);
+applyTuning();
 restart();

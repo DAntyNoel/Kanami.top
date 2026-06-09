@@ -19,7 +19,7 @@ body {
   color: var(--ink);
   background:
     linear-gradient(rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0.76)),
-    url("../../res/images/backgrounds/Be-Shinning.png") center / cover fixed;
+    var(--page-background-image, url("../../res/images/backgrounds/Be-Shinning.png")) center / cover fixed;
 }
 
 button,
@@ -111,7 +111,7 @@ button {
 
 .stage {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--catch-board-columns, 3), minmax(0, 1fr));
   gap: 12px;
   margin-top: 16px;
 }

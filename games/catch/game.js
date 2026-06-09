@@ -5,91 +5,13 @@ const bestEl = document.querySelector("#best");
 const startButton = document.querySelector("#start");
 const messageEl = document.querySelector("#message");
 
-const gameTuning = {
-  storageKey: "kanami-catch-best",
-  durationSeconds: 30,
-  board: {
-    rows: 3,
-    columns: 3
-  },
-  assets: {
-    target: [
-      {
-        src: "../../res/images/stamps/001.png",
-        label: "香奈美闪现"
-      },
-      {
-        src: "../../res/images/stamps/002.jpg",
-        label: "香奈美应援照"
-      },
-      {
-        src: "../../res/images/stamps/003.jpg",
-        label: "香奈美舞台照"
-      }
-    ],
-    decoy: [
-      {
-        src: "../../res/images/stamps/004.png",
-        label: "干扰灯"
-      },
-      {
-        src: "../../res/images/stamps/005.jpg",
-        label: "干扰剪影"
-      }
-    ]
-  },
-  wave: {
-    totalVisibleRatio: {
-      start: 0.12,
-      end: 0.24,
-      easing: "easeInQuad",
-      min: 1,
-      max: 3
-    },
-    correctRatio: {
-      start: 1,
-      end: 0.66,
-      easing: "linear",
-      min: 1
-    },
-    decoyRatio: {
-      start: 0,
-      end: 0.34,
-      easing: "linear",
-      max: 2
-    }
-  },
-  timing: {
-    intervalMs: {
-      start: 980,
-      end: 430,
-      easing: "easeInQuad"
-    },
-    visibleMs: {
-      start: 760,
-      end: 320,
-      easing: "easeInQuad"
-    },
-    minBlankMs: 80,
-    jitterMs: 36
-  },
-  scoring: {
-    target: 1,
-    decoy: -2
-  },
-  sounds: {
-    target: {
-      frequency: 720,
-      duration: 0.07
-    },
-    decoy: {
-      frequency: 180,
-      duration: 0.12
-    }
-  }
+const config = window.KANAMI_CATCH_CONFIG;
+const tuning = config.tuning;
+const assetTemplates = {
+  target: config.targetTemplates.map((template, index) => normalizeAsset(template, index, "target")),
+  decoy: config.decoyTemplates.map((template, index) => normalizeAsset(template, index, "decoy"))
 };
-
-const bestKey = gameTuning.storageKey;
+const bestKey = tuning.storage.bestKey;
 const easings = {
   linear: (progress) => progress,
   easeInQuad: (progress) => progress * progress,
@@ -98,7 +20,7 @@ const easings = {
 };
 
 let score = 0;
-let timeLeft = gameTuning.durationSeconds;
+let timeLeft = tuning.durationSeconds;
 let activeTargets = new Set();
 let activeDecoys = new Set();
 let running = false;
@@ -106,9 +28,33 @@ let spawnTimer = 0;
 let clearTimer = 0;
 let countdownTimer = 0;
 
+function normalizeAsset(template, index, type) {
+  const text = template.text || {};
+  const asset = template.asset || {};
+  const audio = template.audio || {};
+
+  return {
+    id: template.id || `${type}-${index}`,
+    image: asset.image,
+    label: text.label || (type === "target" ? "香奈美闪现" : "干扰光"),
+    frequency: audio.frequency || (type === "target" ? 720 : 180),
+    durationSeconds: audio.durationSeconds || (type === "target" ? 0.07 : 0.12)
+  };
+}
+
+function applyTuning() {
+  document.documentElement.style.setProperty("--catch-board-columns", String(tuning.board.columns));
+  if (tuning.theme?.pageBackgroundImage) {
+    document.documentElement.style.setProperty(
+      "--page-background-image",
+      `url("${tuning.theme.pageBackgroundImage}")`
+    );
+  }
+  messageEl.textContent = tuning.text.ready;
+}
+
 function makeBoard() {
-  const size = gameTuning.board.rows * gameTuning.board.columns;
-  stage.style.gridTemplateColumns = `repeat(${gameTuning.board.columns}, minmax(0, 1fr))`;
+  const size = tuning.board.rows * tuning.board.columns;
   const holes = Array.from({ length: size }, (_, index) => {
     const button = document.createElement("button");
     button.className = "hole";
@@ -122,7 +68,7 @@ function makeBoard() {
 }
 
 function preloadAssets() {
-  Object.values(gameTuning.assets).flat().forEach(({ src }) => {
+  Object.values(assetTemplates).flat().forEach(({ image: src }) => {
     const image = new Image();
     image.src = src;
   });
@@ -145,8 +91,8 @@ function beep(frequency, duration) {
   const oscillator = context.createOscillator();
   const gain = context.createGain();
   oscillator.frequency.value = frequency;
-  oscillator.type = "sine";
-  gain.gain.setValueAtTime(0.05, context.currentTime);
+  oscillator.type = tuning.audio.type;
+  gain.gain.setValueAtTime(tuning.audio.gain, context.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + duration);
   oscillator.connect(gain);
   gain.connect(context.destination);
@@ -165,7 +111,7 @@ function tuneValue(setting, progress) {
 }
 
 function gameProgress() {
-  return clamp((gameTuning.durationSeconds - timeLeft) / gameTuning.durationSeconds, 0, 1);
+  return clamp((tuning.durationSeconds - timeLeft) / tuning.durationSeconds, 0, 1);
 }
 
 function randomItem(items) {
@@ -186,17 +132,17 @@ function randomIndexes(size, count) {
 }
 
 function waveCounts(progress, holeCount) {
-  const targetMin = gameTuning.wave.correctRatio.min ?? 0;
+  const targetMin = tuning.wave.correctRatio.min ?? 0;
   const totalVisible = clamp(
-    Math.round(holeCount * tuneValue(gameTuning.wave.totalVisibleRatio, progress)),
-    Math.max(gameTuning.wave.totalVisibleRatio.min ?? 1, targetMin),
-    Math.min(gameTuning.wave.totalVisibleRatio.max ?? holeCount, holeCount)
+    Math.round(holeCount * tuneValue(tuning.wave.totalVisibleRatio, progress)),
+    Math.max(tuning.wave.totalVisibleRatio.min ?? 1, targetMin),
+    Math.min(tuning.wave.totalVisibleRatio.max ?? holeCount, holeCount)
   );
-  const correctWeight = Math.max(0, tuneValue(gameTuning.wave.correctRatio, progress));
-  const decoyWeight = Math.max(0, tuneValue(gameTuning.wave.decoyRatio, progress));
+  const correctWeight = Math.max(0, tuneValue(tuning.wave.correctRatio, progress));
+  const decoyWeight = Math.max(0, tuneValue(tuning.wave.decoyRatio, progress));
   const combinedWeight = correctWeight + decoyWeight || 1;
-  const targetMax = gameTuning.wave.correctRatio.max ?? totalVisible;
-  const decoyMax = gameTuning.wave.decoyRatio.max ?? totalVisible;
+  const targetMax = tuning.wave.correctRatio.max ?? totalVisible;
+  const decoyMax = tuning.wave.decoyRatio.max ?? totalVisible;
   let targetCount = clamp(
     Math.round(totalVisible * (correctWeight / combinedWeight)),
     targetMin,
@@ -218,11 +164,11 @@ function waveCounts(progress, holeCount) {
 function waveTiming(progress) {
   const intervalMs = Math.max(
     120,
-    tuneValue(gameTuning.timing.intervalMs, progress) +
-      (Math.random() * 2 - 1) * (gameTuning.timing.jitterMs ?? 0)
+    tuneValue(tuning.timing.intervalMs, progress) +
+      (Math.random() * 2 - 1) * (tuning.timing.jitterMs ?? 0)
   );
-  const visibleLimit = Math.max(80, intervalMs - (gameTuning.timing.minBlankMs ?? 0));
-  const visibleMs = clamp(tuneValue(gameTuning.timing.visibleMs, progress), 80, visibleLimit);
+  const visibleLimit = Math.max(80, intervalMs - (tuning.timing.minBlankMs ?? 0));
+  const visibleMs = clamp(tuneValue(tuning.timing.visibleMs, progress), 80, visibleLimit);
 
   return {
     intervalMs,
@@ -234,6 +180,8 @@ function resetHole(hole) {
   const index = hole.dataset.index;
   hole.classList.remove("is-target", "is-decoy");
   hole.style.removeProperty("--hole-image");
+  hole.dataset.audioFrequency = "";
+  hole.dataset.audioDuration = "";
   hole.dataset.kind = "";
   hole.setAttribute("aria-label", `舞台灯 ${Number(index) + 1}`);
 }
@@ -255,11 +203,21 @@ function clearHole(index) {
 }
 
 function paintHole(hole, type) {
-  const asset = randomItem(gameTuning.assets[type]);
+  const asset = randomItem(assetTemplates[type]);
   hole.classList.add(type === "target" ? "is-target" : "is-decoy");
   hole.dataset.kind = type;
-  hole.style.setProperty("--hole-image", `url("${asset.src}")`);
+  hole.dataset.audioFrequency = String(asset.frequency);
+  hole.dataset.audioDuration = String(asset.durationSeconds);
+  hole.style.setProperty("--hole-image", `url("${asset.image}")`);
   hole.setAttribute("aria-label", `${asset.label}，舞台灯 ${Number(hole.dataset.index) + 1}`);
+}
+
+function beepHole(index, type) {
+  const fallback = assetTemplates[type][0];
+  const hole = stage.querySelector(`[data-index="${index}"]`);
+  const frequency = Number(hole?.dataset.audioFrequency || fallback.frequency);
+  const duration = Number(hole?.dataset.audioDuration || fallback.durationSeconds);
+  beep(frequency, duration);
 }
 
 function spawn() {
@@ -291,17 +249,17 @@ function spawn() {
 function hit(index) {
   if (!running) return;
   if (activeTargets.has(index)) {
-    score += gameTuning.scoring.target;
-    messageEl.textContent = "抓到啦！香奈美把这一秒收进舞台相册。";
-    beep(gameTuning.sounds.target.frequency, gameTuning.sounds.target.duration);
+    score += tuning.scoring.target;
+    messageEl.textContent = tuning.text.hit;
+    beepHole(index, "target");
     clearHole(index);
     updateHud();
     return;
   }
   if (activeDecoys.has(index)) {
-    score = Math.max(0, score + gameTuning.scoring.decoy);
-    messageEl.textContent = "那是干扰光啦，香奈美提醒你冷静一点。";
-    beep(gameTuning.sounds.decoy.frequency, gameTuning.sounds.decoy.duration);
+    score = Math.max(0, score + tuning.scoring.decoy);
+    messageEl.textContent = tuning.text.decoy;
+    beepHole(index, "decoy");
     clearHole(index);
     updateHud();
   }
@@ -315,8 +273,8 @@ function finish() {
   clearLights();
   if (score > bestScore()) localStorage.setItem(bestKey, String(score));
   updateHud();
-  startButton.textContent = "再来";
-  messageEl.textContent = `时间到！这次抓到 ${score} 次，香奈美已经记下你的应援速度。`;
+  startButton.textContent = tuning.text.restartButton;
+  messageEl.textContent = tuning.text.finish(score);
 }
 
 function start() {
@@ -324,10 +282,10 @@ function start() {
   window.clearTimeout(clearTimer);
   window.clearInterval(countdownTimer);
   score = 0;
-  timeLeft = gameTuning.durationSeconds;
+  timeLeft = tuning.durationSeconds;
   running = true;
-  startButton.textContent = "进行中";
-  messageEl.textContent = "灯光开始流动了，盯紧香奈美出现的位置。";
+  startButton.textContent = tuning.text.runningButton;
+  messageEl.textContent = tuning.text.start;
   updateHud();
   spawn();
   countdownTimer = window.setInterval(() => {
@@ -338,6 +296,7 @@ function start() {
 }
 
 startButton.addEventListener("click", start);
+applyTuning();
 makeBoard();
 preloadAssets();
 updateHud();
