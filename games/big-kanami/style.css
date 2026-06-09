@@ -20,7 +20,7 @@ body {
   color: var(--ink);
   background:
     linear-gradient(rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0.78)),
-    url("../../res/images/backgrounds/Soda.png") center / cover fixed;
+    var(--page-background-image, url("../../res/images/backgrounds/Soda.png")) center / cover fixed;
   touch-action: manipulation;
 }
 
@@ -187,7 +187,7 @@ button:disabled {
 #game {
   display: block;
   width: 100%;
-  aspect-ratio: 420 / 600;
+  aspect-ratio: var(--game-aspect-ratio, 420 / 540);
   border: 1px solid rgba(36, 37, 56, 0.16);
   border-radius: 8px;
   background:

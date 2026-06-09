@@ -11,28 +11,13 @@ const messageEl = document.querySelector("#message");
 const restartButton = document.querySelector("#restart");
 const dropButton = document.querySelector("#drop");
 
-const width = 420;
-const height = 600;
-const bottle = {
-  left: 34,
-  right: 386,
-  lipY: 98,
-  floorY: 576,
-  gameOverY: 122
-};
-const bestKey = "kanami-big-kanami-best";
-
-const levels = [
-  { name: "小奈美", radius: 20, score: 2, color: "#ffe26a", image: "../../res/images/favicon.png" },
-  { name: "星光奈美", radius: 25, score: 4, color: "#73e0d5", image: "../../res/images/stamps/001.png" },
-  { name: "Soda 奈美", radius: 31, score: 8, color: "#7fb4ff", image: "../../res/images/backgrounds/Soda.png" },
-  { name: "粉心奈美", radius: 38, score: 16, color: "#ff83ad", image: "../../res/images/stamps/004.png" },
-  { name: "橙光奈美", radius: 46, score: 32, color: "#ffac4d", image: "../../res/images/stamps/003.jpg" },
-  { name: "青舞奈美", radius: 55, score: 64, color: "#37b6c8", image: "../../res/images/backgrounds/Be-Shinning.png" },
-  { name: "紫梦奈美", radius: 66, score: 128, color: "#8f72d8", image: "../../res/images/stamps/005.jpg" },
-  { name: "红冠奈美", radius: 79, score: 256, color: "#ef5f6c", image: "../../res/images/stamps/002.jpg" },
-  { name: "大奈美", radius: 94, score: 512, color: "#2fce78", image: "../../res/images/lovekanami.jpg" }
-];
+const config = window.BIG_KANAMI_CONFIG;
+const tuning = config.tuning;
+const width = tuning.stage.width;
+const height = tuning.stage.height;
+const bottle = tuning.bottle;
+const bestKey = tuning.storage.bestKey;
+const levels = config.ballTemplates.map((template, index) => normalizeLevel(template, index));
 
 let engine;
 let runner;
@@ -46,15 +31,52 @@ let warnedAt = 0;
 let animationFrame = 0;
 let imageCache = new Map();
 
+function normalizeLevel(template, index) {
+  const radiusScale = tuning.ball.radiusScale ?? 1;
+  const text = template.text || {};
+  const ball = template.ball || {};
+  const asset = template.asset || {};
+  const name = text.name || `奈美 ${index + 1}`;
+
+  return {
+    id: template.id || `kanami-${index}`,
+    name,
+    label: text.label || name,
+    mergeText: text.mergeText || `合体成功，${name}登场。`,
+    finalText: text.finalText,
+    radius: Math.max(4, Math.round((ball.baseRadius || 20) * radiusScale)),
+    score: ball.score || 0,
+    color: asset.fillColor || "#ffe26a",
+    image: asset.backgroundImage,
+    imageOpacity: asset.imageOpacity ?? 0.92,
+    highlightColor: asset.highlightColor || "rgba(255, 255, 255, 0.2)",
+    textColor: asset.textColor || "#242538",
+    textStrokeColor: asset.textStrokeColor || "rgba(255, 255, 255, 0.9)"
+  };
+}
+
+function applyTuning() {
+  document.documentElement.style.setProperty("--game-aspect-ratio", `${width} / ${height}`);
+  if (tuning.theme?.pageBackgroundImage) {
+    document.documentElement.style.setProperty(
+      "--page-background-image",
+      `url("${tuning.theme.pageBackgroundImage}")`
+    );
+  }
+  canvas.setAttribute("width", String(width));
+  canvas.setAttribute("height", String(height));
+}
+
 function preloadImages() {
-  levels.forEach((level) => {
+  const imageSources = new Set(levels.map((level) => level.image).filter(Boolean));
+  imageSources.forEach((source) => {
     const image = new Image();
-    image.src = level.image;
+    image.src = source;
     image.onload = () => {
       renderNext();
       renderLevelGuide();
     };
-    imageCache.set(level.image, image);
+    imageCache.set(source, image);
   });
 }
 
@@ -68,7 +90,7 @@ function updateBest() {
 }
 
 function randomNextLevel() {
-  return Math.random() > 0.82 ? 1 : 0;
+  return Math.random() < tuning.spawn.secondLevelChance ? Math.min(1, levels.length - 1) : 0;
 }
 
 function resizeCanvas() {
@@ -81,8 +103,8 @@ function resizeCanvas() {
 function makeWall(x, y, wallWidth, wallHeight, options = {}) {
   return Bodies.rectangle(x, y, wallWidth, wallHeight, {
     isStatic: true,
-    friction: 0.18,
-    restitution: 0.08,
+    friction: tuning.physics.wallFriction,
+    restitution: tuning.physics.wallRestitution,
     render: { visible: false },
     ...options
   });
@@ -90,14 +112,21 @@ function makeWall(x, y, wallWidth, wallHeight, options = {}) {
 
 function createWorld() {
   engine = Engine.create({ enableSleeping: true });
-  engine.gravity.y = 0.88;
+  engine.gravity.y = tuning.physics.gravityY;
   runner = Runner.create();
 
-  const wallHeight = bottle.floorY - bottle.lipY + 28;
-  const wallY = bottle.lipY + wallHeight / 2 - 8;
-  const leftWall = makeWall(20, wallY, 30, wallHeight);
-  const rightWall = makeWall(400, wallY, 30, wallHeight);
-  const floor = makeWall(width / 2, bottle.floorY + 16, 380, 34);
+  const wallHeight = bottle.floorY - bottle.lipY + bottle.wallExtraHeight;
+  const wallY = bottle.lipY + wallHeight / 2 - bottle.wallYOffset;
+  const sideWallWidth = bottle.sideWallThickness;
+  const floorWidth = bottle.right - bottle.left + bottle.floorExtraWidth * 2;
+  const leftWall = makeWall(bottle.left - sideWallWidth / 2, wallY, sideWallWidth, wallHeight);
+  const rightWall = makeWall(bottle.right + sideWallWidth / 2, wallY, sideWallWidth, wallHeight);
+  const floor = makeWall(
+    (bottle.left + bottle.right) / 2,
+    bottle.floorY + bottle.floorThickness / 2 - 1,
+    floorWidth,
+    bottle.floorThickness
+  );
 
   World.add(engine.world, [leftWall, rightWall, floor]);
   Events.on(engine, "collisionStart", handleCollisions);
@@ -116,10 +145,10 @@ function clearWorld() {
 function createBall(levelIndex, x, y) {
   const level = levels[levelIndex];
   const body = Bodies.circle(x, y, level.radius, {
-    restitution: 0.18,
-    friction: 0.22,
-    frictionAir: 0.002,
-    density: 0.001 + levelIndex * 0.00018,
+    restitution: tuning.physics.ballRestitution,
+    friction: tuning.physics.ballFriction,
+    frictionAir: tuning.physics.ballFrictionAir,
+    density: tuning.physics.ballBaseDensity + levelIndex * tuning.physics.ballDensityStep,
     label: "kanami-ball"
   });
   body.kanami = { level: levelIndex, bornAt: performance.now(), merging: false };
@@ -131,7 +160,8 @@ function createBall(levelIndex, x, y) {
 function dropBall() {
   if (!canDrop || isGameOver || !engine) return;
   const radius = levels[nextLevel].radius;
-  createBall(nextLevel, Math.max(bottle.left + radius, Math.min(bottle.right - radius, aimX)), bottle.lipY);
+  const x = Math.max(bottle.left + radius, Math.min(bottle.right - radius, aimX));
+  createBall(nextLevel, x, bottle.lipY);
   nextLevel = randomNextLevel();
   canDrop = false;
   dropButton.disabled = true;
@@ -139,7 +169,7 @@ function dropBall() {
   setTimeout(() => {
     canDrop = !isGameOver;
     dropButton.disabled = isGameOver;
-  }, 560);
+  }, tuning.spawn.dropCooldownMs);
 }
 
 function handleCollisions(event) {
@@ -160,15 +190,18 @@ function handleCollisions(event) {
     balls = balls.filter((ball) => ball !== a && ball !== b);
     const merged = createBall(level, x, y);
     Body.setVelocity(merged, {
-      x: (a.velocity.x + b.velocity.x) * 0.28,
-      y: Math.min((a.velocity.y + b.velocity.y) * 0.2, 2)
+      x: (a.velocity.x + b.velocity.x) * tuning.physics.mergeVelocityXScale,
+      y: Math.min(
+        (a.velocity.y + b.velocity.y) * tuning.physics.mergeVelocityYScale,
+        tuning.physics.mergeVelocityYMax
+      )
     });
     score += levels[level].score;
     scoreEl.textContent = String(score);
     updateBest();
     messageEl.textContent = level === levels.length - 1
-      ? "超大奈美诞生！这首歌已经传到世界尽头啦。"
-      : `合体成功，${levels[level].name}登场。`;
+      ? (levels[level].finalText || levels[level].mergeText)
+      : levels[level].mergeText;
   });
 }
 
@@ -177,8 +210,8 @@ function checkGameOver() {
   const now = performance.now();
   const danger = balls.some((ball) => (
     ball.position.y - levels[ball.kanami.level].radius < bottle.gameOverY &&
-    now - ball.kanami.bornAt > 1400 &&
-    Math.abs(ball.velocity.y) < 0.35
+    now - ball.kanami.bornAt > tuning.gameOver.graceMs &&
+    Math.abs(ball.velocity.y) < tuning.gameOver.settledVelocityY
   ));
 
   if (!danger) {
@@ -187,21 +220,21 @@ function checkGameOver() {
   }
   if (!warnedAt) {
     warnedAt = now;
-    messageEl.textContent = "杯口有点挤啦，香奈美要小心一点。";
+    messageEl.textContent = tuning.text.crowded;
     return;
   }
-  if (now - warnedAt > 1600) endGame();
+  if (now - warnedAt > tuning.gameOver.warningMs) endGame();
 }
 
 function endGame() {
   isGameOver = true;
   canDrop = false;
   dropButton.disabled = true;
-  messageEl.textContent = `烧杯满啦，本次 ${score} 分。香奈美整理好舞台就能再来一局。`;
+  messageEl.textContent = tuning.text.gameOver(score);
 }
 
 function drawImageCover(context, image, x, y, size) {
-  if (!image.complete || !image.naturalWidth) return false;
+  if (!image || !image.complete || !image.naturalWidth) return false;
   const scale = Math.max(size / image.naturalWidth, size / image.naturalHeight);
   const drawWidth = image.naturalWidth * scale;
   const drawHeight = image.naturalHeight * scale;
@@ -220,32 +253,41 @@ function drawBall(context, levelIndex, x, y, scale = 1, label = true) {
   context.fillStyle = level.color;
   context.fill();
   context.clip();
-  context.globalAlpha = 0.92;
+  context.globalAlpha = level.imageOpacity;
   drawImageCover(context, image, x - radius, y - radius, radius * 2);
   context.globalAlpha = 1;
-  context.fillStyle = "rgba(255, 255, 255, 0.2)";
+  context.fillStyle = level.highlightColor;
   context.fillRect(x - radius, y - radius, radius * 2, radius * 0.75);
   context.restore();
 
   context.save();
   context.beginPath();
   context.arc(x, y, radius, 0, Math.PI * 2);
-  context.lineWidth = Math.max(2, radius * 0.08);
+  context.lineWidth = Math.max(2, radius * tuning.ball.rimWidthScale);
   context.strokeStyle = "rgba(255, 255, 255, 0.92)";
   context.stroke();
-  context.lineWidth = Math.max(1, radius * 0.045);
+  context.lineWidth = Math.max(1, radius * tuning.ball.innerRimWidthScale);
   context.strokeStyle = "rgba(36, 37, 56, 0.18)";
   context.stroke();
 
-  if (label && radius >= 27) {
-    context.font = `900 ${Math.max(10, radius * 0.24)}px "Segoe UI", sans-serif`;
+  if (label && radius >= tuning.ball.labelMinRadius) {
+    const labelText = level.label || level.name;
+    const labelY = y + radius * tuning.ball.labelYOffsetScale;
+    const maxTextWidth = radius * 1.72;
+    const baseFontSize = Math.max(10, radius * tuning.ball.labelFontScale);
+    context.font = `900 ${baseFontSize}px "Segoe UI", sans-serif`;
+    const measuredWidth = context.measureText(labelText).width;
+    if (measuredWidth > maxTextWidth) {
+      const fittedFontSize = Math.max(8, baseFontSize * (maxTextWidth / measuredWidth));
+      context.font = `900 ${fittedFontSize}px "Segoe UI", sans-serif`;
+    }
     context.textAlign = "center";
     context.textBaseline = "middle";
     context.lineWidth = 4;
-    context.strokeStyle = "rgba(255, 255, 255, 0.9)";
-    context.fillStyle = "#242538";
-    context.strokeText(level.name, x, y + radius * 0.52);
-    context.fillText(level.name, x, y + radius * 0.52);
+    context.strokeStyle = level.textStrokeColor;
+    context.fillStyle = level.textColor;
+    context.strokeText(labelText, x, labelY);
+    context.fillText(labelText, x, labelY);
   }
   context.restore();
 }
@@ -261,7 +303,12 @@ function drawBottle() {
   ctx.beginPath();
   ctx.moveTo(bottle.left, bottle.lipY);
   ctx.lineTo(bottle.left, bottle.floorY);
-  ctx.quadraticCurveTo(width / 2, bottle.floorY + 18, bottle.right, bottle.floorY);
+  ctx.quadraticCurveTo(
+    (bottle.left + bottle.right) / 2,
+    bottle.floorY + bottle.bottomCurveDepth,
+    bottle.right,
+    bottle.floorY
+  );
   ctx.lineTo(bottle.right, bottle.lipY);
   ctx.stroke();
   ctx.fill();
@@ -285,7 +332,7 @@ function drawBottle() {
   ctx.fillStyle = "rgba(36, 37, 56, 0.58)";
   ctx.font = "800 12px Segoe UI, sans-serif";
   ctx.textAlign = "left";
-  ctx.fillText("满到这里就结束", bottle.left + 16, bottle.gameOverY - 8);
+  ctx.fillText(tuning.text.gameOverLine, bottle.left + 16, bottle.gameOverY - 8);
   ctx.restore();
 }
 
@@ -307,7 +354,14 @@ function drawAim() {
 
 function renderNext() {
   nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
-  drawBall(nextCtx, nextLevel, 33, 33, Math.min(1, 29 / levels[nextLevel].radius), false);
+  drawBall(
+    nextCtx,
+    nextLevel,
+    nextCanvas.width / 2,
+    nextCanvas.height / 2,
+    Math.min(1, tuning.ball.nextPreviewMaxRadius / levels[nextLevel].radius),
+    false
+  );
 }
 
 function renderLevelGuide() {
@@ -317,10 +371,17 @@ function renderLevelGuide() {
     card.className = "level-card";
 
     const preview = document.createElement("canvas");
-    preview.width = 72;
-    preview.height = 72;
+    preview.width = tuning.ball.guidePreviewSize;
+    preview.height = tuning.ball.guidePreviewSize;
     const previewCtx = preview.getContext("2d");
-    drawBall(previewCtx, index, 36, 36, Math.min(1, 29 / level.radius), false);
+    drawBall(
+      previewCtx,
+      index,
+      preview.width / 2,
+      preview.height / 2,
+      Math.min(1, tuning.ball.guidePreviewMaxRadius / level.radius),
+      false
+    );
 
     const label = document.createElement("span");
     label.textContent = level.name;
@@ -347,7 +408,8 @@ function canvasPoint(event) {
 }
 
 function updateAim(event) {
-  aimX = Math.max(bottle.left + 20, Math.min(bottle.right - 20, canvasPoint(event)));
+  const radius = levels[nextLevel].radius;
+  aimX = Math.max(bottle.left + radius, Math.min(bottle.right - radius, canvasPoint(event)));
 }
 
 function restart() {
@@ -363,7 +425,7 @@ function restart() {
   scoreEl.textContent = "0";
   updateBest();
   dropButton.disabled = false;
-  messageEl.textContent = "移动鼠标或手指选择杯口位置，点击舞台或按空格投下。香奈美准备好啦。";
+  messageEl.textContent = tuning.text.ready;
   renderNext();
   renderLevelGuide();
   cancelAnimationFrame(animationFrame);
@@ -372,11 +434,12 @@ function restart() {
 
 function boot() {
   if (!window.Matter) {
-    messageEl.textContent = "物理引擎没有加载成功，香奈美暂时没法把球丢进烧杯里。";
+    messageEl.textContent = tuning.text.missingEngine;
     dropButton.disabled = true;
     restartButton.disabled = true;
     return;
   }
+  applyTuning();
   preloadImages();
   resizeCanvas();
   window.addEventListener("resize", resizeCanvas);
@@ -398,11 +461,11 @@ function boot() {
     }
     if (event.key === "ArrowLeft") {
       event.preventDefault();
-      aimX = Math.max(bottle.left + levels[nextLevel].radius, aimX - 18);
+      aimX = Math.max(bottle.left + levels[nextLevel].radius, aimX - tuning.controls.keyboardStep);
     }
     if (event.key === "ArrowRight") {
       event.preventDefault();
-      aimX = Math.min(bottle.right - levels[nextLevel].radius, aimX + 18);
+      aimX = Math.min(bottle.right - levels[nextLevel].radius, aimX + tuning.controls.keyboardStep);
     }
   });
   restart();
