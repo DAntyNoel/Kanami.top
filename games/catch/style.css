@@ -142,7 +142,7 @@ button {
 .hole.is-target::after {
   inset: 9%;
   border-radius: 8px;
-  background: url("../../res/images/stamps/001.png") center / cover;
+  background: var(--hole-image) center / cover;
   transform: scale(1);
   box-shadow: 0 14px 30px rgba(255, 111, 145, 0.36);
 }
@@ -151,7 +151,7 @@ button {
   inset: 12%;
   background:
     linear-gradient(rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.28)),
-    url("../../res/images/stamps/004.png") center / cover;
+    var(--hole-image) center / cover;
   transform: scale(1);
   filter: grayscale(0.45);
 }
