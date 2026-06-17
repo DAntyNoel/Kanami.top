@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>香奈美的日本制霸</title>
+  <meta name="description" content="在 Kanami.top 标记日本四十七都道府县制霸进度。" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="../res/images/favicon.png" />
+</head>
+<body>
+  <div class="background" aria-hidden="true"></div>
+
+  <main class="app-shell">
+    <nav class="topbar" aria-label="页面导航">
+      <a href="../index.html">返回 Kanami.top</a>
+      <a href="CREDITS.md">致谢</a>
+    </nav>
+
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">KANAMI TOOL</p>
+        <h1>香奈美的日本制霸</h1>
+        <p>把去过的都道府县点亮吧。我会替你记住旅程、算好分数，再把日本制霸图存成图片。</p>
+      </div>
+      <img src="../res/images/lovekanami.jpg" alt="香奈美应援图" class="hero-art" />
+    </section>
+
+    <section class="scorebar" aria-label="制霸统计">
+      <div>
+        <span>当前分数</span>
+        <strong id="score">0</strong>
+      </div>
+      <div>
+        <span>点亮地区</span>
+        <strong id="visited-count">0/47</strong>
+      </div>
+      <div>
+        <span>最高等级</span>
+        <strong id="top-level">还没开始</strong>
+      </div>
+      <button id="save-image" type="button">保存图片</button>
+      <button id="reset-map" type="button" class="secondary">清空</button>
+    </section>
+
+    <section class="workspace">
+      <div class="map-card" aria-label="日本制霸地图">
+        <svg id="japan-map" xmlns="http://www.w3.org/2000/svg" viewBox="318 -317.5 1147.5 1147.5" role="img" aria-labelledby="map-title map-desc">
+          <title id="map-title">香奈美的日本制霸地图</title>
+          <desc id="map-desc">点击任一都道府县，选择居住、短居、游玩、出差、路过或没去过。</desc>
+          <rect id="map-background" x="318" y="-317.5" width="1147.5" height="1147.5" />
+          <text x="430" y="-230" id="svg-title">香奈美日本制霸</text>
+          <g id="regions">
+            <polygon id="富山" points="1051.6,276.5 1051.6,360.4 967.6,360.4 967.6,324.4 1000.9,324.4" data-region="富山" />
+            <rect id="神奈川" x="1143.6" y="458.4" width="82" height="51" data-region="神奈川" />
+            <polygon id="茨城" points="1309.6,393.6 1309.6,400.4 1238.6,400.4 1238.6,311.4 1296.6,311.4 1296.6,381.7" data-region="茨城" />
+            <polygon id="千葉" points="1309.6,400.4 1309.6,507.4 1257.6,507.4 1257.6,458.4 1238.6,458.4 1238.6,400.4" data-region="千葉" />
+            <rect id="東京" x="1143.6" y="418.4" width="95" height="40" data-region="東京" />
+            <polygon id="静岡" points="1164.6,509.4 1164.6,548.4 1133.6,548.4 1133.6,512.5 1095.1,547.4 1045.6,547.4 1045.6,488.4 1143.6,488.4 1143.6,509.4" data-region="静岡" />
+            <polygon id="京都" points="903.6,424.4 903.6,488.4 799.6,488.4 799.6,399.4 845.6,399.4 845.6,424.4" data-region="京都" />
+            <polygon id="和歌山" points="903.6,579.4 903.6,616.4 818.6,616.4 818.6,552.4 859.6,552.4 859.6,579.4" data-region="和歌山" />
+            <rect id="鳥取" x="663.6" y="399.4" width="67" height="49" data-region="鳥取" />
+            <polygon id="山口" points="591.6,398.5 591.6,509.4 530.6,509.4 530.6,434.4" data-region="山口" />
+            <rect id="広島" x="591.6" y="448.4" width="72" height="61" data-region="広島" />
+            <polygon id="島根" points="663.6,399.4 663.6,448.4 591.6,448.4 591.6,398.5 596.9,399.4" data-region="島根" />
+            <polygon id="愛知" points="1045.6,488.4 1045.6,547.4 971.6,547.4 971.6,517.4 955.6,517.4 955.6,488.4" data-region="愛知" />
+            <polygon id="三重" points="955.6,488.4 955.6,517.4 942.6,517.4 942.6,616.4 903.6,616.4 903.6,488.4" data-region="三重" />
+            <g id="兵庫" data-region="兵庫">
+              <rect x="730.6" y="399.4" width="69" height="110" />
+              <rect x="782.6" y="519.4" width="22" height="21" />
+            </g>
+            <polygon id="石川" points="967.6,291.4 967.6,373.4 882.6,373.4 882.6,368.4 926.6,339.6 926.6,291.4" data-region="石川" />
+            <rect id="山梨" x="1094.6" y="418.4" width="49" height="70" data-region="山梨" />
+            <g id="大阪" data-region="大阪">
+              <polygon points="859.6,488.4 859.6,552.4 818.6,552.4 818.6,509.4 799.6,509.4 799.6,488.4" />
+            </g>
+            <polygon id="愛媛" points="680.6,563.4 680.6,613.4 565.8,613.4 563.4,567.5 638.6,536.2 638.6,563.4" data-region="愛媛" />
+            <polygon id="高知" points="770.6,627.5 770.6,662.4 730.6,662.4 711.1,641.4 667.5,641.4 646.9,662.4 565.9,662.4 565.8,613.4 680.6,613.4 680.6,608.1" data-region="高知" />
+            <polygon id="徳島" points="770.6,573.4 770.6,627.5 680.6,608.1 680.6,573.4" data-region="徳島" />
+            <rect id="埼玉" x="1108.6" y="381.4" width="130" height="37" data-region="埼玉" />
+            <rect id="栃木" x="1174.6" y="311.4" width="64" height="70" data-region="栃木" />
+            <rect id="岡山" x="663.6" y="448.4" width="67" height="61" data-region="岡山" />
+            <rect id="大分" x="473.6" y="505.4" width="48" height="69" data-region="大分" />
+            <polygon id="福岡" points="521.6,479.4 521.6,505.4 473.6,505.4 473.6,560.4 410.6,560.4 410.6,542.4 428.2,542.4 427.9,479.4" data-region="福岡" />
+            <polygon id="長崎" points="381.6,542.4 385.8,542.4 385.8,569.4 344.6,569.4 344.6,479.4 381.6,479.4" data-region="長崎" />
+            <rect id="香川" x="680.6" y="541.4" width="90" height="32" data-region="香川" />
+            <polygon id="福井" points="967.6,373.4 967.6,424.4 845.6,424.4 845.6,408.4 882.6,408.4 882.6,373.4" data-region="福井" />
+            <rect id="沖縄" x="341.6" y="721.4" width="33" height="61" data-region="沖縄" />
+            <polygon id="宮崎" points="521.6,574.4 521.6,583.8 514.6,595.2 514.6,660.4 498.2,660.4 473.6,660.4 473.6,574.4" data-region="宮崎" />
+            <polygon id="熊本" points="473.6,560.4 473.6,642.4 391.6,642.4 391.6,628.8 410.6,614.3 410.6,560.4" data-region="熊本" />
+            <polygon id="佐賀" points="428.2,542.4 381.6,542.4 381.6,479.4 427.9,479.4" data-region="佐賀" />
+            <polygon id="鹿児島" points="514.6,660.4 514.6,684.8 476.2,720.4 463.6,720.4 463.6,684.4 427.6,684.4 427.6,704.4 391.6,704.4 391.6,642.4 473.6,642.4 473.6,660.4" data-region="鹿児島" />
+            <rect id="奈良" x="859.6" y="488.4" width="44" height="91" data-region="奈良" />
+            <rect id="滋賀" x="903.6" y="424.4" width="52" height="64" data-region="滋賀" />
+            <rect id="群馬" x="1108.6" y="311.4" width="66" height="70" data-region="群馬" />
+            <polygon id="長野" points="1108.6,311.4 1108.6,418.4 1094.6,418.4 1094.6,488.4 1024.6,488.4 1024.6,360.4 1051.6,360.4 1051.6,311.4" data-region="長野" />
+            <polygon id="岐阜" points="1024.6,360.4 1024.6,488.4 955.6,488.4 955.6,424.4 967.6,424.4 967.6,360.4" data-region="岐阜" />
+            <rect id="福島" x="1157.6" y="245.4" width="139" height="66" data-region="福島" />
+            <g id="新潟" data-region="新潟">
+              <polygon points="1157.6,210.4 1157.6,311.4 1051.6,311.4 1051.6,276.5 1148.5,210.4" />
+              <polygon points="1071.5,221.4 1044.5,241.4 1025,241.4 1051.8,221.4" />
+            </g>
+            <rect id="宮城" x="1222.6" y="157.4" width="74" height="88" data-region="宮城" />
+            <polygon id="山形" points="1222.6,157.4 1222.6,245.4 1157.6,245.4 1157.6,210.4 1148.5,210.4 1143.6,204.9 1143.6,157.4" data-region="山形" />
+            <polygon id="岩手" points="1313.6,75.4 1313.6,137.1 1296.6,151.9 1296.6,157.4 1222.6,157.4 1222.6,75.4" data-region="岩手" />
+            <rect id="秋田" x="1143.6" y="75.4" width="79" height="82" data-region="秋田" />
+            <polygon id="青森" points="1313.6,50.1 1313.6,75.4 1143.6,75.4 1143.6,8.4 1187.6,8.4 1187.6,25.4 1234.6,25.4 1234.6,-18.6 1269.6,-18.6 1269.6,19.6" data-region="青森" />
+            <polygon id="北海道" points="1442.6,-160.6 1442.6,-60.6 1387.3,-60.6 1315.9,-22 1255.6,-61.6 1218.6,-61.6 1218.6,-33.6 1143.6,-33.6 1143.6,-86.2 1195.6,-125.2 1195.6,-270.6 1263.4,-270.6 1397,-160.6" data-region="北海道" />
+          </g>
+          <g id="labels" aria-hidden="true">
+            <text x="1009.6" y="318.4">富山</text>
+            <text x="1184.6" y="483.9">神奈川</text>
+            <text x="1274.1" y="355.9">茨城</text>
+            <text x="1274.1" y="453.9">千葉</text>
+            <text x="1191.1" y="438.4">東京</text>
+            <text x="1105.1" y="518.4">静岡</text>
+            <text x="851.6" y="443.9">京都</text>
+            <text x="861.1" y="584.4">和歌山</text>
+            <text x="697.1" y="423.9">鳥取</text>
+            <text x="561.1" y="453.9">山口</text>
+            <text x="627.6" y="478.9">広島</text>
+            <text x="627.6" y="423.4">島根</text>
+            <text x="1000.6" y="517.9">愛知</text>
+            <text x="929.6" y="552.4">三重</text>
+            <text x="767.6" y="469.9">兵庫</text>
+            <text x="925.1" y="332.4">石川</text>
+            <text x="1119.1" y="453.4">山梨</text>
+            <text x="829.6" y="520.4">大阪</text>
+            <text x="622.0" y="574.8">愛媛</text>
+            <text x="668.2" y="635.2">高知</text>
+            <text x="725.6" y="600.5">徳島</text>
+            <text x="1173.6" y="399.9">埼玉</text>
+            <text x="1206.6" y="346.4">栃木</text>
+            <text x="697.1" y="478.9">岡山</text>
+            <text x="497.6" y="539.9">大分</text>
+            <text x="466.1" y="519.9">福岡</text>
+            <text x="365.2" y="524.4">長崎</text>
+            <text x="725.6" y="557.4">香川</text>
+            <text x="906.6" y="398.9">福井</text>
+            <text x="358.1" y="751.9">沖縄</text>
+            <text x="497.6" y="617.4">宮崎</text>
+            <text x="432.6" y="601.4">熊本</text>
+            <text x="404.9" y="510.9">佐賀</text>
+            <text x="453.1" y="681.4">鹿児島</text>
+            <text x="881.6" y="533.9">奈良</text>
+            <text x="929.6" y="456.4">滋賀</text>
+            <text x="1141.6" y="346.4">群馬</text>
+            <text x="1066.6" y="399.9">長野</text>
+            <text x="990.1" y="424.4">岐阜</text>
+            <text x="1227.1" y="278.4">福島</text>
+            <text x="1091.3" y="260.9">新潟</text>
+            <text x="1259.6" y="201.4">宮城</text>
+            <text x="1183.1" y="201.4">山形</text>
+            <text x="1268.1" y="116.4">岩手</text>
+            <text x="1183.1" y="116.4">秋田</text>
+            <text x="1228.6" y="28.4">青森</text>
+            <text x="1293.1" y="-146.3">北海道</text>
+          </g>
+          <text id="svg-score" x="430" y="770">分数: 0</text>
+          <text id="svg-signature" x="430" y="810">Kanami.top</text>
+          <g id="legend" aria-hidden="true">
+            <path class="legend-box level-5" d="M1320 420h118v48h-118Z" />
+            <path class="legend-box level-4" d="M1320 468h118v48h-118Z" />
+            <path class="legend-box level-3" d="M1320 516h118v48h-118Z" />
+            <path class="legend-box level-2" d="M1320 564h118v48h-118Z" />
+            <path class="legend-box level-1" d="M1320 612h118v48h-118Z" />
+            <path class="legend-box level-0" d="M1320 660h118v48h-118Z" />
+            <path class="legend-border" d="M1320 420h118v288h-118Z" />
+            <text x="1334" y="452">居住５</text>
+            <text x="1334" y="500">短居４</text>
+            <text x="1334" y="548">游玩３</text>
+            <text x="1334" y="596">出差２</text>
+            <text x="1334" y="644">路过１</text>
+            <text x="1330" y="692">没去过</text>
+          </g>
+        </svg>
+      </div>
+
+      <aside class="side-panel" aria-label="等级说明">
+        <p class="panel-title">选中地区</p>
+        <strong id="selected-region">请点地图</strong>
+        <div class="level-list" id="level-list"></div>
+        <p id="message" aria-live="polite">我已经准备好日本地图啦，先点一个都道府县吧。</p>
+      </aside>
+    </section>
+
+    <footer class="credits">
+      <span>地图原型来自</span>
+      <a href="https://zhung.com.tw/japanex/" target="_blank" rel="noopener noreferrer">JapanEx 制県レベル</a>
+      <span>，本站做了香奈美版复刻。</span>
+    </footer>
+  </main>
+
+  <div class="level-popover" id="level-popover" hidden>
+    <h2 id="popover-title">地区</h2>
+    <div class="popover-levels" id="popover-levels"></div>
+  </div>
+
+  <div class="output-modal" id="output-modal" hidden>
+    <div class="output-card" role="dialog" aria-modal="true" aria-labelledby="output-title">
+      <h2 id="output-title">图片做好啦</h2>
+      <img id="output-image" alt="生成的日本制霸图片" />
+      <div class="output-actions">
+        <a id="download-link" href="#" download="kanami-japan-ex.png">下载 PNG</a>
+        <button id="close-output" type="button">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

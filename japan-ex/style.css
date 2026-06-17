@@ -1,0 +1,130 @@
+@import url("../china-ex/style.css");
+
+.map-card {
+  min-height: 640px;
+}
+
+#japan-map {
+  display: block;
+  width: min(100%, 940px);
+  min-width: 680px;
+  height: auto;
+  margin: 0 auto;
+}
+
+#map-background {
+  fill: rgba(255, 247, 251, 0.82);
+}
+
+#japan-map text {
+  fill: #18131f;
+  font-family: "PingFang SC", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Microsoft YaHei", sans-serif;
+  font-size: 28px;
+  pointer-events: none;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+#japan-map #svg-title,
+#japan-map #svg-score,
+#japan-map #svg-signature {
+  text-anchor: start;
+}
+
+#japan-map #svg-title,
+#japan-map #svg-score {
+  font-size: 58px;
+  font-weight: 800;
+}
+
+#japan-map #svg-signature {
+  fill: #5c5370;
+  font-size: 32px;
+  font-weight: 800;
+}
+
+#labels text {
+  font-size: 25px;
+  font-weight: 800;
+}
+
+#regions [data-region],
+#regions [data-region] * {
+  fill: #fff;
+  stroke: #18131f;
+  stroke-width: 4;
+  stroke-linejoin: round;
+  cursor: pointer;
+  outline: none;
+  transition: filter 0.18s ease;
+}
+
+#regions [data-region]:hover,
+#regions [data-region]:focus-visible {
+  filter: drop-shadow(0 0 8px rgba(116, 96, 199, 0.5));
+}
+
+#regions [data-region][data-active="true"] {
+  filter: drop-shadow(0 0 10px rgba(255, 120, 120, 0.7));
+}
+
+#regions [data-region][data-level="5"],
+#regions [data-region][data-level="5"] * {
+  fill: var(--red);
+}
+
+#regions [data-region][data-level="4"],
+#regions [data-region][data-level="4"] * {
+  fill: var(--orange);
+}
+
+#regions [data-region][data-level="3"],
+#regions [data-region][data-level="3"] * {
+  fill: var(--yellow);
+}
+
+#regions [data-region][data-level="2"],
+#regions [data-region][data-level="2"] * {
+  fill: var(--mint);
+}
+
+#regions [data-region][data-level="1"],
+#regions [data-region][data-level="1"] * {
+  fill: #88aeff;
+}
+
+#regions [data-region][data-level="0"],
+#regions [data-region][data-level="0"] * {
+  fill: #fff;
+}
+
+#japan-map .legend-box {
+  stroke: none;
+}
+
+#japan-map .legend-border {
+  fill: none;
+  stroke: #18131f;
+  stroke-width: 4;
+  stroke-linejoin: round;
+}
+
+#legend text {
+  font-size: 25px;
+  font-weight: 800;
+  text-anchor: start;
+}
+
+@media (max-width: 900px) {
+  #japan-map {
+    width: 900px;
+    max-width: none;
+  }
+}
+
+@media (max-width: 620px) {
+  #japan-map {
+    width: 780px;
+    min-width: 780px;
+  }
+}
