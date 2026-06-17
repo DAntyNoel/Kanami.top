@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>香奈美的中国制霸</title>
+  <meta name="description" content="在 Kanami.top 标记中国三十四省级行政区域制霸进度。" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="../res/images/favicon.png" />
+</head>
+<body>
+  <div class="background" aria-hidden="true"></div>
+
+  <main class="app-shell">
+    <nav class="topbar" aria-label="页面导航">
+      <a href="../index.html">返回 Kanami.top</a>
+      <a href="CREDITS.md">致谢</a>
+    </nav>
+
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">KANAMI TOOL</p>
+        <h1>香奈美的中国制霸</h1>
+        <p>把到过的地方点亮吧。我会替你记住每一站、算好分数，再把整张应援地图存成图片。</p>
+      </div>
+      <img src="../res/images/lovekanami.jpg" alt="香奈美应援图" class="hero-art" />
+    </section>
+
+    <section class="scorebar" aria-label="制霸统计">
+      <div>
+        <span>当前分数</span>
+        <strong id="score">0</strong>
+      </div>
+      <div>
+        <span>点亮地区</span>
+        <strong id="visited-count">0/34</strong>
+      </div>
+      <div>
+        <span>最高等级</span>
+        <strong id="top-level">还没开始</strong>
+      </div>
+      <button id="save-image" type="button">保存图片</button>
+      <button id="reset-map" type="button" class="secondary">清空</button>
+    </section>
+
+    <section class="workspace">
+      <div class="map-card" aria-label="中国制霸地图">
+        <svg id="china-map" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1134 976" role="img" aria-labelledby="map-title map-desc">
+          <title id="map-title">香奈美的中国制霸地图</title>
+          <desc id="map-desc">点击任一省级行政区域，选择居住、短居、游玩、出差、路过或没去过。</desc>
+          <text x="381" y="119" id="svg-title">香奈美中国制霸</text>
+          <g id="regions">
+            <path id="黑龙江" d="M1100,33v158H894V33H1100z" />
+            <path id="甘肃" d="M585,191v371H351V191H585z" />
+            <path id="吉林" d="M894,191v85h206v-85H894z" />
+            <path id="内蒙古" d="M894,33H738v158H499v227h227l168-108V33z" />
+            <path id="山东" d="M779,446v92h139v-92H779z" />
+            <path id="河北" d="M861,310H726v180h117v-95h18V310z" />
+            <path id="北京" d="M763 336h80v52H763Z" />
+            <path id="天津" d="M763,388h80v43h-80V388z" />
+            <path id="西藏" d="M389,770H35V466h354V770z" />
+            <path id="新疆" d="M35,466V87h316v379H35z" />
+            <path id="河南" d="M779,490H654v117h125V490z" />
+            <path id="安徽" d="M852,538h-73v138h73V538z" />
+            <path id="山西" d="M654,418v108h72V418H654z" />
+            <path id="湖北" d="M779,688v-81H654v81H779z" />
+            <path id="青海" d="M442,626V395H228v231H442z" />
+            <path id="辽宁" d="M861,276v119h154V276H861z" />
+            <path id="广东" d="M823,788H679v81h144V788z" />
+            <path id="江苏" d="M899,538v87h-62v-87H899z" />
+            <path id="江西" d="M852,806V676H749v130H852z" />
+            <path id="浙江" d="M852,625l74,1v107h-74V625z" />
+            <path id="福建" d="M823,733v107h73V733H823z" />
+            <path id="上海" d="M882 602h72v47H882Z" />
+            <path id="陕西" d="M585,653h69V418h-69V653z" />
+            <path id="湖南" d="M654,688h95v100h-95V688z" />
+            <path id="广西" d="M679,788H537v81h142V788z" />
+            <path id="香港" d="M758 856h42v33H758Z" />
+            <path id="澳门" d="M701 856h45v33H701Z" />
+            <path id="贵州" d="M654,709H537v79h117V709z" />
+            <path id="重庆" d="M565 653h89v56H565Z" />
+            <path id="四川" d="M565,737v-84h20v-91H389v175H565z" />
+            <path id="云南" d="M537,737H389v115h148V737z" />
+            <path id="宁夏" d="M585,418h-86v96h86V418z" />
+            <path id="台湾" d="M918 788h45v87H918Z" />
+            <path id="海南" d="M615 897h78v46H615Z" />
+          </g>
+          <path id="south-sea" d="M827 941L827 897L908 897L908 941" />
+          <g id="labels" aria-hidden="true">
+            <text x="659" y="266">内蒙古</text>
+            <text x="951" y="123">黑龙江</text>
+            <text x="966" y="242">吉林</text>
+            <text x="906" y="347">辽宁</text>
+            <text x="773" y="371">北京</text>
+            <text x="773" y="419">天津</text>
+            <text x="751" y="469">河北</text>
+            <text x="861" y="488">山</text>
+            <text x="861" y="518">东</text>
+            <text x="685" y="579">河南</text>
+            <text x="684" y="658">湖北</text>
+            <text x="684" y="733">湖</text>
+            <text x="684" y="763">南</text>
+            <text x="846" y="575">江</text>
+            <text x="846" y="605">苏</text>
+            <text x="888" y="635">上海</text>
+            <text x="872" y="685">浙</text>
+            <text x="872" y="715">江</text>
+            <text x="844" y="783">福</text>
+            <text x="844" y="813">建</text>
+            <text x="925" y="826">台</text>
+            <text x="925" y="856">湾</text>
+            <text x="625" y="930">海南</text>
+            <text x="721" y="842">广东</text>
+            <text x="772" y="736">江</text>
+            <text x="772" y="766">西</text>
+            <text x="793" y="603">安</text>
+            <text x="793" y="633">徽</text>
+            <text x="674" y="466">山</text>
+            <text x="674" y="496">西</text>
+            <text x="604" y="536">陕</text>
+            <text x="604" y="566">西</text>
+            <text x="527" y="460">宁</text>
+            <text x="527" y="490">夏</text>
+            <text x="411" y="304">甘</text>
+            <text x="411" y="334">肃</text>
+            <text x="301" y="520">青海</text>
+            <text x="453" y="660">四川</text>
+            <text x="432" y="805">云南</text>
+            <text x="579" y="839">广西</text>
+            <text x="566" y="759">贵州</text>
+            <text x="579" y="691">重庆</text>
+            <text x="104" y="639">西藏</text>
+            <text x="163" y="288">新疆</text>
+            <text x="767" y="880" class="small-label">港</text>
+            <text x="711" y="880" class="small-label">澳</text>
+          </g>
+          <text id="svg-score" x="35" y="883">分数: 0</text>
+          <text id="svg-signature" x="35" y="937">Kanami.top</text>
+          <g id="legend" aria-hidden="true">
+            <path class="legend-box level-5" d="M983 450h120v50H983Z" />
+            <path class="legend-box level-4" d="M983 500h120v50H983Z" />
+            <path class="legend-box level-3" d="M983 550h120v50H983Z" />
+            <path class="legend-box level-2" d="M983 600h120v50H983Z" />
+            <path class="legend-box level-1" d="M983 650h120v50H983Z" />
+            <path class="legend-box level-0" d="M983 700h120v50H983Z" />
+            <path class="legend-border" d="M983 448h120v304H983Z" />
+            <text x="1000" y="484">居住５</text>
+            <text x="1000" y="535">短居４</text>
+            <text x="1000" y="585">游玩３</text>
+            <text x="1000" y="635">出差２</text>
+            <text x="1000" y="685">路过１</text>
+            <text x="998" y="735">没去过</text>
+          </g>
+        </svg>
+      </div>
+
+      <aside class="side-panel" aria-label="等级说明">
+        <p class="panel-title">选中地区</p>
+        <strong id="selected-region">请点地图</strong>
+        <div class="level-list" id="level-list"></div>
+        <p id="message" aria-live="polite">我已经准备好地图啦，先点一个地区吧。</p>
+      </aside>
+    </section>
+
+    <footer class="credits">
+      <span>地图原型来自</span>
+      <a href="https://lab.magiconch.com/china-ex/" target="_blank" rel="noopener noreferrer">神奇海螺试验场中国制霸</a>
+      <span>，本站做了香奈美版复刻。</span>
+    </footer>
+  </main>
+
+  <div class="level-popover" id="level-popover" hidden>
+    <h2 id="popover-title">地区</h2>
+    <div class="popover-levels" id="popover-levels"></div>
+  </div>
+
+  <div class="output-modal" id="output-modal" hidden>
+    <div class="output-card" role="dialog" aria-modal="true" aria-labelledby="output-title">
+      <h2 id="output-title">图片做好啦</h2>
+      <img id="output-image" alt="生成的中国制霸图片" />
+      <div class="output-actions">
+        <a id="download-link" href="#" download="kanami-china-ex.png">下载 PNG</a>
+        <button id="close-output" type="button">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
