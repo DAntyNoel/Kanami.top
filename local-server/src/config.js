@@ -53,6 +53,10 @@ export const paths = {
   root: rootDir,
   public: path.join(rootDir, "public"),
   sharedAssets: path.resolve(rootDir, "..", "res"),
+  sharedGames: path.resolve(rootDir, "..", "games"),
+  entryHtml: path.resolve(rootDir, "..", "local-server.html"),
+  offlineHtml: path.resolve(rootDir, "..", "local-server-offline.html"),
+  sharedScript: path.resolve(rootDir, "..", "script.js"),
   files: resolveFromRoot(env("LOCAL_SERVER_FILES_DIR", "./files"))
 };
 

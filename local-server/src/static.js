@@ -83,12 +83,17 @@ function isDirectory(filePath) {
 
 export function tryServeStatic(req, res, url) {
   if (url.pathname === "/" || url.pathname === "/start") {
-    sendFile(req, res, path.join(paths.public, "index.html"), "no-store");
+    sendFile(req, res, paths.entryHtml, "no-store");
     return true;
   }
 
   if (url.pathname === "/offline") {
-    sendFile(req, res, path.join(paths.public, "offline.html"), "no-store");
+    sendFile(req, res, paths.offlineHtml, "no-store");
+    return true;
+  }
+
+  if (url.pathname === "/script.js") {
+    sendFile(req, res, paths.sharedScript, "public, max-age=3600");
     return true;
   }
 
@@ -97,6 +102,21 @@ export function tryServeStatic(req, res, url) {
     if (assetPath && isReadableFile(assetPath)) {
       sendFile(req, res, assetPath, "public, max-age=3600");
       return true;
+    }
+  }
+
+  if (url.pathname.startsWith("/games/")) {
+    const gamePath = resolveInside(paths.sharedGames, url.pathname.slice("/games/".length));
+    if (gamePath && isReadableFile(gamePath)) {
+      sendFile(req, res, gamePath, "public, max-age=3600");
+      return true;
+    }
+    if (gamePath && isDirectory(gamePath)) {
+      const indexPath = path.join(gamePath, "index.html");
+      if (isReadableFile(indexPath)) {
+        sendFile(req, res, indexPath, "no-store");
+        return true;
+      }
     }
   }
 
