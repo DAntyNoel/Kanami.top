@@ -12,6 +12,59 @@
 <body>
   <div class="background" style="background-image: url('res/images/backgrounds/Soda.png');"></div>
 
+  <header class="site-header" data-site-header="local-server">
+    <a href="/" class="site-logo" aria-label="回到本地服务主目录">
+      <img src="res/images/favicon.png" alt="local-server logo" />
+      <span class="site-logo-text">local-server</span>
+    </a>
+    <nav class="site-nav" aria-label="服务入口">
+      <button type="button" class="site-nav-link profile-trigger" data-login-trigger aria-haspopup="dialog" aria-expanded="false">
+        <img src="res/images/favicon.png" alt="" class="site-user-avatar" data-profile-avatar hidden />
+        <span class="site-profile-label" data-profile-label>登录</span>
+      </button>
+      <a href="https://kanami.top/" class="site-nav-link site-nav-link-primary">静态主站</a>
+    </nav>
+  </header>
+
+  <div class="profile-panel" data-profile-panel hidden>
+    <div class="profile-panel-backdrop" data-profile-close></div>
+    <section class="profile-dialog" role="dialog" aria-modal="true" aria-labelledby="profile-title">
+      <div class="profile-dialog-header">
+        <div>
+          <p class="profile-eyebrow">Local Server Account</p>
+          <h2 id="profile-title">登录资料</h2>
+        </div>
+        <button type="button" class="profile-close" data-profile-close aria-label="关闭登录资料">&times;</button>
+      </div>
+      <form class="profile-form" data-profile-form>
+        <div class="profile-preview">
+          <img src="res/images/favicon.png" alt="" data-profile-preview />
+          <p data-profile-status>香奈美会把你的资料保存在这台设备上。</p>
+        </div>
+        <label>
+          <span>昵称</span>
+          <input name="nickname" type="text" maxlength="24" placeholder="香奈美的来宾" autocomplete="nickname" />
+        </label>
+        <label>
+          <span>绑定 QQ 号</span>
+          <input name="qq" type="text" inputmode="numeric" pattern="[0-9]{5,12}" maxlength="12" placeholder="请输入 QQ 号" autocomplete="off" />
+        </label>
+        <label>
+          <span>头像地址</span>
+          <input name="avatarUrl" type="url" placeholder="https://example.com/avatar.png" autocomplete="off" />
+        </label>
+        <label>
+          <span>上传头像</span>
+          <input name="avatarFile" type="file" accept="image/*" />
+        </label>
+        <div class="profile-actions">
+          <button type="submit" class="profile-submit">保存登录</button>
+          <button type="button" class="profile-clear" data-profile-clear>退出登录</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
   <main class="main-content">
     <section class="section welcome">
       <h1>Local Server 暂时离线</h1>
@@ -20,5 +73,6 @@
       <a href="/" class="btn">回到入口</a>
     </section>
   </main>
+  <script src="script.js"></script>
 </body>
 </html>
