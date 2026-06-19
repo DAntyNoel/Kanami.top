@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>香奈美 Local Server - 已连接到远程</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="icon" type="image/png" href="/res/images/favicon.png" />
+</head>
+<body>
+  <div class="background"></div>
+
+  <main class="main-content">
+    <section class="section welcome">
+      <p class="eyebrow">KANAMI LOCAL SERVER</p>
+      <h1>Welcome to Kanami's Local Stage!</h1>
+      <p><span class="highlight">香奈美已经把本地舞台接到远程啦。</span></p>
+      <p>这里会作为本地文件映射端口的默认入口，香奈美会帮你确认通道、健康状态和文件映射是否都在发光。</p>
+      <a class="btn" href="/health">查看 health</a>
+    </section>
+
+    <section class="section connection" data-connection-panel data-state="connected">
+      <div class="section-header">
+        <h2>Remote Link</h2>
+        <span class="status-pill" data-connection-badge>已连接到远程</span>
+      </div>
+      <div class="connection-grid" aria-label="local server connection status">
+        <div class="metric">
+          <span class="metric-label">远程入口</span>
+          <span class="metric-value" data-remote-url>https://local-server.kanami.top</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">本地目标</span>
+          <span class="metric-value" data-local-target>http://127.0.0.1:12700</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">文件映射</span>
+          <span class="metric-value" data-file-route>/files/</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">最近检查</span>
+          <span class="metric-value" data-checked-at>等待 health</span>
+        </div>
+      </div>
+      <p class="fine-print">映射根目录：<span data-file-root>./files</span></p>
+    </section>
+
+    <section class="section services">
+      <div class="section-header">
+        <h2>KANAMI Service Gate</h2>
+      </div>
+      <p class="services-lead">香奈美把常用入口放在这里，需要确认状态时直接点开就好。</p>
+      <div class="service-grid" aria-label="KANAMI local server routes">
+        <a href="/health" class="service-card service-card-live">
+          <span class="service-card-status">Health</span>
+          <span class="service-card-title">状态路由</span>
+          <span class="service-card-copy">返回当前服务、隧道目标和文件映射目录的 JSON 状态。</span>
+          <span class="service-card-action">Open /health</span>
+        </a>
+        <a href="/files/" class="service-card service-card-live">
+          <span class="service-card-status">Files</span>
+          <span class="service-card-title">文件映射</span>
+          <span class="service-card-copy">未来本地文件会从这里映射出去，目录越界会被拦住。</span>
+          <span class="service-card-action">Open /files/</span>
+        </a>
+        <a href="/offline" class="service-card service-card-live">
+          <span class="service-card-status">Fallback</span>
+          <span class="service-card-title">离线展示</span>
+          <span class="service-card-copy">当本地端口或远程隧道离线时，可以使用这个页面兜底。</span>
+          <span class="service-card-action">Open /offline</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="section stamps">
+      <div class="section-header">
+        <h2>KANAMI Stamps</h2>
+        <button class="btn-small" type="button" data-shuffle-stamps>换一组</button>
+      </div>
+      <div class="stamps-grid" data-stamps-grid></div>
+      <p class="fine-print">香奈美会在这里守着本地入口，通道亮着就安心交给我吧。</p>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

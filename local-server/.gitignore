@@ -1,0 +1,7 @@
+.env
+.run/
+*.log
+node_modules/
+
+files/*
+!files/.gitkeep
