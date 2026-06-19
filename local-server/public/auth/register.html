@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>注册 - Kanami Local Server</title>
+  <link rel="stylesheet" href="/res/styles/style.css" />
+  <link rel="stylesheet" href="/auth/auth.css" />
+  <link rel="icon" type="image/png" href="/res/images/favicon.png" />
+</head>
+<body data-auth-page="register">
+  <div class="background"></div>
+
+  <header class="site-header" data-site-header="local-server">
+    <a href="/" class="site-logo" aria-label="回到本地服务主目录">
+      <img src="/res/images/favicon.png" alt="local-server logo" />
+      <span class="site-logo-text">local-server</span>
+    </a>
+    <nav class="site-nav" aria-label="服务入口">
+      <a href="/auth/login" class="site-nav-link" data-auth-entry data-auth-login-url="/auth/login" data-auth-profile-url="/auth/profile">
+        <img src="/res/images/favicon.png" alt="" class="site-user-avatar" data-auth-avatar hidden />
+        <span class="site-profile-label" data-auth-label>登录</span>
+      </a>
+      <a href="https://kanami.top/" class="site-nav-link site-nav-link-primary">静态主站</a>
+    </nav>
+  </header>
+
+  <main class="auth-shell">
+    <section class="auth-card auth-card-wide" aria-labelledby="auth-title">
+      <div class="auth-brand">
+        <img src="/res/images/favicon.png" alt="" />
+        <div>
+          <p class="auth-kicker">Kanami Local Server</p>
+          <h1 id="auth-title">创建账号</h1>
+        </div>
+      </div>
+
+      <form class="auth-form" data-auth-form="register">
+        <label>
+          <span>账号邮箱</span>
+          <input name="email" type="email" autocomplete="email" required placeholder="you@example.com" />
+        </label>
+        <div class="auth-field-row">
+          <label>
+            <span>密码</span>
+            <input name="password" type="password" autocomplete="new-password" minlength="6" required placeholder="至少 6 位" />
+          </label>
+          <label>
+            <span>确认密码</span>
+            <input name="passwordConfirm" type="password" autocomplete="new-password" minlength="6" required placeholder="再输入一次" />
+          </label>
+        </div>
+        <div class="auth-field-row">
+          <label>
+            <span>昵称</span>
+            <input name="nickname" type="text" maxlength="24" autocomplete="nickname" placeholder="香奈美的来宾" />
+          </label>
+          <label>
+            <span>QQ 号</span>
+            <input name="qq" type="text" inputmode="numeric" pattern="[0-9]{5,12}" maxlength="12" autocomplete="off" placeholder="可稍后绑定" />
+          </label>
+        </div>
+        <label>
+          <span>头像地址</span>
+          <input name="avatarUrl" type="url" autocomplete="off" placeholder="https://example.com/avatar.png" />
+        </label>
+        <label>
+          <span>上传头像</span>
+          <input name="avatarFile" type="file" accept="image/*" />
+        </label>
+        <div class="auth-avatar-preview">
+          <img src="/res/images/favicon.png" alt="" data-auth-preview />
+          <span data-auth-preview-label>香奈美会把头像存在这台设备上。</span>
+        </div>
+        <p class="auth-message" data-auth-message aria-live="polite"></p>
+        <button type="submit" class="auth-submit">注册并登录</button>
+      </form>
+
+      <p class="auth-switch">已经有账号了？<a href="/auth/login">去登录</a></p>
+    </section>
+  </main>
+
+  <script src="/auth/auth.js"></script>
+</body>
+</html>

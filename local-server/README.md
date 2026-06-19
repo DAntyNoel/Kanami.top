@@ -41,6 +41,7 @@ npm run cloudflare
 - `/` 或 `/start`：读取根目录的 `local-server.html`。
 - `/offline`：读取根目录的 `local-server-offline.html`。
 - `/health`：健康检查 JSON，包含本地端口、远程域名和文件映射目录状态。
+- `/auth/login`、`/auth/register`、`/auth/profile`：读取 `public/auth/` 下的本地账号页面和前端逻辑。
 - `/files/<path>`：从 `LOCAL_SERVER_FILES_DIR` 指向的目录中安全映射文件。
 
 CSS、脚本、图片和游戏入口复用主站根目录资源；真实映射文件放在 `files/`，不会被提交。

@@ -19,6 +19,14 @@ const MIME_TYPES = new Map([
   [".zip", "application/zip"]
 ]);
 
+const AUTH_ROUTES = new Map([
+  ["/auth", "auth/login.html"],
+  ["/auth/", "auth/login.html"],
+  ["/auth/login", "auth/login.html"],
+  ["/auth/register", "auth/register.html"],
+  ["/auth/profile", "auth/profile.html"]
+]);
+
 export function sendJson(req, res, status, payload) {
   res.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
@@ -89,6 +97,20 @@ export function tryServeStatic(req, res, url) {
 
   if (url.pathname === "/offline") {
     sendFile(req, res, paths.offlineHtml, "no-store");
+    return true;
+  }
+
+  const authRoute = AUTH_ROUTES.get(url.pathname);
+  if (authRoute) {
+    const authPath = path.join(paths.public, authRoute);
+    if (isReadableFile(authPath)) {
+      sendFile(req, res, authPath, "no-store");
+      return true;
+    }
+    sendJson(req, res, 404, {
+      error: "AUTH_PAGE_NOT_FOUND",
+      message: "香奈美没有找到这个账号入口。"
+    });
     return true;
   }
 

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>登录 - Kanami Local Server</title>
+  <link rel="stylesheet" href="/res/styles/style.css" />
+  <link rel="stylesheet" href="/auth/auth.css" />
+  <link rel="icon" type="image/png" href="/res/images/favicon.png" />
+</head>
+<body data-auth-page="login">
+  <div class="background"></div>
+
+  <header class="site-header" data-site-header="local-server">
+    <a href="/" class="site-logo" aria-label="回到本地服务主目录">
+      <img src="/res/images/favicon.png" alt="local-server logo" />
+      <span class="site-logo-text">local-server</span>
+    </a>
+    <nav class="site-nav" aria-label="服务入口">
+      <a href="/auth/login" class="site-nav-link" data-auth-entry data-auth-login-url="/auth/login" data-auth-profile-url="/auth/profile">
+        <img src="/res/images/favicon.png" alt="" class="site-user-avatar" data-auth-avatar hidden />
+        <span class="site-profile-label" data-auth-label>登录</span>
+      </a>
+      <a href="https://kanami.top/" class="site-nav-link site-nav-link-primary">静态主站</a>
+    </nav>
+  </header>
+
+  <main class="auth-shell">
+    <section class="auth-card" aria-labelledby="auth-title">
+      <div class="auth-brand">
+        <img src="/res/images/favicon.png" alt="" />
+        <div>
+          <p class="auth-kicker">Kanami Local Server</p>
+          <h1 id="auth-title">欢迎回来</h1>
+        </div>
+      </div>
+
+      <form class="auth-form" data-auth-form="login">
+        <label>
+          <span>账号邮箱</span>
+          <input name="email" type="email" autocomplete="email" required placeholder="you@example.com" />
+        </label>
+        <label>
+          <span>密码</span>
+          <input name="password" type="password" autocomplete="current-password" required placeholder="请输入密码" />
+        </label>
+        <p class="auth-message" data-auth-message aria-live="polite"></p>
+        <button type="submit" class="auth-submit">登录</button>
+      </form>
+
+      <p class="auth-switch">还没有账号？<a href="/auth/register">注册一个</a></p>
+    </section>
+  </main>
+
+  <script src="/auth/auth.js"></script>
+</body>
+</html>
