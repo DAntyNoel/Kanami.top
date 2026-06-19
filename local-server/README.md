@@ -22,6 +22,8 @@ python backend.py --port 12701
 npm run backend:python
 ```
 
+如果默认端口已被 local-server 占用，入口会提示服务已经在运行；如果端口被其他进程占用，可用 `--port 12701` 切到另一个本地调试端口。
+
 Cloudflare Tunnel 入口：
 
 ```powershell

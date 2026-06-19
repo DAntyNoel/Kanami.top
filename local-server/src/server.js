@@ -70,6 +70,18 @@ const server = http.createServer((req, res) => {
   }
 });
 
+server.on("error", (error) => {
+  if (error.code === "EADDRINUSE") {
+    console.error(`${config.serviceName} could not start because ${config.host}:${config.port} is already in use.`);
+    console.error("Stop the existing process or use another LOCAL_SERVER_PORT.");
+    process.exit(98);
+    return;
+  }
+
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exit(1);
+});
+
 server.listen(config.port, config.host, () => {
   console.log(`${config.serviceName} listening at http://${config.host}:${config.port}/`);
 });
