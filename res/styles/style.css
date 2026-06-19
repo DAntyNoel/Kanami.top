@@ -109,6 +109,12 @@ body {
     background: linear-gradient(135deg, rgba(247, 200, 224, 0.95), rgba(255, 238, 172, 0.94));
 }
 
+.site-nav-link-reload {
+    max-width: 112px;
+    background: rgba(255, 255, 255, 0.64);
+    color: #5b66c4;
+}
+
 .site-user-avatar {
     width: 24px;
     height: 24px;
@@ -300,6 +306,14 @@ p {
         max-width: 118px;
         padding: 0 9px;
         font-size: 0.86rem;
+    }
+
+    .site-header[data-site-header="local-server"] .site-logo-text {
+        display: none;
+    }
+
+    .site-nav-link-reload {
+        max-width: 76px;
     }
 
     .main-content {

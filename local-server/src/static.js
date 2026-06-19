@@ -27,6 +27,63 @@ const AUTH_ROUTES = new Map([
   ["/auth/profile", "auth/profile.html"]
 ]);
 
+let reloadState = {
+  token: String(Date.now()),
+  next: ""
+};
+
+function reloadLocation(nextPath) {
+  const fallback = "/";
+  const value = nextPath || fallback;
+  if (!value.startsWith("/") || value.startsWith("//") || value.includes("\\")) {
+    return fallback;
+  }
+
+  const target = new URL(value, "http://local-server");
+  target.searchParams.set("_kanami_reload", String(Date.now()));
+  return `${target.pathname}${target.search}${target.hash}`;
+}
+
+function sendReloadJson(req, res) {
+  res.writeHead(200, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store, max-age=0, must-revalidate"
+  });
+
+  if (req.method === "HEAD") {
+    res.end();
+    return;
+  }
+
+  res.end(JSON.stringify({
+    ok: true,
+    token: reloadState.token,
+    next: reloadState.next
+  }, null, 2));
+}
+
+function sendCacheReload(req, res, url) {
+  reloadState = {
+    token: String(Date.now()),
+    next: reloadLocation(url.searchParams.get("next"))
+  };
+
+  res.writeHead(302, {
+    "Cache-Control": "no-store, max-age=0, must-revalidate",
+    "Clear-Site-Data": "\"cache\"",
+    "Location": reloadState.next
+  });
+  res.end();
+}
+
+function sendExternalReload(req, res, url) {
+  reloadState = {
+    token: String(Date.now()),
+    next: url.searchParams.has("next") ? reloadLocation(url.searchParams.get("next")) : ""
+  };
+  sendReloadJson(req, res);
+}
+
 export function sendJson(req, res, status, payload) {
   res.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
@@ -90,6 +147,21 @@ function isDirectory(filePath) {
 }
 
 export function tryServeStatic(req, res, url) {
+  if (url.pathname === "/__reload/state") {
+    sendReloadJson(req, res);
+    return true;
+  }
+
+  if (url.pathname === "/__reload/trigger") {
+    sendExternalReload(req, res, url);
+    return true;
+  }
+
+  if (url.pathname === "/__reload") {
+    sendCacheReload(req, res, url);
+    return true;
+  }
+
   if (url.pathname === "/" || url.pathname === "/start") {
     sendFile(req, res, paths.entryHtml, "no-store");
     return true;
@@ -115,14 +187,19 @@ export function tryServeStatic(req, res, url) {
   }
 
   if (url.pathname === "/script.js") {
-    sendFile(req, res, paths.sharedScript, "public, max-age=3600");
+    sendFile(req, res, paths.sharedScript, "no-store");
+    return true;
+  }
+
+  if (url.pathname === "/__reload-client.js") {
+    sendFile(req, res, path.join(paths.public, "reload-client.js"), "no-store");
     return true;
   }
 
   if (url.pathname.startsWith("/res/")) {
     const assetPath = resolveInside(paths.sharedAssets, url.pathname.slice("/res/".length));
     if (assetPath && isReadableFile(assetPath)) {
-      sendFile(req, res, assetPath, "public, max-age=3600");
+      sendFile(req, res, assetPath, "no-store");
       return true;
     }
   }
@@ -144,7 +221,10 @@ export function tryServeStatic(req, res, url) {
 
   const publicPath = resolveInside(paths.public, url.pathname);
   if (publicPath && isReadableFile(publicPath)) {
-    const cacheControl = path.extname(publicPath).toLowerCase() === ".html" ? "no-store" : "public, max-age=3600";
+    const isAuthAsset = url.pathname.startsWith("/auth/");
+    const cacheControl = path.extname(publicPath).toLowerCase() === ".html" || isAuthAsset
+      ? "no-store"
+      : "public, max-age=3600";
     sendFile(req, res, publicPath, cacheControl);
     return true;
   }

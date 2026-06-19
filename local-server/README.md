@@ -14,6 +14,14 @@ cd local-server
 npm start
 ```
 
+已打开页面可以用页眉里的“刷新缓存”按钮清理浏览器缓存并重载。改完代码后，也可以从终端通知已打开页面自动刷新：
+
+```powershell
+npm run reload
+npm run reload -- --next /auth/login
+npm run reload -- --url http://127.0.0.1:12701 --next /auth/register
+```
+
 本地调试的 Python 后端入口：
 
 ```powershell
@@ -42,6 +50,8 @@ npm run cloudflare
 - `/offline`：读取根目录的 `local-server-offline.html`。
 - `/health`：健康检查 JSON，包含本地端口、远程域名和文件映射目录状态。
 - `/auth/login`、`/auth/register`、`/auth/profile`：读取 `public/auth/` 下的本地账号页面和前端逻辑。
+- `/__reload?next=<path>`：临时调试入口，要求浏览器清理站点缓存后回到指定路径。
+- `/__reload/trigger?next=<path>`：终端或外部工具触发已打开页面自动刷新。
 - `/files/<path>`：从 `LOCAL_SERVER_FILES_DIR` 指向的目录中安全映射文件。
 
 CSS、脚本、图片和游戏入口复用主站根目录资源；真实映射文件放在 `files/`，不会被提交。
