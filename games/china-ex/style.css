@@ -47,7 +47,7 @@ a {
   z-index: -2;
   background:
     linear-gradient(120deg, rgba(247, 200, 224, 0.84), rgba(183, 213, 255, 0.7)),
-    url("../res/images/backgrounds/Soda.png") center / cover no-repeat;
+    url("../../res/images/backgrounds/Soda.png") center / cover no-repeat;
 }
 
 .background::after {
