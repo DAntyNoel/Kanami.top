@@ -7,14 +7,32 @@
 
 服务默认监听 `127.0.0.1:12700`，未来用于通过 Cloudflare Tunnel 暴露到 `local-server.kanami.top`。
 
-## 运行
+## 入口
 
 ```powershell
 cd local-server
 npm start
 ```
 
-可选地复制 `.env.example` 为 `.env` 调整监听端口、远程域名和文件映射目录。
+本地调试的 Python 后端入口：
+
+```powershell
+python backend.py
+python backend.py --port 12701
+npm run backend:python
+```
+
+Cloudflare Tunnel 入口：
+
+```powershell
+npm run cloudflare
+```
+
+`cloudflare.js` 会读取 `.env` 或环境变量里的 `TUNNEL_TOKEN`，并执行 `cloudflared tunnel --no-autoupdate run --token ...`。当前模板里 `TUNNEL_TOKEN=` 保持为空，所以这个入口会直接提示未启动，不会误连线上隧道。
+
+## 配置
+
+可复制 `.env.example` 为 `.env` 调整监听端口、远程域名、文件映射目录和 tunnel token。
 
 ## 路由
 

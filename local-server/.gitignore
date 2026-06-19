@@ -1,7 +1,10 @@
 .env
+env
 .run/
 *.log
 node_modules/
+__pycache__/
+*.pyc
 
 files/*
 !files/.gitkeep

@@ -7,7 +7,10 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "check": "node --check src/config.js && node --check src/static.js && node --check src/server.js"
+    "backend:python": "python backend.py",
+    "debug:python": "python backend.py",
+    "cloudflare": "node cloudflare.js",
+    "check": "node --check src/config.js && node --check src/static.js && node --check src/server.js && node --check cloudflare.js && python -m py_compile backend.py"
   },
   "engines": {
     "node": ">=18.18"
