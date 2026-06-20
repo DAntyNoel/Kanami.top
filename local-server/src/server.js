@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import http from "node:http";
 import { config, paths } from "./config.js";
+import { galleryStatus } from "./gallery.js";
 import { sendJson, tryServeMappedFile, tryServeStatic } from "./static.js";
 
 function filesRootReady() {
@@ -27,7 +28,8 @@ function healthPayload() {
       available: filesRootReady(),
       route: config.fileRoutePrefix,
       root: paths.files
-    }
+    },
+    gallery: galleryStatus()
   };
 }
 

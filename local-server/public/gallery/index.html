@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>香奈美图库 - Kanami Local Server</title>
+  <link rel="stylesheet" href="/res/styles/style.css" />
+  <link rel="stylesheet" href="/gallery/gallery.css" />
+  <link rel="icon" type="image/png" href="/res/images/favicon.png" />
+</head>
+<body class="gallery-page">
+  <div class="background"></div>
+
+  <header class="site-header" data-site-header="local-server">
+    <a href="/" class="site-logo" aria-label="回到本地服务主目录">
+      <img src="/res/images/favicon.png" alt="local-server logo" />
+      <span class="site-logo-text">local-server</span>
+    </a>
+    <nav class="site-nav" aria-label="服务入口">
+      <a href="/" class="site-nav-link">本地舞台</a>
+      <a href="/auth/login" class="site-nav-link" data-auth-entry data-auth-login-url="/auth/login" data-auth-profile-url="/auth/profile">
+        <img src="/res/images/favicon.png" alt="" class="site-user-avatar" data-auth-avatar hidden />
+        <span class="site-profile-label" data-auth-label>登录</span>
+      </a>
+      <a href="/__reload?next=/gallery" class="site-nav-link site-nav-link-reload">刷新缓存</a>
+    </nav>
+  </header>
+
+  <main class="gallery-shell">
+    <section class="gallery-overview" aria-labelledby="gallery-title">
+      <div class="gallery-heading">
+        <p class="gallery-kicker">Kanami Gallery</p>
+        <h1 id="gallery-title">香奈美图库</h1>
+        <p>我把 advanced_media 的素材铺开啦，想找哪一张就直接挑吧。</p>
+      </div>
+      <div class="gallery-stats" aria-label="图库统计">
+        <div>
+          <strong data-stat-total>--</strong>
+          <span>张图片</span>
+        </div>
+        <div>
+          <strong data-stat-folders>--</strong>
+          <span>个分类</span>
+        </div>
+        <div>
+          <strong data-stat-shown>--</strong>
+          <span>当前显示</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="gallery-controls" aria-label="图库筛选">
+      <label class="gallery-search">
+        <span>搜索</span>
+        <input type="search" data-gallery-search placeholder="文件名、标签、描述" autocomplete="off" />
+      </label>
+      <label>
+        <span>分类</span>
+        <select data-gallery-folder></select>
+      </label>
+      <label>
+        <span>排序</span>
+        <select data-gallery-sort>
+          <option value="newest">最新在前</option>
+          <option value="oldest">最早在前</option>
+          <option value="name">文件名</option>
+          <option value="size">体积最大</option>
+        </select>
+      </label>
+      <div class="gallery-density" role="group" aria-label="图库密度">
+        <button type="button" data-density="comfortable" aria-pressed="true" title="舒展视图">□</button>
+        <button type="button" data-density="compact" aria-pressed="false" title="紧凑视图">▦</button>
+      </div>
+    </section>
+
+    <section class="gallery-status" data-gallery-status aria-live="polite">香奈美正在翻找图库...</section>
+    <section class="gallery-grid" data-gallery-grid data-density="comfortable" aria-label="图片预览"></section>
+    <div class="gallery-more">
+      <button type="button" class="gallery-load-more" data-gallery-more hidden>再拿一些出来</button>
+    </div>
+  </main>
+
+  <dialog class="gallery-lightbox" data-lightbox>
+    <button type="button" class="lightbox-close" data-lightbox-close aria-label="关闭预览" title="关闭">×</button>
+    <div class="lightbox-body">
+      <button type="button" class="lightbox-step" data-lightbox-prev aria-label="上一张" title="上一张">‹</button>
+      <figure class="lightbox-figure">
+        <img data-lightbox-image alt="" />
+        <figcaption data-lightbox-caption></figcaption>
+      </figure>
+      <aside class="lightbox-detail">
+        <p class="gallery-kicker" data-lightbox-folder></p>
+        <h2 data-lightbox-title></h2>
+        <dl>
+          <div>
+            <dt>文件</dt>
+            <dd data-lightbox-file></dd>
+          </div>
+          <div>
+            <dt>时间</dt>
+            <dd data-lightbox-created></dd>
+          </div>
+          <div>
+            <dt>大小</dt>
+            <dd data-lightbox-size></dd>
+          </div>
+          <div>
+            <dt>标签</dt>
+            <dd data-lightbox-tags></dd>
+          </div>
+        </dl>
+        <p class="lightbox-description" data-lightbox-description></p>
+        <div class="lightbox-actions">
+          <a data-lightbox-open target="_blank" rel="noopener noreferrer">打开原图</a>
+          <button type="button" data-lightbox-copy>复制链接</button>
+        </div>
+        <p class="copy-state" data-lightbox-copy-state aria-live="polite"></p>
+      </aside>
+      <button type="button" class="lightbox-step" data-lightbox-next aria-label="下一张" title="下一张">›</button>
+    </div>
+  </dialog>
+
+  <script src="/auth/session.js"></script>
+  <script src="/gallery/gallery.js"></script>
+  <script src="/__reload-client.js"></script>
+</body>
+</html>

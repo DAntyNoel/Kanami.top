@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { config, paths } from "./config.js";
+import { tryServeGallery } from "./gallery.js";
 
 const MIME_TYPES = new Map([
   [".html", "text/html; charset=utf-8"],
@@ -167,6 +168,10 @@ export function tryServeStatic(req, res, url) {
     return true;
   }
 
+  if (tryServeGallery(req, res, url)) {
+    return true;
+  }
+
   if (url.pathname === "/offline") {
     sendFile(req, res, paths.offlineHtml, "no-store");
     return true;
@@ -222,7 +227,8 @@ export function tryServeStatic(req, res, url) {
   const publicPath = resolveInside(paths.public, url.pathname);
   if (publicPath && isReadableFile(publicPath)) {
     const isAuthAsset = url.pathname.startsWith("/auth/");
-    const cacheControl = path.extname(publicPath).toLowerCase() === ".html" || isAuthAsset
+    const isGalleryAsset = url.pathname.startsWith("/gallery/");
+    const cacheControl = path.extname(publicPath).toLowerCase() === ".html" || isAuthAsset || isGalleryAsset
       ? "no-store"
       : "public, max-age=3600";
     sendFile(req, res, publicPath, cacheControl);
