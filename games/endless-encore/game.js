@@ -578,6 +578,156 @@ function drawParallax(image, factor, y, height, alpha) {
   }
 }
 
+function seededUnit(seed) {
+  const value = Math.sin(seed * 127.1) * 43758.5453123;
+  return value - Math.floor(value);
+}
+
+function fillOval(x, y, width, height) {
+  ctx.save();
+  ctx.translate(x + width / 2, y + height / 2);
+  ctx.scale(width / 2, height / 2);
+  ctx.beginPath();
+  ctx.arc(0, 0, 1, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawBranch(fromX, fromY, toX, toY, width, color) {
+  const bend = (toX - fromX) * 0.28;
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(fromX, fromY);
+  ctx.bezierCurveTo(fromX + bend, fromY - 26, toX - bend * 0.4, toY + 18, toX, toY);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawBlossomCloud(centerX, centerY, radius, seed, alpha) {
+  const colors = ["#ffd3e6", "#ffc1d8", "#fff0f7", "#f8b6d8", "#f4d7ff"];
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  for (let i = 0; i < 12; i += 1) {
+    const angle = seededUnit(seed + i * 1.9) * Math.PI * 2;
+    const distance = radius * (0.08 + seededUnit(seed + i * 2.7) * 0.58);
+    const bloomRadius = radius * (0.34 + seededUnit(seed + i * 3.4) * 0.28);
+    const x = centerX + Math.cos(angle) * distance;
+    const y = centerY + Math.sin(angle) * distance * 0.62;
+    const gradient = ctx.createRadialGradient(x - bloomRadius * 0.25, y - bloomRadius * 0.35, 2, x, y, bloomRadius);
+    gradient.addColorStop(0, "rgba(255,255,255,0.96)");
+    gradient.addColorStop(0.5, colors[i % colors.length]);
+    gradient.addColorStop(1, "rgba(247,136,185,0.72)");
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(x, y, bloomRadius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = "rgba(255,255,255,0.88)";
+  for (let i = 0; i < 9; i += 1) {
+    const angle = seededUnit(seed + i * 4.1) * Math.PI * 2;
+    const distance = radius * (0.16 + seededUnit(seed + i * 5.2) * 0.54);
+    ctx.beginPath();
+    ctx.arc(
+      centerX + Math.cos(angle) * distance,
+      centerY + Math.sin(angle) * distance * 0.58,
+      radius * 0.055,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function drawPetal(x, y, size, rotation, color) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+  ctx.scale(1, 0.58);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(0, 0, size, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawLantern(x, y, seed) {
+  ctx.save();
+  ctx.strokeStyle = "rgba(112,75,130,0.36)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x, y - 28);
+  ctx.lineTo(x, y - 5);
+  ctx.stroke();
+
+  const gradient = ctx.createLinearGradient(x - 12, y - 4, x + 12, y + 24);
+  gradient.addColorStop(0, "#fff7bf");
+  gradient.addColorStop(0.55, "#ffd166");
+  gradient.addColorStop(1, "#ff8fbd");
+  ctx.fillStyle = gradient;
+  roundRect(x - 13, y - 5, 26, 26, 8);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.72)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(118,105,216,0.78)";
+  ctx.font = "900 12px Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(seededUnit(seed) > 0.5 ? "K" : "♪", x, y + 12);
+  ctx.restore();
+}
+
+function drawKanamiTree(x, baseY, scale, seed, alpha = 1) {
+  ctx.save();
+  ctx.translate(x, baseY);
+  ctx.scale(scale, scale);
+  ctx.globalAlpha = alpha;
+
+  ctx.fillStyle = "rgba(72,45,82,0.16)";
+  fillOval(-48, -8, 108, 22);
+
+  const trunkGradient = ctx.createLinearGradient(-18, -142, 18, 4);
+  trunkGradient.addColorStop(0, "#8f5f86");
+  trunkGradient.addColorStop(0.5, "#6d4666");
+  trunkGradient.addColorStop(1, "#3e2d4a");
+  ctx.fillStyle = trunkGradient;
+  ctx.beginPath();
+  ctx.moveTo(-14, 0);
+  ctx.bezierCurveTo(-21, -45, -16, -94, -6, -142);
+  ctx.bezierCurveTo(5, -102, 22, -44, 15, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  drawBranch(-5, -104, -72, -166, 13, "#6d4666");
+  drawBranch(-2, -120, 76, -184, 12, "#704b70");
+  drawBranch(3, -84, 52, -136, 9, "#7b5276");
+  drawBranch(-7, -70, -46, -118, 8, "#6b4565");
+
+  drawBlossomCloud(-66, -178, 54, seed + 3, 0.92);
+  drawBlossomCloud(-24, -204, 62, seed + 11, 0.98);
+  drawBlossomCloud(38, -190, 70, seed + 19, 0.98);
+  drawBlossomCloud(88, -154, 48, seed + 29, 0.88);
+
+  drawLantern(-50, -120, seed + 31);
+  drawLantern(58, -126, seed + 37);
+
+  for (let i = 0; i < 11; i += 1) {
+    const px = -88 + seededUnit(seed + i * 6.7) * 190;
+    const py = -124 + seededUnit(seed + i * 7.3) * 118;
+    const size = 2.4 + seededUnit(seed + i * 8.1) * 2.8;
+    drawPetal(px, py, size, seededUnit(seed + i * 9.5) * Math.PI, "rgba(255,214,232,0.78)");
+  }
+
+  ctx.restore();
+}
+
 function drawBackground() {
   const sky = ctx.createLinearGradient(0, 0, 0, game.height);
   sky.addColorStop(0, "#fff5fb");
@@ -590,18 +740,14 @@ function drawBackground() {
   drawParallax(images.bgShining, 0.18, game.height * 0.1, game.height * 0.58, 0.18);
 
   const camera = game.cameraX;
-  for (let x = -((camera * 0.42) % 180); x < game.width + 180; x += 180) {
-    const base = groundY() - 122;
-    ctx.fillStyle = "rgba(255,255,255,0.55)";
-    roundRect(x + 42, base, 46, 108, 8);
-    ctx.fill();
-    ctx.fillStyle = "rgba(118,105,216,0.36)";
-    ctx.fillRect(x + 55, base + 12, 20, 70);
-    ctx.fillStyle = "rgba(255,112,166,0.34)";
-    ctx.beginPath();
-    ctx.arc(x + 65, base + 16, 44, Math.PI * 0.2, Math.PI * 0.82);
-    ctx.lineWidth = 8;
-    ctx.stroke();
+  for (let x = -((camera * 0.24) % 260) - 80; x < game.width + 280; x += 260) {
+    const seed = Math.floor((camera * 0.24 + x) / 260) + 100;
+    drawKanamiTree(x + 78, groundY() - 2, 0.46 + seededUnit(seed) * 0.06, seed, 0.42);
+  }
+
+  for (let x = -((camera * 0.46) % 330) - 120; x < game.width + 360; x += 330) {
+    const seed = Math.floor((camera * 0.46 + x) / 330) + 220;
+    drawKanamiTree(x + 126, groundY() - 4, 0.68 + seededUnit(seed) * 0.08, seed, 0.76);
   }
 
   const stage = ctx.createLinearGradient(0, groundY(), 0, game.height);
