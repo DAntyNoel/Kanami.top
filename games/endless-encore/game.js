@@ -16,6 +16,7 @@ const controlButtons = Array.from(document.querySelectorAll("[data-control]"));
 const STORAGE_KEY = "kanami-endless-encore-best";
 const DPR_LIMIT = 2;
 const WORLD_SCALE = 9;
+const PLAYER_START_X = 92;
 const ASSET_PATHS = {
   player: "../../res/images/favicon.png",
   portrait: "../../res/images/lovekanami.jpg",
@@ -30,13 +31,12 @@ const images = {};
 const controls = {
   left: false,
   right: false,
-  jump: false,
+  up: false,
   down: false,
   dash: false,
   probe: false
 };
 const pressed = {
-  jump: false,
   dash: false,
   probe: false
 };
@@ -48,6 +48,7 @@ const game = {
   lastTime: 0,
   cameraX: 0,
   distance: 0,
+  maxProgressX: PLAYER_START_X,
   bonusScore: 0,
   combo: 0,
   comboTimer: 0,
@@ -69,17 +70,16 @@ const player = {
   width: 52,
   height: 78,
   baseHeight: 78,
-  slideHeight: 44,
   vx: 0,
   vy: 0,
   hp: 100,
   maxHp: 100,
-  onGround: false,
   invulnerable: 0,
   dashTime: 0,
   dashCooldown: 0,
   probeCooldown: 0,
-  slideTime: 0
+  directionX: 1,
+  directionY: 0
 };
 
 const messages = {
@@ -130,6 +130,25 @@ function groundY() {
   return game.height - 82;
 }
 
+function laneTop() {
+  return Math.max(66, game.height * 0.18);
+}
+
+function laneBottom() {
+  return groundY() - 14;
+}
+
+function randomLaneY(height, lowerBias = 0) {
+  const top = laneTop() + 8;
+  const bottom = laneBottom() - height;
+  const ratio = lowerBias > 0 ? Math.pow(Math.random(), 1 / lowerBias) : Math.random();
+  return lerp(top, Math.max(top, bottom), ratio);
+}
+
+function idlePlayerY() {
+  return clamp(laneBottom() - player.height - 72, laneTop(), laneBottom() - player.height);
+}
+
 function totalScore() {
   return Math.floor(game.distance * 2.25 + game.bonusScore);
 }
@@ -162,6 +181,7 @@ function resetGame() {
   game.lastTime = performance.now();
   game.cameraX = 0;
   game.distance = 0;
+  game.maxProgressX = PLAYER_START_X;
   game.bonusScore = 0;
   game.combo = 0;
   game.comboTimer = 0;
@@ -174,19 +194,19 @@ function resetGame() {
   game.pulse = null;
   game.startedAt = Date.now();
 
-  player.x = 92;
+  player.x = PLAYER_START_X;
   player.width = 52;
   player.height = player.baseHeight;
-  player.y = groundY() - player.height;
-  player.vx = 140;
+  player.y = idlePlayerY();
+  player.vx = 0;
   player.vy = 0;
   player.hp = player.maxHp;
-  player.onGround = true;
   player.invulnerable = 0;
   player.dashTime = 0;
   player.dashCooldown = 0;
   player.probeCooldown = 0;
-  player.slideTime = 0;
+  player.directionX = 1;
+  player.directionY = 0;
 
   overlay.hidden = true;
   startButton.textContent = "重开";
@@ -282,7 +302,7 @@ function spawnObstacle(x, kind) {
     type: "obstacle",
     kind,
     x,
-    y: flying ? groundY() - 132 : groundY() - height,
+    y: flying ? randomLaneY(height) : randomLaneY(height, low ? 2.3 : 1.2),
     width: low ? 74 : flying ? 58 : 48,
     height,
     hit: false,
@@ -292,12 +312,13 @@ function spawnObstacle(x, kind) {
 }
 
 function spawnProbeTarget(x) {
+  const height = 72;
   game.entities.push({
     type: "target",
     x,
-    y: groundY() - 126,
+    y: randomLaneY(height),
     width: 58,
-    height: 72,
+    height,
     scanned: false,
     passed: false,
     phase: rand(0, Math.PI * 2)
@@ -305,12 +326,13 @@ function spawnProbeTarget(x) {
 }
 
 function spawnHeal(x) {
+  const size = 30;
   game.entities.push({
     type: "heal",
     x,
-    y: groundY() - rand(118, 170),
-    width: 30,
-    height: 30,
+    y: randomLaneY(size),
+    width: size,
+    height: size,
     collected: false,
     phase: rand(0, Math.PI * 2)
   });
@@ -350,12 +372,11 @@ function rectsOverlap(a, b) {
 }
 
 function playerRect() {
-  const slideInset = player.height < player.baseHeight ? 12 : 5;
   return {
     x: player.x + 7,
-    y: player.y + slideInset,
+    y: player.y + 6,
     width: player.width - 14,
-    height: player.height - slideInset - 4
+    height: player.height - 12
   };
 }
 
@@ -377,56 +398,70 @@ function triggerDash() {
   player.dashCooldown = 1.35;
   player.invulnerable = Math.max(player.invulnerable, 0.22);
   for (let i = 0; i < 10; i += 1) {
-    spawnParticle(player.x + 6, player.y + player.height / 2, "#41c7d8");
+    spawnParticle(
+      player.x + player.width / 2 - player.directionX * 22,
+      player.y + player.height / 2 - player.directionY * 22,
+      "#41c7d8"
+    );
   }
 }
 
 function updateInput(dt) {
-  const difficulty = clamp(game.distance / 700, 0, 1);
-  let targetSpeed = 130 + difficulty * 56;
-  if (controls.right) targetSpeed += 150;
-  if (controls.left) targetSpeed -= 110;
-  if (controls.down && player.onGround) targetSpeed += 20;
-  if (player.dashTime > 0) targetSpeed += 430;
-  player.vx = lerp(player.vx, Math.max(60, targetSpeed), clamp(dt * 4.6, 0, 1));
+  let inputX = (controls.right ? 1 : 0) - (controls.left ? 1 : 0);
+  let inputY = (controls.down ? 1 : 0) - (controls.up ? 1 : 0);
+  const inputLength = Math.hypot(inputX, inputY);
 
-  if (pressed.jump && player.onGround) {
-    player.vy = -760;
-    player.onGround = false;
-    for (let i = 0; i < 8; i += 1) {
-      spawnParticle(player.x + player.width / 2, groundY() - 4, "#ffd166");
-    }
+  if (inputLength > 0) {
+    inputX /= inputLength;
+    inputY /= inputLength;
+    player.directionX = inputX;
+    player.directionY = inputY;
   }
+
+  const dashActive = player.dashTime > 0;
+  const speed = dashActive ? 610 : 295;
+  const driftX = dashActive && inputLength === 0 ? player.directionX : inputX;
+  const driftY = dashActive && inputLength === 0 ? player.directionY : inputY;
+  const easing = inputLength > 0 || dashActive ? 8.5 : 7.4;
+
+  player.vx = lerp(player.vx, driftX * speed, clamp(dt * easing, 0, 1));
+  player.vy = lerp(player.vy, driftY * speed, clamp(dt * easing, 0, 1));
+
   if (pressed.dash) triggerDash();
   if (pressed.probe) triggerProbe();
 
-  pressed.jump = false;
   pressed.dash = false;
   pressed.probe = false;
 }
 
 function updatePlayer(dt) {
-  const sliding = controls.down && player.onGround;
-  const oldBottom = player.y + player.height;
-  player.height = sliding ? player.slideHeight : player.baseHeight;
-  player.y = oldBottom - player.height;
-
   player.x += player.vx * dt;
-  player.vy += 1900 * dt;
   player.y += player.vy * dt;
 
-  if (player.y + player.height >= groundY()) {
-    player.y = groundY() - player.height;
+  const minX = 24;
+  const minY = laneTop();
+  const maxY = laneBottom() - player.height;
+
+  if (player.x < minX) {
+    player.x = minX;
+    player.vx = 0;
+  }
+  if (player.y < minY) {
+    player.y = minY;
     player.vy = 0;
-    player.onGround = true;
+  }
+  if (player.y > maxY) {
+    player.y = maxY;
+    player.vy = 0;
   }
 
   player.invulnerable = Math.max(0, player.invulnerable - dt);
   player.dashTime = Math.max(0, player.dashTime - dt);
   player.dashCooldown = Math.max(0, player.dashCooldown - dt);
   player.probeCooldown = Math.max(0, player.probeCooldown - dt);
-  game.distance = player.x / WORLD_SCALE;
-  game.cameraX = Math.max(0, player.x - game.width * 0.32);
+  game.maxProgressX = Math.max(game.maxProgressX, player.x);
+  game.distance = Math.max(0, (game.maxProgressX - PLAYER_START_X) / WORLD_SCALE);
+  game.cameraX = Math.max(0, player.x - game.width * 0.42);
 }
 
 function updatePulse(dt) {
@@ -972,9 +1007,9 @@ function mapKey(event) {
   const key = event.key.toLowerCase();
   if (key === "arrowleft" || key === "a") return "left";
   if (key === "arrowright" || key === "d") return "right";
-  if (key === "arrowup" || key === "w" || key === " ") return "jump";
+  if (key === "arrowup" || key === "w") return "up";
   if (key === "arrowdown" || key === "s") return "down";
-  if (key === "shift") return "dash";
+  if (key === "shift" || key === " ") return "dash";
   if (key === "f" || key === "enter") return "probe";
   return "";
 }
@@ -1004,8 +1039,9 @@ window.addEventListener("keydown", (event) => {
     return;
   }
   event.preventDefault();
-  if (game.mode !== "running" && (control === "jump" || control === "probe")) {
+  if (game.mode !== "running") {
     startOrRestart();
+    setControl(control, true);
     return;
   }
   if (!event.repeat) setControl(control, true);
@@ -1022,7 +1058,7 @@ window.addEventListener("blur", releaseAllControls);
 window.addEventListener("resize", () => {
   resizeCanvas();
   if (game.mode !== "running") {
-    player.y = groundY() - player.height;
+    player.y = idlePlayerY();
     draw();
   }
 });
@@ -1059,7 +1095,7 @@ overlayAction.addEventListener("click", startOrRestart);
 
 loadImages();
 resizeCanvas();
-player.y = groundY() - player.height;
+player.y = idlePlayerY();
 bestEl.textContent = String(game.best);
 updateHud();
 draw();
