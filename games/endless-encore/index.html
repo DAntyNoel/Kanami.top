@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Endless Encore</title>
+  <meta name="description" content="在 Kanami.top 游玩香奈美的无尽应援横版小游戏。" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="../../res/images/favicon.png" />
+</head>
+<body>
+  <main class="game-shell">
+    <nav class="topbar" aria-label="Game navigation">
+      <a href="../../index.html">返回 Kanami.top</a>
+      <a href="CREDITS.md">致谢</a>
+    </nav>
+
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">KANAMI GAME</p>
+        <h1>Endless Encore</h1>
+        <p>舞台灯往前铺开啦，跟着香奈美把应援声送到更远的地方。星光越多、节奏越稳，我就唱得越开心哦。</p>
+      </div>
+      <img src="../../res/images/favicon.png" alt="香奈美头像" class="hero-art" />
+    </section>
+
+    <section class="panel hud" aria-label="游戏状态">
+      <div><span>分数</span><strong id="score">0</strong></div>
+      <div><span>距离</span><strong id="distance">0m</strong></div>
+      <div><span>连击</span><strong id="combo">0</strong></div>
+      <div><span>HP</span><strong id="hp">100</strong></div>
+      <div><span>最佳</span><strong id="best">0</strong></div>
+      <button id="start" type="button">开始</button>
+    </section>
+
+    <section class="playfield" aria-label="Endless Encore playfield">
+      <canvas id="game" width="960" height="540" aria-label="香奈美无尽应援舞台"></canvas>
+      <div class="overlay" id="overlay">
+        <p class="overlay-kicker">ENDLESS LIVE</p>
+        <h2 id="overlay-title">准备好了吗？</h2>
+        <p id="overlay-copy">我已经把舞台和灯牌都准备好了。只要你愿意陪我跑下去，今天的安可就不会结束。</p>
+        <button id="overlay-action" type="button">开始巡演</button>
+      </div>
+    </section>
+
+    <section class="touch-controls" aria-label="舞台控制">
+      <button type="button" data-control="left" aria-label="向左" title="向左">←</button>
+      <button type="button" data-control="right" aria-label="向右" title="向右">→</button>
+      <button type="button" data-control="jump" aria-label="跳跃" title="跳跃">↑</button>
+      <button type="button" data-control="down" aria-label="下滑" title="下滑">↓</button>
+      <button type="button" data-control="dash" aria-label="冲刺" title="冲刺">⚡</button>
+      <button type="button" data-control="probe" aria-label="应援光波" title="应援光波">✦</button>
+    </section>
+
+    <section class="panel message" id="message" aria-live="polite">我已经调好耳返啦，等你一起出发。</section>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
