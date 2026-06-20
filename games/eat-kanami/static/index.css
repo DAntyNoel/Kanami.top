@@ -108,6 +108,7 @@ body {
 }
 
 #GameTimeLayer {
+    display: none;
     top: 1em;
     left: 0;
     width: 100%;
@@ -116,6 +117,14 @@ body {
     font-size: 4em;
     text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff;
     overflow: hidden;
+}
+
+.eat-kanami-header {
+    z-index: 10020;
+}
+
+#welcome > .FILL.BOX-M > .container {
+    padding-top: 6rem;
 }
 
 #GameLayerBG {

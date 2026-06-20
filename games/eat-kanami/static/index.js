@@ -243,6 +243,13 @@ const MODE_NORMAL = 1, MODE_ENDLESS = 2, MODE_PRACTICE = 3;
         return cps;
     }
 
+    function updateHeaderValue(id, text) {
+        let element = document.getElementById(id);
+        if (element) {
+            element.textContent = text;
+        }
+    }
+
     function timer() {
         _gameTimeNum--;
         _gameStartTime++;
@@ -258,16 +265,20 @@ const MODE_NORMAL = 1, MODE_ENDLESS = 2, MODE_PRACTICE = 3;
     }
 
     function updatePanel() {
+        updateHeaderValue('score', scoreToString(_gameScore));
         if (mode === MODE_NORMAL) {
-            if (!_gameOver) {
-                GameTimeLayer.innerHTML = createTimeText(_gameTimeNum);
-            }
+            let timeText = _gameOver ? I18N['time-up'] + '!' : createTimeText(_gameTimeNum);
+            if (!_gameOver) GameTimeLayer.innerHTML = timeText;
+            updateHeaderValue('live-status', timeText);
         } else if (mode === MODE_ENDLESS) {
             let cps = getCPS();
             let text = (cps === 0 ? I18N['calculating'] : cps.toFixed(2));
             GameTimeLayer.innerHTML = `CPS:${text}`;
+            updateHeaderValue('live-status', `CPS:${text}`);
+            updateHeaderValue('cps', text);
         } else {
             GameTimeLayer.innerHTML = `SCORE:${_gameScore}`;
+            updateHeaderValue('live-status', `SCORE:${_gameScore}`);
         }
     }
     //使重试按钮获得焦点
@@ -466,7 +477,6 @@ const MODE_NORMAL = 1, MODE_ENDLESS = 2, MODE_PRACTICE = 3;
 
         $('#cps').text(cps.toFixed(2));
         $('#score').text(scoreToString(score));
-        $('#GameScoreLayer-score').css('display', mode === MODE_ENDLESS ? 'none' : '');
         $('#best').text(scoreToString(best));
 
         l.css('display', 'block');

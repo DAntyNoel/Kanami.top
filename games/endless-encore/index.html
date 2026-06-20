@@ -6,30 +6,34 @@
   <title>Endless Encore</title>
   <meta name="description" content="在 Kanami.top 游玩香奈美的无尽应援横版小游戏。" />
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="../shared/game-header.css" />
   <link rel="icon" type="image/png" href="../../res/images/favicon.png" />
 </head>
 <body>
-  <main class="game-shell">
-    <nav class="topbar" aria-label="Game navigation">
-      <a href="../../index.html">返回 Kanami.top</a>
+  <header class="game-header" aria-label="小游戏页眉">
+    <a href="../../index.html" class="game-logo" aria-label="返回 kanami.top">
+      <img src="../../res/images/favicon.png" alt="" />
+      <span>kanami.top</span>
+    </a>
+    <div class="game-header-copy">
+      <p class="game-kicker">KANAMI GAME</p>
+      <h1>Endless Encore</h1>
+      <p>舞台灯往前铺开啦，跟着香奈美把应援声送到更远的地方。星光越多、节奏越稳，我就唱得越开心哦。</p>
+    </div>
+    <section class="game-header-stats" aria-label="游戏状态">
+      <div class="game-stat"><span>分数</span><strong id="score">0</strong></div>
+      <div class="game-stat"><span>距离</span><strong id="distance">0m</strong></div>
+      <div class="game-stat"><span>连击</span><strong id="combo">0</strong></div>
+      <div class="game-stat"><span>HP</span><strong id="hp">100</strong></div>
+      <div class="game-stat"><span>最佳</span><strong id="best">0</strong></div>
+    </section>
+    <nav class="game-header-actions" aria-label="页面导航">
       <a href="CREDITS.md">致谢</a>
     </nav>
+  </header>
 
-    <section class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow">KANAMI GAME</p>
-        <h1>Endless Encore</h1>
-        <p>舞台灯往前铺开啦，跟着香奈美把应援声送到更远的地方。星光越多、节奏越稳，我就唱得越开心哦。</p>
-      </div>
-      <img src="../../res/images/favicon.png" alt="香奈美头像" class="hero-art" />
-    </section>
-
-    <section class="panel hud" aria-label="游戏状态">
-      <div><span>分数</span><strong id="score">0</strong></div>
-      <div><span>距离</span><strong id="distance">0m</strong></div>
-      <div><span>连击</span><strong id="combo">0</strong></div>
-      <div><span>HP</span><strong id="hp">100</strong></div>
-      <div><span>最佳</span><strong id="best">0</strong></div>
+  <main class="game-shell">
+    <section class="panel hud game-action-bar" aria-label="游戏操作">
       <button id="start" type="button">开始</button>
     </section>
 

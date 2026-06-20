@@ -5,28 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>合成大奈美</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="../shared/game-header.css" />
   <link rel="icon" type="image/png" href="../../res/images/favicon.png" />
 </head>
 <body>
-  <main class="game-shell">
-    <nav class="topbar" aria-label="Game navigation">
-      <a href="../../index.html">返回 Kanami.top</a>
-      <a href="CREDITS.md">致谢</a>
-    </nav>
-
-    <section class="hero">
-      <p class="eyebrow">KANAMI GAME</p>
+  <header class="game-header" aria-label="小游戏页眉">
+    <a href="../../index.html" class="game-logo" aria-label="返回 kanami.top">
+      <img src="../../res/images/favicon.png" alt="" />
+      <span>kanami.top</span>
+    </a>
+    <div class="game-header-copy">
+      <p class="game-kicker">KANAMI GAME</p>
       <h1>合成大奈美</h1>
       <p>从杯口放下一颗香奈美小球吧。相同的球碰在一起就会合体，香奈美要慢慢变成超大奈美啦。</p>
-    </section>
-
-    <section class="panel hud">
-      <div><span>分数</span><strong id="score">0</strong></div>
-      <div><span>最佳</span><strong id="best">0</strong></div>
-      <div class="next-wrap">
+    </div>
+    <section class="game-header-stats" aria-label="游戏状态">
+      <div class="game-stat"><span>分数</span><strong id="score">0</strong></div>
+      <div class="game-stat"><span>最佳</span><strong id="best">0</strong></div>
+      <div class="game-stat">
         <span>下一颗</span>
         <canvas id="next-ball" width="66" height="66" aria-label="Next Kanami ball"></canvas>
       </div>
+    </section>
+    <nav class="game-header-actions" aria-label="页面导航">
+      <a href="CREDITS.md">致谢</a>
+    </nav>
+  </header>
+
+  <main class="game-shell">
+    <section class="panel hud game-action-bar" aria-label="游戏操作">
       <button id="restart" type="button">重开</button>
     </section>
 

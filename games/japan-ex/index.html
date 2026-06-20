@@ -6,39 +6,43 @@
   <title>香奈美的日本制霸</title>
   <meta name="description" content="在 Kanami.top 标记日本四十七都道府县制霸进度。" />
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="../shared/game-header.css" />
   <link rel="icon" type="image/png" href="../../res/images/favicon.png" />
 </head>
 <body>
   <div class="background" aria-hidden="true"></div>
 
-  <main class="app-shell">
-    <nav class="topbar" aria-label="页面导航">
-      <a href="../../index.html">返回 Kanami.top</a>
-      <a href="CREDITS.md">致谢</a>
-    </nav>
-
-    <section class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow">KANAMI TOOL</p>
-        <h1>香奈美的日本制霸</h1>
-        <p>把去过的都道府县点亮吧。我会替你记住旅程、算好分数，再把日本制霸图存成图片。</p>
-      </div>
-      <img src="../../res/images/lovekanami.jpg" alt="香奈美应援图" class="hero-art" />
-    </section>
-
-    <section class="scorebar" aria-label="制霸统计">
-      <div>
+  <header class="game-header" aria-label="工具页眉">
+    <a href="../../index.html" class="game-logo" aria-label="返回 kanami.top">
+      <img src="../../res/images/favicon.png" alt="" />
+      <span>kanami.top</span>
+    </a>
+    <div class="game-header-copy">
+      <p class="game-kicker">KANAMI TOOL</p>
+      <h1>香奈美的日本制霸</h1>
+      <p>把去过的都道府县点亮吧。我会替你记住旅程、算好分数，再把日本制霸图存成图片。</p>
+    </div>
+    <section class="game-header-stats" aria-label="制霸统计">
+      <div class="game-stat">
         <span>当前分数</span>
         <strong id="score">0</strong>
       </div>
-      <div>
+      <div class="game-stat">
         <span>点亮地区</span>
         <strong id="visited-count">0/47</strong>
       </div>
-      <div>
+      <div class="game-stat">
         <span>最高等级</span>
         <strong id="top-level">还没开始</strong>
       </div>
+    </section>
+    <nav class="game-header-actions" aria-label="页面导航">
+      <a href="CREDITS.md">致谢</a>
+    </nav>
+  </header>
+
+  <main class="app-shell">
+    <section class="scorebar game-action-bar" aria-label="制霸操作">
       <button id="save-image" type="button">保存图片</button>
       <button id="reset-map" type="button" class="secondary">清空</button>
     </section>

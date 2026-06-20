@@ -5,34 +5,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Kanami Memory</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="../shared/game-header.css" />
   <link rel="icon" type="image/png" href="../../res/images/favicon.png" />
 </head>
 <body>
-  <main class="game-shell">
-    <nav class="topbar" aria-label="Game navigation">
-      <a href="../../index.html">返回 Kanami.top</a>
-      <a href="CREDITS.md">致谢</a>
-    </nav>
-
-    <section class="hero">
-      <p class="eyebrow">KANAMI GAME</p>
+  <header class="game-header" aria-label="小游戏页眉">
+    <a href="../../index.html" class="game-logo" aria-label="返回 kanami.top">
+      <img src="../../res/images/favicon.png" alt="" />
+      <span>kanami.top</span>
+    </a>
+    <div class="game-header-copy">
+      <p class="game-kicker">KANAMI GAME</p>
       <h1>Kanami Memory</h1>
       <p>翻开香奈美准备的卡片吧。记住表情包的位置，全部配对成功就算我赢啦。</p>
-    </section>
-
-    <section class="panel stats" aria-label="Game stats">
-      <div>
+    </div>
+    <section class="game-header-stats" aria-label="游戏状态">
+      <div class="game-stat">
         <span>步数</span>
         <strong id="moves">0</strong>
       </div>
-      <div>
+      <div class="game-stat">
         <span>时间</span>
         <strong id="timer">00:00</strong>
       </div>
-      <div>
+      <div class="game-stat">
         <span>最佳</span>
         <strong id="best">--</strong>
       </div>
+    </section>
+    <nav class="game-header-actions" aria-label="页面导航">
+      <a href="CREDITS.md">致谢</a>
+    </nav>
+  </header>
+
+  <main class="game-shell">
+    <section class="panel stats game-action-bar" aria-label="游戏操作">
       <button id="restart" type="button">重开</button>
     </section>
 
