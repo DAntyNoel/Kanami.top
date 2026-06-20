@@ -31,10 +31,17 @@ function sendFile(req, res, filePath) {
 }
 
 function resolveInside(baseDir, requestPath) {
-  const decoded = decodeURIComponent(requestPath);
+  let decoded;
+  try {
+    decoded = decodeURIComponent(requestPath);
+  } catch {
+    return null;
+  }
+
   const safePath = decoded.replace(/^\/+/, "");
   const absolutePath = path.resolve(baseDir, safePath);
-  if (absolutePath !== baseDir && !absolutePath.startsWith(`${baseDir}${path.sep}`)) {
+  const relativePath = path.relative(baseDir, absolutePath);
+  if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
     return null;
   }
   return absolutePath;

@@ -55,3 +55,5 @@ npm run cloudflare
 - `/files/<path>`：从 `LOCAL_SERVER_FILES_DIR` 指向的目录中安全映射文件。
 
 CSS、脚本、图片和游戏入口复用主站根目录资源；真实映射文件放在 `files/`，不会被提交。
+
+`/auth/*` 当前是本地调试资料页，账号和头像只保存在当前浏览器的 `localStorage` 中。它可以用于本地展示登录态，但不等同于公网服务端认证。

@@ -524,9 +524,19 @@ const MODE_NORMAL = 1, MODE_ENDLESS = 2, MODE_PRACTICE = 3;
                     "; domain=" + arguments[3] + (arguments[4] ? "; path=" + arguments[4] + (arguments[5] ? "; secure" : "") : "") :
                     "") : ""), !0;
             }
-            return value = document.cookie.match("(?:^|;)\\s*" + name.replace(/([-.*+?^${}()|[\]\/\\])/g, "\\$1") + "=([^;]*)"),
-                value = value && "string" == typeof value[1] ? unescape(value[1]) : !1, (/^(\{|\[).+\}|\]$/.test(value) ||
-                /^[0-9]+$/g.test(value)) && eval("value=" + value), value;
+            value = document.cookie.match("(?:^|;)\\s*" + name.replace(/([-.*+?^${}()|[\]\/\\])/g, "\\$1") + "=([^;]*)");
+            value = value && "string" == typeof value[1] ? unescape(value[1]) : !1;
+            if (typeof value === "string" && /^-?[0-9]+(?:\.[0-9]+)?$/.test(value)) {
+                return Number(value);
+            }
+            if (typeof value === "string" && /^(\{.*\}|\[.*\])$/.test(value)) {
+                try {
+                    return JSON.parse(value);
+                } catch (error) {
+                    return value;
+                }
+            }
+            return value;
         }
         let data = {};
         value = document.cookie.replace(/\s/g, "").split(";");

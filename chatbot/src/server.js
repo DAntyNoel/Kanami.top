@@ -5,6 +5,8 @@ import { isApiKeyRequired, providerHeaders, resolveProvider } from "./provider.j
 import { tryServeStatic } from "./static.js";
 
 const rateBuckets = new Map();
+const rateLimitWindowMs = 60000;
+let lastRateLimitSweep = 0;
 
 function json(res, status, payload, headers = {}) {
   res.writeHead(status, {
@@ -39,9 +41,16 @@ function clientIp(req) {
 function checkRateLimit(req) {
   const key = clientIp(req);
   const now = Date.now();
-  const bucket = rateBuckets.get(key) ?? { resetAt: now + 60000, count: 0 };
+  if (now - lastRateLimitSweep > rateLimitWindowMs) {
+    for (const [bucketKey, bucket] of rateBuckets) {
+      if (now > bucket.resetAt) rateBuckets.delete(bucketKey);
+    }
+    lastRateLimitSweep = now;
+  }
+
+  const bucket = rateBuckets.get(key) ?? { resetAt: now + rateLimitWindowMs, count: 0 };
   if (now > bucket.resetAt) {
-    bucket.resetAt = now + 60000;
+    bucket.resetAt = now + rateLimitWindowMs;
     bucket.count = 0;
   }
   bucket.count += 1;

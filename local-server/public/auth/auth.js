@@ -53,12 +53,70 @@
     };
   }
 
+  function bytesToHex(bytes) {
+    return Array.from(bytes)
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("");
+  }
+
+  function hexToBytes(hex) {
+    const bytes = new Uint8Array(hex.length / 2);
+    for (let index = 0; index < bytes.length; index += 1) {
+      bytes[index] = Number.parseInt(hex.slice(index * 2, index * 2 + 2), 16);
+    }
+    return bytes;
+  }
+
   async function passwordDigest(password) {
     const data = new TextEncoder().encode(password);
     const digest = await crypto.subtle.digest("SHA-256", data);
-    return Array.from(new Uint8Array(digest))
-      .map((byte) => byte.toString(16).padStart(2, "0"))
-      .join("");
+    return bytesToHex(new Uint8Array(digest));
+  }
+
+  async function passwordHash(password, salt, iterations = 120000) {
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(password),
+      "PBKDF2",
+      false,
+      ["deriveBits"]
+    );
+    const bits = await crypto.subtle.deriveBits(
+      {
+        name: "PBKDF2",
+        hash: "SHA-256",
+        salt: hexToBytes(salt),
+        iterations
+      },
+      key,
+      256
+    );
+    return bytesToHex(new Uint8Array(bits));
+  }
+
+  async function passwordRecord(password) {
+    const saltBytes = new Uint8Array(16);
+    crypto.getRandomValues(saltBytes);
+    const salt = bytesToHex(saltBytes);
+    return {
+      algorithm: "PBKDF2-SHA256",
+      iterations: 120000,
+      salt,
+      hash: await passwordHash(password, salt)
+    };
+  }
+
+  async function passwordMatches(user, password) {
+    if (user.password && user.password.algorithm === "PBKDF2-SHA256") {
+      if (!user.password.hash || !user.password.salt) return false;
+      return user.password.hash === await passwordHash(
+        password,
+        user.password.salt,
+        user.password.iterations || 120000
+      );
+    }
+
+    return user.passwordHash === await passwordDigest(password);
   }
 
   function normalizeEmail(value) {
@@ -152,11 +210,26 @@
   async function handleLogin(form) {
     const email = normalizeEmail(form.elements.email.value);
     const password = form.elements.password.value;
-    const user = accounts()[email];
+    const saved = accounts();
+    const user = saved[email];
 
-    if (!user || user.passwordHash !== await passwordDigest(password)) {
+    if (!user || !await passwordMatches(user, password)) {
       message(form, "账号或密码不对哦。", "error");
       return;
+    }
+
+    if (!user.password || user.password.algorithm !== "PBKDF2-SHA256") {
+      saved[email] = {
+        ...user,
+        password: await passwordRecord(password),
+        passwordHash: undefined,
+        updatedAt: new Date().toISOString()
+      };
+      try {
+        saveAccounts(saved);
+      } catch {
+        // 登录成功不依赖旧账号哈希迁移。
+      }
     }
 
     setSession(email);
@@ -199,7 +272,7 @@
 
     saved[email] = {
       email,
-      passwordHash: await passwordDigest(password),
+      password: await passwordRecord(password),
       nickname,
       qq,
       avatar,
