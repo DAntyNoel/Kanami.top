@@ -80,7 +80,7 @@ function offlineHtml() {
     <p>香奈美正在重新接上声音通道，等服务恢复后再回到这里，我会继续听你说话的。</p>
     <div class="offline-actions" aria-label="离线页操作">
       <a href="/start">再试一次</a>
-      <a class="secondary" href="https://kanami.top/">回到我的主页</a>
+      <a class="secondary" href="https://kanami.top/">返回主页面</a>
     </div>
   </main>
 </body>
