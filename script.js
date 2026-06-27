@@ -159,6 +159,31 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function mediaDimensions(meta) {
+    const width = Number(meta.width);
+    const height = Number(meta.height);
+    if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+      return null;
+    }
+    return { width, height };
+  }
+
+  function mediaLayoutClass(item, dimensions) {
+    if (item.meta.mediaType !== "image" || !dimensions) return "";
+    const ratio = dimensions.width / dimensions.height;
+    const title = item.title || "";
+    const isWallpaper = item.group === "wallpapers" || item.meta.type === "story_wallpaper";
+    const isLargeWide = dimensions.width >= 900 && ratio >= 1.35;
+    const isNamedLargeWide = /^(\d+px-|壁纸-)/.test(title) && ratio >= 1.35;
+
+    if ((isWallpaper && ratio >= 1.25) || isLargeWide || isNamedLargeWide) {
+      return "wiki-resource-item-featured";
+    }
+    if (ratio <= 0.68) return "wiki-resource-item-portrait";
+    if (ratio >= 1.35) return "wiki-resource-item-landscape";
+    return "";
+  }
+
   function flattenMedia(id, data) {
     return Object.entries(data).map(([url, meta]) => ({
       id: url,
@@ -274,6 +299,12 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderMediaCard(item) {
     const { url, meta, title } = item;
     const card = createEl("article", "wiki-resource-item");
+    const dimensions = mediaDimensions(meta);
+    const layoutClass = mediaLayoutClass(item, dimensions);
+    if (layoutClass) card.classList.add(layoutClass);
+    if (dimensions && meta.mediaType === "image") {
+      card.style.setProperty("--wiki-media-ratio", `${dimensions.width} / ${dimensions.height}`);
+    }
     const thumb = createEl("div", "wiki-resource-thumb");
     if (meta.mediaType === "image") {
       const img = document.createElement("img");
