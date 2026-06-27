@@ -28,42 +28,58 @@ document.addEventListener("DOMContentLoaded", () => {
   
 // 随机表情包展示功能
 document.addEventListener("DOMContentLoaded", () => {
+  const stampsDir = "res/images/stamps/";
+  const fallbackStamps = [
+    { src: `${stampsDir}001.png`, title: "香奈美表情 001" },
+    { src: `${stampsDir}002.jpg`, title: "香奈美表情 002" },
+    { src: `${stampsDir}003.jpg`, title: "香奈美表情 003" },
+    { src: `${stampsDir}004.png`, title: "香奈美表情 004" },
+    { src: `${stampsDir}005.jpg`, title: "香奈美表情 005" }
+  ];
+  const grid = document.getElementById("stamps-grid");
+  const shuffleBtn = document.getElementById("shuffle-stamps");
+  if (!grid || !shuffleBtn) return;
 
-    const stampsDir = "res/images/stamps/";
-    // 假设你提前把所有表情包文件名放入数组
-    // 如果是静态网页，无法自动读取文件夹，需要手动列出
-    const allStamps = [
-        "001.png",
-        "002.jpg",
-        "003.jpg",
-        "004.png",
-        "005.jpg"
-    ];
-    const grid = document.getElementById("stamps-grid");
-    const shuffleBtn = document.getElementById("shuffle-stamps");
-    if (!grid || !shuffleBtn) return;
-  
-    function getRandomStamps() {
-      const count = 2 // Math.floor(Math.random() * 3) + 4; // 4~6 张
-      const shuffled = allStamps.sort(() => 0.5 - Math.random());
-      return shuffled.slice(0, count);
+  let allStamps = fallbackStamps;
+
+  function randomStamps() {
+    const count = Math.min(allStamps.length, Math.max(6, Math.floor(Math.random() * 7) + 6));
+    return [...allStamps]
+      .sort(() => 0.5 - Math.random())
+      .slice(0, count);
+  }
+
+  function renderStamps() {
+    const fragment = document.createDocumentFragment();
+    for (const stamp of randomStamps()) {
+      const img = document.createElement("img");
+      img.src = stamp.src;
+      img.alt = stamp.title || "香奈美表情";
+      img.loading = "lazy";
+      fragment.appendChild(img);
     }
-  
-    function renderStamps() {
-      const stamps = getRandomStamps();
-      grid.innerHTML = "";
-      stamps.forEach(file => {
-        const img = document.createElement("img");
-        img.src = stampsDir + file;
-        img.alt = "KANAMI Stamp";
-        grid.appendChild(img);
-      });
+    grid.replaceChildren(fragment);
+  }
+
+  async function loadWikiStamps() {
+    const response = await fetch("res/WIKI/emotes.json", { cache: "no-store" });
+    if (!response.ok) throw new Error(`emotes.json ${response.status}`);
+    const data = await response.json();
+    const stamps = Object.entries(data)
+      .map(([url, meta]) => ({
+        src: meta.thumbnailUrl || url,
+        title: meta.title || "香奈美 WIKI 表情"
+      }))
+      .filter((stamp) => stamp.src);
+    if (stamps.length) {
+      allStamps = stamps;
     }
-  
-    shuffleBtn.addEventListener("click", renderStamps);
-  
-    renderStamps(); // 初始加载
-  });
+  }
+
+  shuffleBtn.addEventListener("click", renderStamps);
+  renderStamps();
+  loadWikiStamps().then(renderStamps).catch(() => {});
+});
 
 document.addEventListener("DOMContentLoaded", () => {
   const tabs = document.getElementById("wiki-resource-tabs");

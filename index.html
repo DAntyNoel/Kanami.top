@@ -20,129 +20,136 @@
     </a>
     <nav class="site-nav" aria-label="站点入口">
       <a href="/resource/" class="site-nav-link">资源映射</a>
-      <a href="https://local-server.kanami.top/" class="site-nav-link site-nav-link-primary">服务入口</a>
+      <a href="https://chat.kanami.top/start" class="site-nav-link site-nav-link-primary">和我聊天</a>
     </nav>
   </header>
 
   <main class="main-content">
-    <!-- <section class="section hero">
-      <h1>Welcome to Kanami’s World</h1>
-      <p>Click below to visit my blog.</p>
-      <p>下面是临时的个人主页。</p>
-      <p>下のボタンからブログへ。</p>
-      <a href="https://blog.lovekanami.me" class="btn">Enter Blog</a>
-    </section> -->
-
-    <section class="section welcome">
-      <h1>Welcome to Kanami’s World! <span class="emoji">👋</span></h1>
-      <p><span class="highlight">香奈美占领世界！</span> <span class="emoji">✨</span></p>
-      <p>Stay tuned for more amazing content coming soon!</p>
-      <a href="https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E#%E8%A7%92%E8%89%B2%E8%AE%BE%E5%AE%9A" class="btn" target="_blank" rel="noopener noreferrer">LET'S KANAMI！</a>
+    <section class="section welcome home-hero">
+      <div class="welcome-copy">
+        <p class="eyebrow">kanami.top</p>
+        <h1>香奈美的应援舞台，已经为引航者点亮啦</h1>
+        <p><span class="highlight">我会把表情、故事、小游戏和聊天舞台都整理在这里。</span></p>
+        <p>想先从哪里开始呢？香奈美已经把入口摆到最前面了。</p>
+        <div class="hero-actions" aria-label="香奈美主入口">
+          <a href="/resource/" class="btn">进入资源舞台</a>
+          <a href="https://chat.kanami.top/start" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">和香奈美聊天</a>
+          <a href="#games" class="btn btn-quiet">去小游戏区</a>
+        </div>
+      </div>
+      <figure class="welcome-visual">
+        <img src="res/images/lovekanami.jpg" alt="香奈美应援主视觉" />
+        <figcaption>香奈美会在这里唱给你听。</figcaption>
+      </figure>
     </section>
 
     <section class="section stamps">
       <div class="stamps-header">
-        <h2>KANAMI Stamps</h2>
-        <button id="shuffle-stamps" class="btn-small">换一批 🔄</button>
+        <div>
+          <p class="eyebrow">Kanami stamps</p>
+          <h2>香奈美给你挑了一批表情</h2>
+        </div>
+        <button id="shuffle-stamps" class="btn-small">换一批</button>
       </div>
       <div class="stamps-grid" id="stamps-grid">
-        <!-- 随机表情包会在这里生成 -->
       </div>
-      <p>现在还没有多少图片哦～所以你怎么换也都只有这些啦</p>
+      <p class="stamps-note">想看完整素材的话，香奈美已经把 WIKI 资源映射整理好了。</p>
+      <a href="/resource/" class="inline-link">打开资源映射</a>
     </section>
 
-    <section class="section game">
+    <section class="section game" id="games">
       <div class="game-header">
-        <h2>KANAMI Game Zone 🎮</h2>
+        <p class="eyebrow">Kanami games</p>
+        <h2>来玩香奈美的小舞台</h2>
       </div>
       <p class="game-lead">试试香奈美的小游戏吧～</p>
       <div class="game-grid" aria-label="KANAMI games">
         <a href="games/eat-kanami/index.html" target="_blank" rel="noopener noreferrer" class="game-card game-card-live">
-          <span class="game-card-status">Live</span>
+          <span class="game-card-status">可玩</span>
           <span class="game-card-title">EatKanami</span>
           <span class="game-card-copy">点击开凿，挑战手速</span>
-          <span class="game-card-action">Play</span>
+          <span class="game-card-action">开始挑战</span>
         </a>
         <a href="games/memory/index.html" target="_blank" rel="noopener noreferrer" class="game-card game-card-live">
-          <span class="game-card-status">Live</span>
+          <span class="game-card-status">可玩</span>
           <span class="game-card-title">Kanami Memory</span>
           <span class="game-card-copy">翻开表情包，配对香奈美</span>
-          <span class="game-card-action">Play</span>
+          <span class="game-card-action">翻开舞台</span>
         </a>
         <a href="games/catch/index.html" target="_blank" rel="noopener noreferrer" class="game-card game-card-live">
-          <span class="game-card-status">Live</span>
+          <span class="game-card-status">可玩</span>
           <span class="game-card-title">Catch Kanami</span>
           <span class="game-card-copy">点亮舞台，抓住闪现时刻</span>
-          <span class="game-card-action">Play</span>
+          <span class="game-card-action">捕捉星光</span>
         </a>
         <a href="games/endless-encore/index.html" target="_blank" rel="noopener noreferrer" class="game-card game-card-live">
-          <span class="game-card-status">New</span>
+          <span class="game-card-status">新曲</span>
           <span class="game-card-title">Endless Encore</span>
           <span class="game-card-copy">无尽巡演，收集星光躲开暗灯</span>
-          <span class="game-card-action">Play</span>
+          <span class="game-card-action">开启巡演</span>
         </a>
         <a href="games/2048/index.html" target="_blank" rel="noopener noreferrer" class="game-card game-card-live">
-          <span class="game-card-status">Live</span>
+          <span class="game-card-status">可玩</span>
           <span class="game-card-title">Kanami 2048</span>
           <span class="game-card-copy">合成应援元素，冲到终点</span>
-          <span class="game-card-action">Play</span>
+          <span class="game-card-action">开始合成</span>
         </a>
         <a href="games/big-kanami/index.html" target="_blank" rel="noopener noreferrer" class="game-card game-card-live">
-          <span class="game-card-status">Live</span>
+          <span class="game-card-status">可玩</span>
           <span class="game-card-title">合成大奈美</span>
           <span class="game-card-copy">从杯口丢下小球，碰到相同香奈美就合体</span>
-          <span class="game-card-action">Play</span>
+          <span class="game-card-action">投下小球</span>
         </a>
         <a href="games/simon/index.html" target="_blank" rel="noopener noreferrer" class="game-card game-card-live">
-          <span class="game-card-status">Live</span>
+          <span class="game-card-status">可玩</span>
           <span class="game-card-title">Stage Simon</span>
           <span class="game-card-copy">记住灯光旋律，跟上香奈美</span>
-          <span class="game-card-action">Play</span>
+          <span class="game-card-action">跟上节拍</span>
         </a>
         <a href="games/sweeper/index.html" target="_blank" rel="noopener noreferrer" class="game-card game-card-live">
-          <span class="game-card-status">Live</span>
+          <span class="game-card-status">可玩</span>
           <span class="game-card-title">Kanami Sweeper</span>
           <span class="game-card-copy">揭开舞台格，避开星光炸点</span>
-          <span class="game-card-action">Play</span>
+          <span class="game-card-action">揭开格子</span>
         </a>
       </div>
     </section>
 
     <section class="section services">
       <div class="services-header">
-        <h2>KANAMI Service Gate</h2>
+        <p class="eyebrow">Backstage</p>
+        <h2>后台入口</h2>
       </div>
-      <p class="services-lead">新的舞台入口准备好了，香奈美会在这里带你去对应的地方。</p>
-      <div class="game-grid services-grid" aria-label="KANAMI services">
-        <a href="https://chat.kanami.top/start" target="_blank" rel="noopener noreferrer" class="game-card service-card game-card-live">
-          <span class="game-card-status">Chat</span>
-          <span class="game-card-title">Kanami Chatbot</span>
-          <span class="game-card-copy">来和香奈美说说话吧，我会在舞台这边听你说。</span>
-          <span class="game-card-action">Open chat.kanami.top</span>
-        </a>
-        <a href="https://cliproxy.kanami.top/management.html" target="_blank" rel="noopener noreferrer" class="game-card service-card game-card-live">
-          <span class="game-card-status">API</span>
-          <span class="game-card-title">CLIProxy API</span>
-          <span class="game-card-copy">把客户端交给香奈美转发，后台已经在这里待命啦。</span>
-          <span class="game-card-action">Open cliproxy.kanami.top</span>
-        </a>
-        <a href="https://cliproxy-keeper.kanami.top/" target="_blank" rel="noopener noreferrer" class="game-card service-card game-card-live">
-          <span class="game-card-status">Keeper</span>
-          <span class="game-card-title">Usage Keeper</span>
-          <span class="game-card-copy">香奈美会帮你看住用量记录，让转发服务保持闪亮。</span>
-          <span class="game-card-action">Open cliproxy-keeper.kanami.top</span>
-        </a>
+      <p class="services-lead">这里是香奈美给维护者留的入口，普通引航者可以先去资源和小游戏舞台。</p>
+      <details class="backstage-panel">
+        <summary>展开后台入口</summary>
+        <div class="game-grid services-grid" aria-label="KANAMI services">
+          <a href="https://cliproxy.kanami.top/management.html" target="_blank" rel="noopener noreferrer" class="game-card service-card game-card-live">
+            <span class="game-card-status">API</span>
+            <span class="game-card-title">CLIProxy API</span>
+            <span class="game-card-copy">后台转发面板放在这里，香奈美会把普通舞台和管理舞台分开。</span>
+            <span class="game-card-action">打开管理面板</span>
+          </a>
+          <a href="https://cliproxy-keeper.kanami.top/" target="_blank" rel="noopener noreferrer" class="game-card service-card game-card-live">
+            <span class="game-card-status">Keeper</span>
+            <span class="game-card-title">Usage Keeper</span>
+            <span class="game-card-copy">用量记录和转发状态交给后台看守，不打扰前台应援。</span>
+            <span class="game-card-action">查看用量后台</span>
+          </a>
+        </div>
+      </details>
+      <div class="game-grid services-grid public-tools" aria-label="KANAMI public tools">
         <a href="games/china-ex/" class="game-card service-card game-card-live">
-          <span class="game-card-status">Tool</span>
+          <span class="game-card-status">地图</span>
           <span class="game-card-title">香奈美中国制霸</span>
           <span class="game-card-copy">点亮去过的地区，我会帮你算分并生成分享图片。</span>
-          <span class="game-card-action">Open /games/china-ex</span>
+          <span class="game-card-action">点亮地图</span>
         </a>
         <a href="games/japan-ex/" class="game-card service-card game-card-live">
-          <span class="game-card-status">Tool</span>
+          <span class="game-card-status">地图</span>
           <span class="game-card-title">香奈美日本制霸</span>
           <span class="game-card-copy">点亮去过的都道府县，我会帮你做成日本制霸图。</span>
-          <span class="game-card-action">Open /games/japan-ex</span>
+          <span class="game-card-action">点亮地图</span>
         </a>
       </div>
     </section>

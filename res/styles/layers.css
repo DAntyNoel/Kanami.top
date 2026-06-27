@@ -6,20 +6,15 @@
     box-shadow: 0 0 40px rgba(255, 255, 255, 0.05);
 }
 
-.welcome {
-    background: rgba(255, 255, 255, 0.8);
-    padding: 60px 80px;
-}
-
 .section {
     width: 100%;
     background: rgba(255, 255, 255, 0.95);
-    border-radius: 20px;
+    border-radius: 8px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.2);
     padding: 30px 20px;
-    max-width: 600px;
+    max-width: 980px;
     animation: fadeIn 1s ease-in;
-    text-align: center;
+    text-align: left;
 }
 
 @keyframes fadeIn {

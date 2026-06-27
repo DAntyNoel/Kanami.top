@@ -1,23 +1,25 @@
 .stamps {
     width: 100%;
-    border-radius: 20px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-    padding: 30px 20px;
 }
 
 .stamps-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    gap: 18px;
     margin-bottom: 20px;
 }
   
 .btn-small {
+    min-height: 42px;
     padding: 0.4rem 1rem;
-    font-size: 1.3rem;
-    border-radius: 10px;
+    color: #3d2f45;
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 800;
+    border-radius: 8px;
     background: linear-gradient(135deg, #f7c8e0, #b7d5ff);
-    border: none;
+    border: 1px solid rgba(112, 74, 117, 0.14);
     cursor: pointer;
     transition: all 0.3s ease;
 }
@@ -29,19 +31,30 @@
   
 .stamps-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, 200px); 
-    gap: 15px;
-    justify-content: center; 
+    grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+    gap: 12px;
 }
   
 .stamps-grid img {
-    width: 200px;       
-    height: 200px;     
+    width: 100%;
+    aspect-ratio: 1;
     object-fit: contain;
-    border-radius: 10px;
+    border: 1px solid rgba(112, 74, 117, 0.12);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.82);
     transition: transform 0.3s ease;
 }
   
 .stamps-grid img:hover {
     transform: scale(1.1);
+}
+
+.stamps-note {
+    margin-top: 18px;
+    margin-bottom: 8px;
+}
+
+.inline-link {
+    color: #704a75;
+    font-weight: 800;
 }

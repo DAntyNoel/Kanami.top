@@ -13,6 +13,15 @@ body {
     position: relative;
 }
 
+.eyebrow {
+    margin-bottom: 8px;
+    color: #7b5380;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
 .background {
     position: fixed;
     top: 0;
@@ -142,9 +151,10 @@ body {
 
 h1 {
     font-size: 2rem;
-    color: #667eea;
-    margin-bottom: 20px;
-    font-weight: 600;
+    color: #42314d;
+    margin-bottom: 18px;
+    font-weight: 850;
+    line-height: 1.06;
 }
 
 h2 {
@@ -163,8 +173,8 @@ p {
 }
 
 .highlight {
-    color: #764ba2;
-    font-weight: 600;
+    color: #704a75;
+    font-weight: 700;
 }
 
 .emoji {
@@ -173,20 +183,79 @@ p {
 
 
 .btn {
-    display: inline-block;
-    background: linear-gradient(135deg, #f7c8e0, #b7d5ff);
-    color: #333;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    background: linear-gradient(135deg, #ffe5a6, #f7c8e0);
+    color: #3d2f45;
     text-decoration: none;
-    padding: 0.75rem 1.75rem;
-    border-radius: 25px;
-    font-weight: 600;
-    margin-top: 15px;
+    padding: 0.75rem 1.2rem;
+    border: 1px solid rgba(112, 74, 117, 0.16);
+    border-radius: 8px;
+    font-weight: 800;
     transition: all 0.3s ease;
   }
   
 .btn:hover {
     transform: scale(1.08);
     box-shadow: 0 0 20px rgba(255, 200, 230, 0.7);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #c9e7ff, #f7c8e0);
+}
+
+.btn-quiet {
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.home-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.75fr);
+    align-items: center;
+    gap: clamp(28px, 5vw, 58px);
+    min-height: min(720px, calc(100vh - 124px));
+    padding: clamp(30px, 6vw, 72px);
+    background: linear-gradient(110deg, rgba(255, 255, 255, 0.96), rgba(255, 246, 228, 0.88));
+}
+
+.home-hero h1 {
+    font-size: 4.2rem;
+}
+
+.welcome-copy p {
+    max-width: 620px;
+}
+
+.hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.welcome-visual {
+    margin: 0;
+}
+
+.welcome-visual img {
+    display: block;
+    width: min(100%, 420px);
+    margin-left: auto;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border: 1px solid rgba(112, 74, 117, 0.18);
+    border-radius: 8px;
+    box-shadow: 0 24px 58px rgba(63, 45, 70, 0.22);
+}
+
+.welcome-visual figcaption {
+    margin-top: 12px;
+    color: #704a75;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-align: right;
 }
 
 .services-lead {
@@ -209,6 +278,31 @@ p {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 14px;
+}
+
+.public-tools {
+    margin-top: 18px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.backstage-panel {
+    margin: 4px 0 18px;
+    border: 1px solid rgba(112, 74, 117, 0.14);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.68);
+}
+
+.backstage-panel summary {
+    min-height: 48px;
+    padding: 14px 16px;
+    color: #45335f;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.backstage-panel .services-grid {
+    padding: 0 16px 16px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .game-card {
@@ -321,11 +415,31 @@ p {
         gap: 28px;
     }
 
-    .welcome {
-        padding: 42px 24px;
+    .home-hero h1 {
+        font-size: 2.15rem;
     }
 
-    .game-grid {
+    .home-hero {
+        grid-template-columns: 1fr;
+        min-height: auto;
+        padding: 34px 22px;
+    }
+
+    .welcome-visual img {
+        width: 100%;
+    }
+
+    .welcome-visual figcaption {
+        text-align: left;
+    }
+
+    .hero-actions {
+        flex-direction: column;
+    }
+
+    .game-grid,
+    .public-tools,
+    .backstage-panel .services-grid {
         grid-template-columns: 1fr;
     }
 
@@ -335,7 +449,25 @@ p {
 }
 
 @media (max-width: 720px) and (min-width: 521px) {
-    .game-grid {
+    .home-hero h1 {
+        font-size: 3rem;
+    }
+
+    .home-hero {
+        grid-template-columns: 1fr;
+    }
+
+    .welcome-visual img {
+        margin-left: 0;
+    }
+
+    .welcome-visual figcaption {
+        text-align: left;
+    }
+
+    .game-grid,
+    .public-tools,
+    .backstage-panel .services-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
