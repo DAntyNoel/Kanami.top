@@ -396,7 +396,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (meta.text) {
       body.appendChild(createEl("p", "wiki-resource-text", meta.text));
     }
-    const open = createEl("a", "wiki-resource-open", "打开资源");
+    const open = createEl("a", "wiki-resource-open", "打开收藏");
     open.href = mediaSourceCandidates(url)[0] || url;
     open.target = "_blank";
     open.rel = "noopener noreferrer";
@@ -462,7 +462,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const items = activeItems();
     panel.innerHTML = "";
     if (!items.length) {
-      panel.appendChild(createEl("p", "wiki-resource-empty", "香奈美没有找到匹配的资源。"));
+      panel.appendChild(createEl("p", "wiki-resource-empty", "香奈美没有在星光收藏室里找到匹配内容。"));
       return;
     }
     if (state.active === "oath") {
@@ -476,7 +476,7 @@ document.addEventListener("DOMContentLoaded", () => {
     items.slice(0, limit).forEach((item) => grid.appendChild(renderMediaCard(item)));
     panel.appendChild(grid);
     if (items.length > limit) {
-      panel.appendChild(createEl("p", "wiki-resource-empty", `香奈美先放出 ${limit} 个，继续搜索可以更快找到想要的资源。`));
+      panel.appendChild(createEl("p", "wiki-resource-empty", `香奈美先放出 ${limit} 个，继续搜索可以更快找到想要的收藏。`));
     }
   }
 
@@ -523,7 +523,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .catch((error) => {
       console.error("Failed to load WIKI resources", error);
       panel.innerHTML = "";
-      panel.appendChild(createEl("p", "wiki-resource-empty", "香奈美暂时没能打开资源映射。"));
+      panel.appendChild(createEl("p", "wiki-resource-empty", "香奈美暂时没能打开星光收藏室。"));
       stats.innerHTML = "";
       stats.appendChild(chip("加载失败"));
     });

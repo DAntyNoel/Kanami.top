@@ -102,10 +102,10 @@
       }),
       card({
         href: "/resource/",
-        status: "资源",
-        title: "本地资源映射",
-        copy: "资源舞台会优先读取本地 WIKI 映射，缺图时再回到线上来源。",
-        action: "查看资源"
+        status: "收藏",
+        title: "本地星光收藏室",
+        copy: "星光收藏室会优先读取本地 WIKI 映射，缺图时再回到线上来源。",
+        action: "查看收藏"
       }),
       card({
         href: "/health",
