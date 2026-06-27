@@ -3,6 +3,8 @@ debug*
 
 **/_*
 
+*.vscode
+
 *.env
 node_modules/
 chatbot/env
