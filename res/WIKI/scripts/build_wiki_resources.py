@@ -17,6 +17,7 @@ from bs4 import BeautifulSoup, Tag
 SOURCE_PAGE = "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E"
 GALLERY_PAGE = "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E/%E7%94%BB%E5%BB%8A"
 VOICE_PAGE = "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E/%E8%AF%AD%E9%9F%B3%E5%8F%B0%E8%AF%8D"
+OATH_PAGE = "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E/%E8%AA%93%E7%BA%A6"
 RESOURCE_HOST_MARKER = "patchwiki.biligame.com/images/klbq/"
 MEDIA_EXTENSIONS = {
     "png": "image",
@@ -48,6 +49,7 @@ GALLERY_TYPE = "story_wallpaper"
 GALLERY_SECTION = "画廊"
 VOICE_FILE = "audio.json"
 VOICE_SECTION = "语音台词"
+OATH_TEXT_FILE = "oath_texts.json"
 CONTENT_SELECTOR = "#mw-content-text"
 REQUEST_HEADERS = {
     "User-Agent": (
@@ -65,6 +67,16 @@ def text_of(node: Tag | None) -> str:
     if node is None:
         return ""
     return re.sub(r"\s+", " ", node.get_text(" ", strip=True)).strip()
+
+
+def direct_text_of(node: Tag | None) -> str:
+    if node is None:
+        return ""
+    parts = []
+    for child in node.children:
+        if isinstance(child, str):
+            parts.append(child)
+    return re.sub(r"\s+", " ", "".join(parts)).strip()
 
 
 def fetch_source(source_page: str) -> str:
@@ -214,6 +226,16 @@ def init_resources() -> dict[str, OrderedDict[str, dict[str, Any]]]:
     for filename, _resource_type in OUTPUTS.values():
         resources.setdefault(filename, OrderedDict())
     return resources
+
+
+def empty_oath_texts() -> dict[str, Any]:
+    return {
+        "sourcePage": OATH_PAGE,
+        "kachiuCommunications": [],
+        "characterStories": [],
+        "characterBiographies": [],
+        "returnLetters": [],
+    }
 
 
 def build_main_resources(
@@ -400,6 +422,214 @@ def build_voice_resources(
                         target[normalized_url] = metadata
 
 
+def h2_texts(content: Tag) -> dict[str, Tag]:
+    return {text_of(h2): h2 for h2 in content.find_all("h2")}
+
+
+def message_role(tag: Tag) -> str:
+    classes = set(tag.get("class") or [])
+    if "char-text" in classes:
+        return "香奈美"
+    if "mc-text" in classes or "textToggleDisplayButtonLabelText" in classes:
+        return "引航者"
+    return ""
+
+
+def message_kind(tag: Tag) -> str:
+    classes = set(tag.get("class") or [])
+    if "textToggleDisplayButtonLabelText" in classes:
+        return "option"
+    return "message"
+
+
+def parse_kachiu_communications(content: Tag) -> list[dict[str, Any]]:
+    section = h2_texts(content).get("卡丘通讯")
+    if section is None:
+        return []
+    container = section.find_next_sibling("div", class_="resp-tabs")
+    if container is None:
+        return []
+
+    labels = [text_of(label) for label in container.select(".resp-tabs-list li")]
+    panels = container.select(".resp-tabs-container > .resp-tab-content")
+    entries = []
+    for index, (label, panel) in enumerate(zip(labels, panels), start=1):
+        messages = []
+        seen_options: set[tuple[str, str]] = set()
+        for tag in panel.find_all(["span", "div"]):
+            classes = set(tag.get("class") or [])
+            if not (
+                "char-text" in classes
+                or "mc-text" in classes
+                or "textToggleDisplayButtonLabelText" in classes
+            ):
+                continue
+            if "textToggleDisplayButtonLabelText" in classes and "off" in classes:
+                continue
+            text = text_of(tag)
+            if not text:
+                continue
+            kind = message_kind(tag)
+            role = message_role(tag)
+            if kind == "option":
+                option_key = (role, text)
+                if option_key in seen_options:
+                    continue
+                seen_options.add(option_key)
+            messages.append({"role": role, "kind": kind, "text": text})
+        entries.append(
+            {
+                "id": f"kachiu-{index:02d}",
+                "title": label,
+                "type": "卡丘通讯",
+                "sourcePage": OATH_PAGE,
+                "messages": messages,
+            }
+        )
+    return entries
+
+
+def parse_story_links(content: Tag) -> list[dict[str, str]]:
+    section = h2_texts(content).get("角色剧情")
+    if section is None:
+        return []
+    nav = section.find_next_sibling("div", class_="nav-chara")
+    if nav is None:
+        return []
+
+    links = []
+    seen: set[str] = set()
+    for box in nav.select(".game-story-box"):
+        label = text_of(box)
+        link = box.find("a", href=True)
+        if link is None:
+            continue
+        href = urljoin(OATH_PAGE, link["href"])
+        if href in seen:
+            continue
+        seen.add(href)
+        links.append({"title": label, "url": href, "wikiTitle": link.get("title") or label})
+    return links
+
+
+def clean_story_line(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def parse_story_page(story: dict[str, str], html: str) -> dict[str, Any]:
+    soup = BeautifulSoup(html, "html.parser")
+    content = soup.select_one(CONTENT_SELECTOR) or soup
+    page_title_node = soup.select_one("h1")
+    page_title = text_of(page_title_node) or story["wikiTitle"]
+    unlock = ""
+    condition_table = content.select_one("table.klbqtable.text-center")
+    if condition_table:
+        unlock = text_of(condition_table)
+
+    scenes = []
+    for scene_index, table in enumerate(content.select("table.klbq-story-table"), start=1):
+        lines = []
+        for row in table.find_all("tr"):
+            cells = row.find_all(["th", "td"], recursive=False)
+            if not cells:
+                continue
+            text = clean_story_line(text_of(cells[-1]))
+            if text:
+                lines.append(text)
+        if lines:
+            scenes.append({"index": scene_index, "lines": lines})
+
+    return {
+        "title": story["title"],
+        "wikiTitle": page_title,
+        "type": "角色剧情",
+        "sourcePage": story["url"],
+        "unlockCondition": unlock,
+        "scenes": scenes,
+    }
+
+
+def parse_character_biographies(content: Tag) -> list[dict[str, Any]]:
+    section = h2_texts(content).get("角色小传")
+    if section is None:
+        return []
+
+    biographies = []
+    current_title = ""
+    current_condition = ""
+    node = section.find_next_sibling()
+    while node and not (isinstance(node, Tag) and node.name == "h2"):
+        if isinstance(node, Tag) and node.name == "h3":
+            current_title = text_of(node)
+            current_condition = ""
+        elif isinstance(node, Tag) and node.name == "table" and current_title:
+            current_condition = text_of(node)
+        elif isinstance(node, Tag) and "poem" in (node.get("class") or []) and current_title:
+            paragraphs = [
+                text_of(paragraph)
+                for paragraph in node.find_all("p")
+                if text_of(paragraph)
+            ]
+            if not paragraphs:
+                paragraphs = [line for line in text_of(node).split(" ") if line]
+            biographies.append(
+                {
+                    "title": current_title,
+                    "type": "角色小传",
+                    "sourcePage": OATH_PAGE,
+                    "unlockCondition": current_condition,
+                    "paragraphs": paragraphs,
+                }
+            )
+        node = node.find_next_sibling()
+    return biographies
+
+
+def parse_return_letters(content: Tag) -> list[dict[str, Any]]:
+    section = h2_texts(content).get("回归信")
+    if section is None:
+        return []
+    condition = ""
+    paragraphs: list[str] = []
+    node = section.find_next_sibling()
+    while node and not (isinstance(node, Tag) and node.name == "h2"):
+        if isinstance(node, Tag) and node.name == "table" and "navbox" not in (node.get("class") or []):
+            condition = text_of(node)
+        elif isinstance(node, Tag) and "poem" in (node.get("class") or []):
+            paragraphs.extend(
+                text_of(paragraph)
+                for paragraph in node.find_all("p")
+                if text_of(paragraph)
+            )
+        node = node.find_next_sibling()
+    if not paragraphs:
+        return []
+    return [
+        {
+            "title": "回归信",
+            "type": "回归信",
+            "sourcePage": OATH_PAGE,
+            "triggerCondition": condition,
+            "paragraphs": paragraphs,
+        }
+    ]
+
+
+def build_oath_texts(html: str) -> dict[str, Any]:
+    soup = BeautifulSoup(html, "html.parser")
+    content = soup.select_one(CONTENT_SELECTOR) or soup
+    oath_texts = empty_oath_texts()
+    oath_texts["kachiuCommunications"] = parse_kachiu_communications(content)
+    story_links = parse_story_links(content)
+    oath_texts["characterStories"] = [
+        parse_story_page(story, fetch_source(story["url"]))
+        for story in story_links
+    ]
+    oath_texts["characterBiographies"] = parse_character_biographies(content)
+    oath_texts["returnLetters"] = parse_return_letters(content)
+    return oath_texts
+
+
 def write_resources(resources: dict[str, OrderedDict[str, dict[str, Any]]]) -> None:
     output_dir = Path(__file__).resolve().parents[1]
     for filename, data in resources.items():
@@ -410,15 +640,33 @@ def write_resources(resources: dict[str, OrderedDict[str, dict[str, Any]]]) -> N
         )
 
 
+def write_oath_texts(oath_texts: dict[str, Any]) -> None:
+    output_dir = Path(__file__).resolve().parents[1]
+    path = output_dir / OATH_TEXT_FILE
+    path.write_text(
+        json.dumps(oath_texts, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
 def main() -> None:
     resources = init_resources()
     build_main_resources(fetch_source(SOURCE_PAGE), resources)
     build_gallery_resources(fetch_source(GALLERY_PAGE), resources)
     build_voice_resources(fetch_source(VOICE_PAGE), resources)
+    oath_texts = build_oath_texts(fetch_source(OATH_PAGE))
     write_resources(resources)
+    write_oath_texts(oath_texts)
     total = sum(len(data) for data in resources.values())
     for filename, data in resources.items():
         print(f"{filename}: {len(data)}")
+    print(
+        "oath_texts.json: "
+        f"{len(oath_texts['kachiuCommunications'])} communications, "
+        f"{len(oath_texts['characterStories'])} stories, "
+        f"{len(oath_texts['characterBiographies'])} biographies, "
+        f"{len(oath_texts['returnLetters'])} return letters"
+    )
     print(f"total: {total}")
 
 
