@@ -72,7 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const stats = document.getElementById("wiki-resource-stats");
   if (!tabs || !panel || !search || !stats) return;
 
-  const wikiBase = "res/WIKI/";
+  const wikiBase = window.KANAMI_WIKI_BASE || "res/WIKI/";
   const mediaGroups = [
     { id: "emotes", label: "表情包", file: "emotes.json" },
     { id: "wallpapers", label: "壁纸", file: "story_wallpapers.json" },

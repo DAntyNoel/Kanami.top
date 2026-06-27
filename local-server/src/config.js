@@ -56,6 +56,7 @@ export const paths = {
   sharedGames: path.resolve(rootDir, "..", "games"),
   entryHtml: path.resolve(rootDir, "..", "local-server.html"),
   offlineHtml: path.resolve(rootDir, "..", "local-server-offline.html"),
+  resourceHtml: path.resolve(rootDir, "..", "resource", "index.html"),
   sharedScript: path.resolve(rootDir, "..", "script.js"),
   gallery: resolveFromRoot(env("LOCAL_SERVER_GALLERY_DIR", "../KanamiBot/data/advanced_media")),
   files: resolveFromRoot(env("LOCAL_SERVER_FILES_DIR", "./files"))

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resource Stage - 香奈美资源映射</title>
+  <link rel="stylesheet" href="/res/styles/style.css" />
+  <link rel="stylesheet" href="/res/styles/layers.css" />
+  <link rel="stylesheet" href="/res/styles/wiki-resources.css" />
+  <link rel="icon" type="image/png" href="/res/images/favicon.png" />
+</head>
+<body id="resource-top">
+  <div class="background"></div>
+
+  <header class="site-header resource-stage-header" data-site-header="resource">
+    <a href="#resource-top" class="site-logo" aria-label="回到资源舞台顶部">
+      <img src="/res/images/favicon.png" alt="Resource Stage logo" />
+      <span class="site-logo-text">Resource Stage</span>
+    </a>
+    <nav class="site-nav resource-stage-nav" aria-label="资源舞台入口">
+      <a href="#resource-top" class="site-nav-link">返回顶部</a>
+      <label class="resource-header-search" aria-label="快捷搜索资源">
+        <span>Search</span>
+        <input id="wiki-resource-search" type="search" placeholder="快捷搜索" autocomplete="off" />
+      </label>
+      <a href="/" class="site-nav-link site-nav-link-primary">返回主页</a>
+      <a class="site-nav-link" href="https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E" target="_blank" rel="noopener noreferrer">WIKI</a>
+    </nav>
+  </header>
+
+  <main class="main-content resource-stage-main">
+    <section class="section wiki-resources resource-stage-shell" id="wiki-resources" aria-labelledby="wiki-resources-title">
+      <div class="wiki-resources-head">
+        <div>
+          <h1 id="wiki-resources-title">KANAMI Resource Stage</h1>
+          <p class="wiki-resources-lead">香奈美把 WIKI 里的应援素材都摆上舞台啦，想找什么就直接搜吧。</p>
+        </div>
+        <a class="wiki-source-link" href="https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E" target="_blank" rel="noopener noreferrer">WIKI</a>
+      </div>
+
+      <div class="wiki-resource-stats" id="wiki-resource-stats" aria-live="polite">
+        <span>加载中</span>
+      </div>
+
+      <div class="wiki-resource-controls resource-stage-controls">
+        <div class="wiki-resource-tabs" id="wiki-resource-tabs" role="tablist" aria-label="资源分类"></div>
+      </div>
+
+      <div class="wiki-resource-panel" id="wiki-resource-panel" aria-live="polite">
+        <p class="wiki-resource-empty">香奈美正在整理资源，稍等一下哦。</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    window.KANAMI_WIKI_BASE = "/res/WIKI/";
+  </script>
+  <script src="/res/WIKI/wiki-data.js"></script>
+  <script src="/script.js"></script>
+</body>
+</html>
