@@ -2,6 +2,7 @@
   const HEADER_SELECTOR = ".site-header, .game-header, .kanami-chat-site-header";
   const MENU_CLASS = "kanami-header-menu";
   const PANEL_CLASS = "kanami-header-menu-panel";
+  const PINNED_SELECTOR = "[data-header-pinned]";
 
   function directChildren(element, selector) {
     return Array.from(element.children).filter((child) => !selector || child.matches(selector));
@@ -25,7 +26,7 @@
     const menu = nav.querySelector(`:scope > .${MENU_CLASS}`);
     const panel = menu?.querySelector(`.${PANEL_CLASS}`);
     const panelItems = panel ? Array.from(panel.children) : [];
-    const looseItems = Array.from(nav.children).filter((child) => child !== menu);
+    const looseItems = Array.from(nav.children).filter((child) => child !== menu && !child.matches(PINNED_SELECTOR));
     if (menu) menu.remove();
     return [...panelItems, ...looseItems];
   }
@@ -52,7 +53,7 @@
 
     const menu = nav.querySelector(`:scope > .${MENU_CLASS}`);
     const panel = menu?.querySelector(`.${PANEL_CLASS}`);
-    const looseItems = Array.from(nav.children).filter((child) => child !== menu);
+    const looseItems = Array.from(nav.children).filter((child) => child !== menu && !child.matches(PINNED_SELECTOR));
     if (menu && panel) {
       looseItems.forEach((item) => panel.appendChild(item));
       const panelItems = Array.from(panel.children);

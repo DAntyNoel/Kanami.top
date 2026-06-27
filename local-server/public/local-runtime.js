@@ -37,11 +37,11 @@
     const logo = header?.querySelector(".site-logo");
     const logoText = header?.querySelector(".site-logo-text");
     const headerTitle = header?.querySelector(".site-header-copy h1");
-    if (!header || !nav || !logo || !logoText) return;
+    if (!header || !nav || !logo) return;
 
     header.dataset.siteHeader = "local-server";
     logo.setAttribute("aria-label", "回到香奈美本地舞台");
-    logoText.textContent = "本地舞台";
+    if (logoText) logoText.textContent = "本地舞台";
     if (headerTitle) headerTitle.textContent = "香奈美的本地舞台";
 
     nav.querySelectorAll("[data-local-runtime-nav]").forEach((item) => item.remove());
@@ -51,6 +51,7 @@
     auth.dataset.authEntry = "";
     auth.dataset.authLoginUrl = "/auth/login";
     auth.dataset.authProfileUrl = "/auth/profile";
+    auth.dataset.headerPinned = "";
     const avatar = document.createElement("img");
     avatar.src = "/res/images/favicon.png";
     avatar.alt = "";
@@ -138,8 +139,14 @@
     }
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
+  function boot() {
     ensureHeader();
     insertLocalPanel();
-  });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
 })();

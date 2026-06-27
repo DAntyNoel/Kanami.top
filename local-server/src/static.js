@@ -220,9 +220,10 @@ function localBootstrapScript(req, url) {
 }
 
 function localRuntimeScripts(req, url) {
+  const runtimeVersion = encodeURIComponent(reloadState.token);
   const scripts = [
     localBootstrapScript(req, url),
-    `<script src="/local-runtime.js"></script>`,
+    `<script src="/local-runtime.js?v=${runtimeVersion}"></script>`,
     `<script src="/auth/session.js"></script>`
   ];
   if (hasAdminAccess(req, url)) {
@@ -325,6 +326,11 @@ export function tryServeStatic(req, res, url) {
 
   if (url.pathname === "/__reload-client.js") {
     sendFile(req, res, path.join(paths.public, "reload-client.js"), "no-store");
+    return true;
+  }
+
+  if (url.pathname === "/local-runtime.js") {
+    sendFile(req, res, path.join(paths.public, "local-runtime.js"), "no-store");
     return true;
   }
 
