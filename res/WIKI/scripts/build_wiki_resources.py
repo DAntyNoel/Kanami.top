@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build static resource maps from the Kanami Biligame Wiki page."""
+"""Build static resource maps from the Kanami Biligame Wiki pages."""
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ from bs4 import BeautifulSoup, Tag
 
 
 SOURCE_PAGE = "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E"
+GALLERY_PAGE = "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E/%E7%94%BB%E5%BB%8A"
 RESOURCE_HOST_MARKER = "patchwiki.biligame.com/images/klbq/"
 MEDIA_EXTENSIONS = {
     "png": "image",
@@ -41,6 +42,10 @@ OUTPUTS = {
 }
 
 SKIP_HEADINGS = {"香奈美", "WIKI功能", "目录"}
+GALLERY_FILE = "story_wallpapers.json"
+GALLERY_TYPE = "story_wallpaper"
+GALLERY_SECTION = "画廊"
+CONTENT_SELECTOR = "#mw-content-text"
 
 
 def text_of(node: Tag | None) -> str:
@@ -49,11 +54,11 @@ def text_of(node: Tag | None) -> str:
     return re.sub(r"\s+", " ", node.get_text(" ", strip=True)).strip()
 
 
-def fetch_source() -> str:
+def fetch_source(source_page: str) -> str:
     response = requests.get(
-        SOURCE_PAGE,
+        source_page,
         timeout=30,
-        headers={"User-Agent": "KanamiTopResourceMapper/1.0"},
+        headers={"User-Agent": "Mozilla/5.0 KanamiTopResourceMapper/1.0"},
     )
     response.raise_for_status()
     return response.text
@@ -67,8 +72,8 @@ def extension_of(url: str) -> str:
     return filename.rsplit(".", 1)[-1].lower()
 
 
-def normalize_url(raw_url: str) -> str:
-    absolute = urljoin(SOURCE_PAGE, raw_url.strip())
+def normalize_url(raw_url: str, source_page: str) -> str:
+    absolute = urljoin(source_page, raw_url.strip())
     parsed = urlparse(absolute)
     path = parsed.path
 
@@ -79,8 +84,8 @@ def normalize_url(raw_url: str) -> str:
     return urlunparse(parsed._replace(path=path, query="", fragment=""))
 
 
-def is_tracked_resource(raw_url: str) -> bool:
-    normalized = normalize_url(raw_url)
+def is_tracked_resource(raw_url: str, source_page: str) -> bool:
+    normalized = normalize_url(raw_url, source_page)
     return RESOURCE_HOST_MARKER in normalized and extension_of(normalized) in MEDIA_EXTENSIONS
 
 
@@ -119,33 +124,72 @@ def int_attr(tag: Tag, name: str) -> int | None:
     return None
 
 
-def collect_urls(tag: Tag) -> list[str]:
+def split_srcset(value: str) -> list[str]:
     urls: list[str] = []
+    for candidate in value.split(","):
+        url = candidate.strip().split(" ", 1)[0]
+        if url:
+            urls.append(url)
+    return urls
+
+
+def collect_urls(tag: Tag, source_page: str) -> list[str]:
+    urls: list[str] = []
+    seen: set[str] = set()
     for attr in ("src", "data-src", "href"):
         value = tag.get(attr)
-        if isinstance(value, str) and is_tracked_resource(value):
-            urls.append(value)
+        if isinstance(value, str) and is_tracked_resource(value, source_page):
+            normalized = normalize_url(value, source_page)
+            if normalized not in seen:
+                urls.append(value)
+                seen.add(normalized)
+    srcset = tag.get("srcset")
+    if isinstance(srcset, str):
+        for value in split_srcset(srcset):
+            if is_tracked_resource(value, source_page):
+                normalized = normalize_url(value, source_page)
+                if normalized not in seen:
+                    urls.append(value)
+                    seen.add(normalized)
     return urls
+
+
+def image_area(metadata: dict[str, Any]) -> int:
+    width = metadata.get("width") or 0
+    height = metadata.get("height") or 0
+    return width * height
 
 
 def merge_metadata(existing: dict[str, Any], incoming: dict[str, Any]) -> None:
     existing["occurrences"] += 1
-    if not existing.get("thumbnailUrl") and incoming.get("thumbnailUrl"):
+    if incoming.get("thumbnailUrl") and (
+        not existing.get("thumbnailUrl") or image_area(incoming) > image_area(existing)
+    ):
         existing["thumbnailUrl"] = incoming["thumbnailUrl"]
+        existing["width"] = incoming["width"]
+        existing["height"] = incoming["height"]
     for key in ("title", "width", "height"):
         if not existing.get(key) and incoming.get(key):
             existing[key] = incoming[key]
 
 
-def build_resources(html: str) -> dict[str, OrderedDict[str, dict[str, Any]]]:
-    soup = BeautifulSoup(html, "html.parser")
+def init_resources() -> dict[str, OrderedDict[str, dict[str, Any]]]:
     resources: dict[str, OrderedDict[str, dict[str, Any]]] = {}
     for filename, _resource_type in OUTPUTS.values():
         resources.setdefault(filename, OrderedDict())
+    return resources
+
+
+def build_main_resources(
+    html: str,
+    resources: dict[str, OrderedDict[str, dict[str, Any]]],
+) -> None:
+    soup = BeautifulSoup(html, "html.parser")
+    content = soup.select_one(CONTENT_SELECTOR) or soup
     current_section: str | None = None
     current_subsection: str | None = None
 
-    for node in soup.find_all(["h1", "h2", "h3", "img", "a", "source", "audio"]):
+    for node in content.find_all(["h1", "h2", "h3", "img", "a", "source", "audio"]):
         if not isinstance(node, Tag):
             continue
 
@@ -165,8 +209,8 @@ def build_resources(html: str) -> dict[str, OrderedDict[str, dict[str, Any]]]:
             continue
 
         filename, resource_type = output
-        for raw_url in collect_urls(node):
-            normalized_url = normalize_url(raw_url)
+        for raw_url in collect_urls(node, SOURCE_PAGE):
+            normalized_url = normalize_url(raw_url, SOURCE_PAGE)
             extension = extension_of(normalized_url)
             media_type = MEDIA_EXTENSIONS[extension]
             absolute_url = urljoin(SOURCE_PAGE, raw_url.strip())
@@ -194,7 +238,59 @@ def build_resources(html: str) -> dict[str, OrderedDict[str, dict[str, Any]]]:
             else:
                 target[normalized_url] = metadata
 
-    return resources
+
+def build_gallery_resources(
+    html: str,
+    resources: dict[str, OrderedDict[str, dict[str, Any]]],
+) -> None:
+    soup = BeautifulSoup(html, "html.parser")
+    content = soup.select_one(CONTENT_SELECTOR) or soup
+    current_subsection: str | None = None
+
+    for node in content.find_all(["h1", "h2", "h3", "img", "a", "source", "audio"]):
+        if not isinstance(node, Tag):
+            continue
+
+        if node.name == "h2":
+            heading = text_of(node)
+            current_subsection = None if not heading or heading in SKIP_HEADINGS else heading
+            continue
+        if node.name in {"h1", "h3"}:
+            continue
+        if current_subsection is None:
+            continue
+
+        for raw_url in collect_urls(node, GALLERY_PAGE):
+            normalized_url = normalize_url(raw_url, GALLERY_PAGE)
+            extension = extension_of(normalized_url)
+            media_type = MEDIA_EXTENSIONS[extension]
+            if media_type != "image":
+                continue
+
+            absolute_url = urljoin(GALLERY_PAGE, raw_url.strip())
+            thumbnail_url = None
+            if "/images/klbq/thumb/" in urlparse(absolute_url).path:
+                thumbnail_url = absolute_url
+
+            metadata: dict[str, Any] = {
+                "title": title_from(node, raw_url, normalized_url),
+                "type": GALLERY_TYPE,
+                "section": GALLERY_SECTION,
+                "subsection": current_subsection,
+                "mediaType": media_type,
+                "extension": extension,
+                "thumbnailUrl": thumbnail_url,
+                "sourcePage": GALLERY_PAGE,
+                "width": int_attr(node, "width"),
+                "height": int_attr(node, "height"),
+                "occurrences": 1,
+            }
+
+            target = resources[GALLERY_FILE]
+            if normalized_url in target:
+                merge_metadata(target[normalized_url], metadata)
+            else:
+                target[normalized_url] = metadata
 
 
 def write_resources(resources: dict[str, OrderedDict[str, dict[str, Any]]]) -> None:
@@ -208,7 +304,9 @@ def write_resources(resources: dict[str, OrderedDict[str, dict[str, Any]]]) -> N
 
 
 def main() -> None:
-    resources = build_resources(fetch_source())
+    resources = init_resources()
+    build_main_resources(fetch_source(SOURCE_PAGE), resources)
+    build_gallery_resources(fetch_source(GALLERY_PAGE), resources)
     write_resources(resources)
     total = sum(len(data) for data in resources.values())
     for filename, data in resources.items():
