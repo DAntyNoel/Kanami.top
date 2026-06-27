@@ -48,15 +48,16 @@ npm run cloudflare
 
 - `/` 或 `/start`：读取根目录的 `local-server.html`。
 - `/offline`：读取根目录的 `local-server-offline.html`。
-- `/health`：健康检查 JSON，包含本地端口、远程域名和文件映射目录状态。
+- `/health`：公网安全的健康检查 JSON，只返回在线状态。
+- `/health/detail`：本地详细健康检查，包含本地端口、远程域名和文件映射目录状态。
 - `/auth/login`、`/auth/register`、`/auth/profile`：读取 `public/auth/` 下的本地账号页面和前端逻辑。
 - `/gallery`：读取 `public/gallery/` 下的图库预览界面。
 - `/gallery/api`：读取 `LOCAL_SERVER_GALLERY_DIR` 指向的 `advanced_media/index.json` 并输出图库清单。
 - `/gallery/media/<folder>/<path>`：从 `LOCAL_SERVER_GALLERY_DIR` 中安全映射图片和缩略图。
-- `/__reload?next=<path>`：临时调试入口，要求浏览器清理站点缓存后回到指定路径。
-- `/__reload/trigger?next=<path>`：终端或外部工具触发已打开页面自动刷新。
-- `/files/<path>`：从 `LOCAL_SERVER_FILES_DIR` 指向的目录中安全映射文件。
+- `/__reload?next=<path>`：临时调试入口，仅本机或带 `LOCAL_SERVER_ADMIN_TOKEN` 可用，要求浏览器清理站点缓存后回到指定路径。
+- `/__reload/trigger?next=<path>`：终端或外部工具触发已打开页面自动刷新，仅本机或带管理口令可用。
+- `/files/<path>`：从 `LOCAL_SERVER_FILES_DIR` 指向的目录中安全映射文件，默认只公开 `LOCAL_SERVER_FILE_ALLOWED_PREFIXES` 列出的 `WIKI/images/` 素材目录。
 
-CSS、脚本、图片和游戏入口复用主站根目录资源；真实映射文件放在 `files/`，不会被提交。图库默认读取 `../KanamiBot/data/advanced_media`，可通过 `LOCAL_SERVER_GALLERY_DIR` 改到其他同结构目录。
+CSS、脚本、图片和游戏入口复用主站根目录资源；真实映射文件放在 `files/`，不会被提交。图库默认读取 `../KanamiBot/data/advanced_media`，可通过 `LOCAL_SERVER_GALLERY_DIR` 改到其他同结构目录。需要公开更多映射目录时，优先把明确的资源目录加入 `LOCAL_SERVER_FILE_ALLOWED_PREFIXES`，不要直接把整个 `files/` 放到公网。
 
 `/auth/*` 当前是本地调试资料页，账号和头像只保存在当前浏览器的 `localStorage` 中。它可以用于本地展示登录态，但不等同于公网服务端认证。

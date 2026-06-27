@@ -54,10 +54,10 @@ function resizeInput() {
 
 async function checkHealth() {
   try {
-    const response = await fetch("/health", { cache: "no-store" });
+    const response = await fetch("/api/config", { cache: "no-store" });
     const payload = await response.json();
     const providerLabel = payload.provider === "local-cliproxy" ? "本地代理" : "BASE URL";
-    setStatus(payload.apiConfigured ? `${providerLabel}已连接 · ${payload.model}` : "后台缺少 API_KEY");
+    setStatus(`${providerLabel}已待命 · ${payload.model}`);
   } catch {
     setStatus("后台暂时离线");
   }

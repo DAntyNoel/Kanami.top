@@ -12,7 +12,16 @@ function filesRootReady() {
   }
 }
 
-function healthPayload() {
+function publicHealthPayload() {
+  return {
+    ok: true,
+    service: config.serviceName,
+    status: "online",
+    time: new Date().toISOString()
+  };
+}
+
+function detailedHealthPayload() {
   return {
     ok: true,
     service: config.serviceName,
@@ -33,6 +42,13 @@ function healthPayload() {
   };
 }
 
+function isDetailedHealthAllowed(req, url) {
+  const host = String(req.headers.host || "").split(":")[0].toLowerCase();
+  if (["localhost", "127.0.0.1", "::1", "[::1]"].includes(host)) return true;
+  if (!config.adminToken) return false;
+  return req.headers["x-kanami-admin-token"] === config.adminToken || url.searchParams.get("token") === config.adminToken;
+}
+
 const server = http.createServer((req, res) => {
   try {
     const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
@@ -47,7 +63,19 @@ const server = http.createServer((req, res) => {
     }
 
     if ((req.method === "GET" || req.method === "HEAD") && url.pathname === "/health") {
-      sendJson(req, res, 200, healthPayload());
+      sendJson(req, res, 200, publicHealthPayload());
+      return;
+    }
+
+    if ((req.method === "GET" || req.method === "HEAD") && url.pathname === "/health/detail") {
+      if (isDetailedHealthAllowed(req, url)) {
+        sendJson(req, res, 200, detailedHealthPayload());
+        return;
+      }
+      sendJson(req, res, 403, {
+        error: "ADMIN_ACCESS_REQUIRED",
+        message: "香奈美把详细健康检查收进后台啦。"
+      });
       return;
     }
 

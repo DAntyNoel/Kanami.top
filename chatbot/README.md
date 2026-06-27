@@ -56,7 +56,8 @@ npm run stop
 ## 接口
 
 - `GET /start`：聊天页面。
-- `GET /health`：本地健康检查，Cloudflare 或监控可使用。
+- `GET /health`：公网安全的健康检查，只返回在线状态。
+- `GET /health/detail`：本机或带 `ADMIN_TOKEN` 的详细健康检查，会返回模型、provider 和本地代理状态。
 - `POST /api/chat`：OpenAI-compatible Chat Completions 转发，默认 SSE 流式返回。
 
 请求示例：

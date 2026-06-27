@@ -151,18 +151,57 @@ function isDirectory(filePath) {
   }
 }
 
+function requestHost(req) {
+  return String(req.headers.host || "").split(":")[0].toLowerCase();
+}
+
+function isLocalHost(req) {
+  const host = requestHost(req);
+  return ["localhost", "127.0.0.1", "::1", "[::1]"].includes(host);
+}
+
+function hasAdminAccess(req, url) {
+  if (isLocalHost(req)) return true;
+  if (!config.adminToken) return false;
+  return req.headers["x-kanami-admin-token"] === config.adminToken || url.searchParams.get("token") === config.adminToken;
+}
+
+function isAllowedMappedPath(requested) {
+  const normalized = requested.replace(/^\/+/, "");
+  return config.fileAllowedPrefixes.some((prefix) => normalized === prefix.slice(0, -1) || normalized.startsWith(prefix));
+}
+
+function denyAdminRoute(req, res) {
+  sendJson(req, res, 403, {
+    error: "ADMIN_ACCESS_REQUIRED",
+    message: "香奈美把这个调试入口收进后台啦，请从本机访问或带上管理口令。"
+  });
+}
+
 export function tryServeStatic(req, res, url) {
   if (url.pathname === "/__reload/state") {
+    if (!hasAdminAccess(req, url)) {
+      denyAdminRoute(req, res);
+      return true;
+    }
     sendReloadJson(req, res);
     return true;
   }
 
   if (url.pathname === "/__reload/trigger") {
+    if (!hasAdminAccess(req, url)) {
+      denyAdminRoute(req, res);
+      return true;
+    }
     sendExternalReload(req, res, url);
     return true;
   }
 
   if (url.pathname === "/__reload") {
+    if (!hasAdminAccess(req, url)) {
+      denyAdminRoute(req, res);
+      return true;
+    }
     sendCacheReload(req, res, url);
     return true;
   }
@@ -253,6 +292,14 @@ export function tryServeMappedFile(req, res, url) {
   }
 
   const requested = url.pathname.slice(config.fileRoutePrefix.length);
+  if (!config.publicFilesEnabled || (!isAllowedMappedPath(requested) && !hasAdminAccess(req, url))) {
+    sendJson(req, res, 403, {
+      error: "FILE_ROUTE_RESTRICTED",
+      message: "香奈美只公开已经登记的资源目录，其他映射文件先留在后台。"
+    });
+    return true;
+  }
+
   const filePath = resolveInside(paths.files, requested);
   if (!filePath) {
     sendJson(req, res, 403, {

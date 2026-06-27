@@ -58,6 +58,17 @@ function checkRateLimit(req) {
   return bucket.count <= config.rateLimitPerMinute;
 }
 
+function requestHost(req) {
+  return String(req.headers.host || "").split(":")[0].toLowerCase();
+}
+
+function hasAdminAccess(req, url) {
+  const host = requestHost(req);
+  if (["localhost", "127.0.0.1", "::1", "[::1]"].includes(host)) return true;
+  if (!config.adminToken) return false;
+  return req.headers["x-kanami-admin-token"] === config.adminToken || url.searchParams.get("token") === config.adminToken;
+}
+
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
@@ -301,9 +312,27 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === "GET" && url.pathname === "/health") {
+    if (!config.publicHealthDetails) {
+      json(res, 200, {
+        ok: true,
+        status: "online"
+      });
+      return;
+    }
+  }
+
+  if (req.method === "GET" && (url.pathname === "/health/detail" || url.pathname === "/health")) {
+    if (!config.publicHealthDetails && !hasAdminAccess(req, url)) {
+      json(res, 403, {
+        error: "ADMIN_ACCESS_REQUIRED",
+        message: "香奈美把后台细节收进管理入口啦。"
+      });
+      return;
+    }
     const provider = await resolveProvider({ forceLocalProbe: true });
     json(res, 200, {
       ok: true,
+      status: "online",
       model: config.model,
       prompt: "kanami-prompt.md",
       apiConfigured: Boolean(config.apiKey) || provider.source === "local-cliproxy",

@@ -45,6 +45,14 @@ function numberEnv(name, fallback) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function listEnv(name, fallback = []) {
+  return env(name, fallback.join(","))
+    .split(",")
+    .map((item) => item.trim().replace(/^\/+/, ""))
+    .filter(Boolean)
+    .map((item) => (item.endsWith("/") ? item : `${item}/`));
+}
+
 function resolveFromRoot(value) {
   return path.isAbsolute(value) ? value : path.resolve(rootDir, value);
 }
@@ -69,5 +77,8 @@ export const config = {
   remoteHost: env("LOCAL_SERVER_REMOTE_HOST", "local-server.kanami.top"),
   remoteUrl: env("LOCAL_SERVER_REMOTE_URL", "https://local-server.kanami.top"),
   remoteConnected: boolEnv("LOCAL_SERVER_REMOTE_CONNECTED", true),
-  fileRoutePrefix: "/files/"
+  fileRoutePrefix: "/files/",
+  publicFilesEnabled: boolEnv("LOCAL_SERVER_PUBLIC_FILES", true),
+  fileAllowedPrefixes: listEnv("LOCAL_SERVER_FILE_ALLOWED_PREFIXES", ["WIKI/images/"]),
+  adminToken: env("LOCAL_SERVER_ADMIN_TOKEN", "")
 };

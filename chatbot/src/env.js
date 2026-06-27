@@ -68,6 +68,11 @@ function listValue(fileEnv, key, fallback = []) {
     .filter(Boolean);
 }
 
+function boolValue(fileEnv, key, fallback) {
+  const raw = envValue(fileEnv, key, String(fallback)).toLowerCase();
+  return ["1", "true", "yes", "on"].includes(raw);
+}
+
 function normalizeBaseUrl(url) {
   return url.replace(/\/+$/, "");
 }
@@ -97,5 +102,7 @@ export const config = {
   maxMessageChars: numberValue(fileEnv, "MAX_MESSAGE_CHARS", 2400, { min: 200, max: 12000 }),
   requestTimeoutMs: numberValue(fileEnv, "REQUEST_TIMEOUT_MS", 90000, { min: 5000, max: 300000 }),
   rateLimitPerMinute: numberValue(fileEnv, "RATE_LIMIT_PER_MINUTE", 30, { min: 1, max: 300 }),
-  allowedOrigins: listValue(fileEnv, "ALLOWED_ORIGINS", [])
+  allowedOrigins: listValue(fileEnv, "ALLOWED_ORIGINS", []),
+  publicHealthDetails: boolValue(fileEnv, "PUBLIC_HEALTH_DETAILS", false),
+  adminToken: envValue(fileEnv, "ADMIN_TOKEN", "")
 };
