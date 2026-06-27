@@ -94,6 +94,8 @@ def collect_urls(data: dict[str, dict[str, Any]]) -> list[str]:
     urls: list[str] = []
     seen: set[str] = set()
     for remote_url, metadata in data.items():
+        if not isinstance(metadata, dict):
+            continue
         for value in (remote_url, metadata.get("thumbnailUrl")):
             if is_resource_url(value) and value not in seen:
                 urls.append(value)
@@ -112,7 +114,7 @@ def remap_metadata(metadata: dict[str, Any], route_prefix: str) -> dict[str, Any
 def build_local_map(data: dict[str, dict[str, Any]], route_prefix: str) -> dict[str, dict[str, Any]]:
     remapped: dict[str, dict[str, Any]] = {}
     for remote_url, metadata in data.items():
-        if not is_resource_url(remote_url):
+        if not is_resource_url(remote_url) or not isinstance(metadata, dict):
             continue
         remapped[local_route(remote_url, route_prefix)] = remap_metadata(metadata, route_prefix)
     return remapped
