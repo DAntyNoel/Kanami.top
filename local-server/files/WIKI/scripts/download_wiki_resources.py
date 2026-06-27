@@ -46,6 +46,23 @@ class DownloadError(RuntimeError):
     """Raised when one or more resources fail to download."""
 
 
+def parse_content_range(value: str | None) -> tuple[int, int, int | None] | None:
+    if not value or not value.startswith("bytes "):
+        return None
+    byte_range, separator, total = value.removeprefix("bytes ").partition("/")
+    if separator != "/":
+        return None
+    start_text, separator, end_text = byte_range.partition("-")
+    if separator != "-" or not start_text.isdigit() or not end_text.isdigit():
+        return None
+    return int(start_text), int(end_text), int(total) if total.isdigit() else None
+
+
+def content_length(response: requests.Response) -> int | None:
+    value = response.headers.get("Content-Length")
+    return int(value) if value and value.isdigit() else None
+
+
 def default_source_dir() -> Path:
     return Path(__file__).resolve().parents[4] / "res" / "WIKI"
 
@@ -148,17 +165,50 @@ def download_one(
         return "pending"
 
     target.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = target.with_name(f"{target.name}.part")
+    if force and temp_path.exists():
+        temp_path.unlink()
     last_error: Exception | None = None
 
     for attempt in range(1, retries + 2):
         try:
-            with session.get(url, stream=True, timeout=timeout) as response:
+            resume_from = temp_path.stat().st_size if temp_path.exists() else 0
+            headers = {"Range": f"bytes={resume_from}-"} if resume_from > 0 else None
+
+            with session.get(url, headers=headers, stream=True, timeout=timeout) as response:
+                if response.status_code == requests.codes.requested_range_not_satisfiable and resume_from > 0:
+                    temp_path.unlink(missing_ok=True)
+                    raise OSError(f"server rejected resume from byte {resume_from}; partial file reset")
+
                 response.raise_for_status()
-                temp_path = target.with_name(f"{target.name}.part")
-                with temp_path.open("wb") as file:
+
+                content_range = parse_content_range(response.headers.get("Content-Range"))
+                append = False
+                expected_size: int | None = None
+
+                if resume_from > 0 and response.status_code == requests.codes.partial_content:
+                    if content_range is None or content_range[0] != resume_from:
+                        temp_path.unlink(missing_ok=True)
+                        raise OSError(f"unexpected Content-Range while resuming from byte {resume_from}")
+                    append = True
+                    expected_size = content_range[2]
+                elif resume_from > 0:
+                    resume_from = 0
+
+                if expected_size is None:
+                    response_length = content_length(response)
+                    if response_length is not None:
+                        expected_size = resume_from + response_length
+
+                with temp_path.open("ab" if append else "wb") as file:
                     for chunk in response.iter_content(chunk_size=1024 * 256):
                         if chunk:
                             file.write(chunk)
+
+                actual_size = temp_path.stat().st_size
+                if expected_size is not None and actual_size < expected_size:
+                    raise OSError(f"incomplete download: got {actual_size} of {expected_size} bytes")
+
                 os.replace(temp_path, target)
             return "downloaded"
         except Exception as error:  # noqa: BLE001 - keep retry handling compact for CLI use.
@@ -256,7 +306,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, default=default_output_dir(), help="download and local map output directory")
     parser.add_argument("--route-prefix", default=DEFAULT_ROUTE_PREFIX, help="URL prefix written into local JSON maps")
     parser.add_argument("--timeout", type=float, default=30, help="per-request timeout in seconds")
-    parser.add_argument("--retries", type=int, default=2, help="retry count after the first failed request")
+    parser.add_argument("--retries", type=int, default=5, help="retry count after the first failed request")
     parser.add_argument("--force", action="store_true", help="download again even if a file already exists")
     parser.add_argument(
         "--export-wallpapers",
