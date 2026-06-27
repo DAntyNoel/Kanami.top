@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import sys
 import time
 from collections.abc import Iterable
@@ -28,6 +29,8 @@ import requests
 RESOURCE_HOST = "patchwiki.biligame.com"
 RESOURCE_PATH_PREFIX = "/images/klbq/"
 DEFAULT_ROUTE_PREFIX = "/files/WIKI"
+WALLPAPER_MAP_NAME = "story_wallpapers.json"
+DEFAULT_WALLPAPER_DIR_NAME = "wallpapers"
 REQUEST_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -74,6 +77,15 @@ def local_route(url: str, route_prefix: str) -> str:
     if not path.startswith(RESOURCE_PATH_PREFIX):
         raise ValueError(f"Unsupported resource path: {url}")
     return f"{route_prefix.rstrip('/')}{path}"
+
+
+def route_to_local_path(value: str, output_dir: Path, route_prefix: str) -> Path | None:
+    if not isinstance(value, str):
+        return None
+    prefix = route_prefix.rstrip("/") + "/"
+    if not value.startswith(prefix):
+        return None
+    return output_dir / Path(*value.removeprefix(prefix).split("/"))
 
 
 def iter_source_maps(source_dir: Path) -> Iterable[Path]:
@@ -163,6 +175,79 @@ def write_local_map(path: Path, data: dict[str, dict[str, Any]], dry_run: bool) 
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def exported_route(path: Path, output_dir: Path, route_prefix: str) -> str | None:
+    try:
+        relative_path = path.relative_to(output_dir)
+    except ValueError:
+        return None
+    return f"{route_prefix.rstrip('/')}/{relative_path.as_posix()}"
+
+
+def safe_filename(value: str, fallback: str) -> str:
+    stem = Path(value).stem or fallback
+    for prefix in ("250px-", "800px-", "80px-", "30px-"):
+        if stem.startswith(prefix):
+            stem = stem.removeprefix(prefix)
+            break
+    cleaned = "".join("_" if char in '<>:"/\\|?*' or ord(char) < 32 else char for char in stem).strip(" ._")
+    return cleaned or fallback
+
+
+def wallpaper_name(index: int, source_url: str, metadata: dict[str, Any]) -> str:
+    thumbnail_url = metadata.get("thumbnailUrl")
+    raw_name = unquote(urlparse(thumbnail_url if isinstance(thumbnail_url, str) else source_url).path.rsplit("/", 1)[-1])
+    name = safe_filename(raw_name, f"wallpaper-{index:03d}")
+    extension = metadata.get("extension") or Path(urlparse(source_url).path).suffix.lstrip(".") or "png"
+    return f"{index:03d}-{name}.{extension}"
+
+
+def export_wallpapers(
+    local_map_path: Path,
+    export_dir: Path,
+    *,
+    output_dir: Path,
+    route_prefix: str,
+    dry_run: bool = False,
+) -> int:
+    """Copy all story wallpaper resources into one flat export directory."""
+
+    data = read_json(local_map_path)
+    records: list[dict[str, Any]] = []
+
+    if not dry_run:
+        export_dir.mkdir(parents=True, exist_ok=True)
+
+    for index, (local_url, metadata) in enumerate(data.items(), start=1):
+        if not isinstance(metadata, dict) or metadata.get("mediaType") != "image":
+            continue
+
+        source_path = route_to_local_path(local_url, output_dir, route_prefix)
+        if source_path is None:
+            continue
+        filename = wallpaper_name(index, local_url, metadata)
+        target_path = export_dir / filename
+
+        if not dry_run:
+            if not source_path.is_file():
+                raise FileNotFoundError(f"wallpaper source not found: {source_path}")
+            shutil.copy2(source_path, target_path)
+
+        record = dict(metadata)
+        exported_url = exported_route(target_path, output_dir, route_prefix)
+        if exported_url:
+            record["url"] = exported_url
+        record["sourceUrl"] = local_url
+        record["filePath"] = str(target_path)
+        record["fileName"] = filename
+        records.append(record)
+
+    if not dry_run:
+        index_path = export_dir / "index.json"
+        index_path.write_text(json.dumps(records, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    return len(records)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Download all media referenced by res/WIKI maps into local-server/files/WIKI."
@@ -173,6 +258,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--timeout", type=float, default=30, help="per-request timeout in seconds")
     parser.add_argument("--retries", type=int, default=2, help="retry count after the first failed request")
     parser.add_argument("--force", action="store_true", help="download again even if a file already exists")
+    parser.add_argument(
+        "--export-wallpapers",
+        nargs="?",
+        const=DEFAULT_WALLPAPER_DIR_NAME,
+        metavar="DIR",
+        help="copy story wallpapers into DIR after local maps are ready; defaults to wallpapers",
+    )
     parser.add_argument("--dry-run", action="store_true", help="print planned work without writing files")
     return parser.parse_args()
 
@@ -229,6 +321,20 @@ def main() -> int:
         for error in errors:
             print(f"- {error}", file=sys.stderr)
         return 1
+
+    if args.export_wallpapers:
+        wallpaper_map_path = output_dir / WALLPAPER_MAP_NAME
+        wallpaper_export_dir = Path(args.export_wallpapers)
+        if not wallpaper_export_dir.is_absolute():
+            wallpaper_export_dir = output_dir / wallpaper_export_dir
+        count = export_wallpapers(
+            wallpaper_map_path,
+            wallpaper_export_dir.resolve(),
+            output_dir=output_dir,
+            route_prefix=args.route_prefix,
+            dry_run=args.dry_run,
+        )
+        print(f"wallpapers exported: {count} -> {wallpaper_export_dir}")
 
     return 0
 
