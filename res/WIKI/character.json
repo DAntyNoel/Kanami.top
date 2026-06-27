@@ -1,0 +1,28 @@
+{
+  "https://patchwiki.biligame.com/images/klbq/1/1d/ffln5mqrwtvr0dj0wq54guvs10jsfdo.png": {
+    "title": "香奈美头像.png",
+    "type": "character",
+    "section": "超弦体设定",
+    "subsection": null,
+    "mediaType": "image",
+    "extension": "png",
+    "thumbnailUrl": "https://patchwiki.biligame.com/images/klbq/thumb/1/1d/ffln5mqrwtvr0dj0wq54guvs10jsfdo.png/80px-%E9%A6%99%E5%A5%88%E7%BE%8E%E5%A4%B4%E5%83%8F.png",
+    "sourcePage": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E",
+    "width": 80,
+    "height": 80,
+    "occurrences": 1
+  },
+  "https://patchwiki.biligame.com/images/klbq/f/fe/mcqn1k260ul52l4749f6cymev3kkz71.png": {
+    "title": "30px-剪刀手阵营小图标.png",
+    "type": "character",
+    "section": "超弦体设定",
+    "subsection": null,
+    "mediaType": "image",
+    "extension": "png",
+    "thumbnailUrl": "https://patchwiki.biligame.com/images/klbq/thumb/f/fe/mcqn1k260ul52l4749f6cymev3kkz71.png/30px-%E5%89%AA%E5%88%80%E6%89%8B%E9%98%B5%E8%90%A5%E5%B0%8F%E5%9B%BE%E6%A0%87.png",
+    "sourcePage": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E",
+    "width": 30,
+    "height": 30,
+    "occurrences": 1
+  }
+}
