@@ -249,11 +249,23 @@ textarea:focus {
   font-size: clamp(2rem, 7vw, 4rem);
 }
 
+.offline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 26px;
+}
+
 .offline-action {
   display: inline-grid;
   place-items: center;
-  margin-top: 26px;
   padding: 0 22px;
+}
+
+.offline-action-secondary {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: inset 0 0 0 1px rgba(119, 167, 223, 0.34);
 }
 
 @media (max-width: 820px) {

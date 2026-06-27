@@ -42,17 +42,22 @@ function offlineHtml() {
       font-size: clamp(2rem, 7vw, 4rem);
       line-height: 1.02;
     }
-    p:last-child {
+    main > p {
       margin: 0;
       color: #685f70;
       font-size: 1.05rem;
       line-height: 1.75;
     }
+    .offline-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 26px;
+    }
     a {
       display: inline-grid;
       place-items: center;
       height: 46px;
-      margin-top: 26px;
       padding: 0 22px;
       border-radius: 8px;
       color: #fff;
@@ -61,6 +66,11 @@ function offlineHtml() {
       background: linear-gradient(135deg, #ee8ab4, #77a7df);
       box-shadow: 0 10px 26px rgba(119,167,223,.28);
     }
+    a.secondary {
+      color: #2f2634;
+      background: rgba(255,255,255,.78);
+      box-shadow: inset 0 0 0 1px rgba(119,167,223,.34);
+    }
   </style>
 </head>
 <body>
@@ -68,7 +78,10 @@ function offlineHtml() {
     <p>KANAMI IS OFFLINE</p>
     <h1>后台的舞台灯暂时暗下来了。</h1>
     <p>香奈美正在重新接上声音通道，等服务恢复后再回到这里，我会继续听你说话的。</p>
-    <a href="/start">再试一次</a>
+    <div class="offline-actions" aria-label="离线页操作">
+      <a href="/start">再试一次</a>
+      <a class="secondary" href="https://kanami.top/">回到我的主页</a>
+    </div>
   </main>
 </body>
 </html>`;
