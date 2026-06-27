@@ -129,6 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const panel = document.getElementById("wiki-resource-panel");
   const search = document.getElementById("wiki-resource-search");
   const stats = document.getElementById("wiki-resource-stats");
+  const toc = document.getElementById("wiki-resource-toc");
   if (!tabs || !panel || !search || !stats) return;
 
   const wikiBase = window.KANAMI_WIKI_BASE || "res/WIKI/";
@@ -326,6 +327,19 @@ document.addEventListener("DOMContentLoaded", () => {
     return (state.flat[state.active] || []).filter(matches);
   }
 
+  function jumpToPanel() {
+    panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function setActiveGroup(groupId, options = {}) {
+    if (!groups.some((group) => group.id === groupId)) return;
+    state.active = groupId;
+    render();
+    if (options.scroll) {
+      requestAnimationFrame(jumpToPanel);
+    }
+  }
+
   function renderStats() {
     const mediaTotal = mediaGroups.reduce((sum, group) => sum + (state.flat[group.id]?.length || 0), 0);
     const oathTotal = state.flat.oath?.length || 0;
@@ -345,14 +359,32 @@ document.addEventListener("DOMContentLoaded", () => {
       button.className = "wiki-resource-tab";
       button.id = `wiki-tab-${group.id}`;
       button.setAttribute("role", "tab");
+      button.setAttribute("aria-controls", "wiki-resource-panel");
       button.setAttribute("aria-selected", String(group.id === state.active));
       button.textContent = `${group.label} ${state.flat[group.id]?.length || 0}`;
       button.addEventListener("click", () => {
-        state.active = group.id;
-        render();
+        setActiveGroup(group.id);
       });
       tabs.appendChild(button);
     }
+  }
+
+  function renderToc() {
+    if (!toc) return;
+    const list = createEl("div", "wiki-resource-toc-list");
+    for (const group of groups) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "wiki-resource-toc-link";
+      button.setAttribute("aria-current", String(group.id === state.active));
+      button.appendChild(createEl("span", "", group.label));
+      button.appendChild(createEl("span", "wiki-resource-toc-count", state.flat[group.id]?.length || 0));
+      button.addEventListener("click", () => {
+        setActiveGroup(group.id, { scroll: true });
+      });
+      list.appendChild(button);
+    }
+    toc.replaceChildren(list);
   }
 
   function renderMediaCard(item) {
@@ -483,6 +515,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function render() {
     renderStats();
     renderTabs();
+    renderToc();
     renderPanel();
   }
 
@@ -527,4 +560,19 @@ document.addEventListener("DOMContentLoaded", () => {
       stats.innerHTML = "";
       stats.appendChild(chip("加载失败"));
     });
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const backTop = document.getElementById("wiki-back-top");
+  if (!backTop) return;
+
+  function syncBackTop() {
+    backTop.dataset.visible = String(window.scrollY > 360);
+  }
+
+  backTop.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+  window.addEventListener("scroll", syncBackTop, { passive: true });
+  syncBackTop();
 });

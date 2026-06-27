@@ -33,28 +33,37 @@
   </header>
 
   <main class="main-content resource-stage-main">
-    <section class="section wiki-resources resource-stage-shell" id="wiki-resources" aria-labelledby="wiki-resources-title">
-      <div class="wiki-resources-head">
-        <div>
-          <h1 id="wiki-resources-title">香奈美的星光收藏室</h1>
-          <p class="wiki-resources-lead">香奈美把 WIKI 里的表情、语音、故事和应援资料都收在这里啦，想找什么就直接搜吧。</p>
+    <div class="resource-stage-layout">
+      <section class="section wiki-resources resource-stage-shell" id="wiki-resources" aria-labelledby="wiki-resources-title">
+        <div class="wiki-resources-head">
+          <div>
+            <h1 id="wiki-resources-title">香奈美的星光收藏室</h1>
+            <p class="wiki-resources-lead">香奈美把 WIKI 里的表情、语音、故事和应援资料都收在这里啦，想找什么就直接搜吧。</p>
+          </div>
+          <a class="wiki-source-link" href="https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E" target="_blank" rel="noopener noreferrer">WIKI</a>
         </div>
-        <a class="wiki-source-link" href="https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E" target="_blank" rel="noopener noreferrer">WIKI</a>
-      </div>
 
-      <div class="wiki-resource-stats" id="wiki-resource-stats" aria-live="polite">
-        <span>加载中</span>
-      </div>
+        <div class="wiki-resource-stats" id="wiki-resource-stats" aria-live="polite">
+          <span>加载中</span>
+        </div>
 
-      <div class="wiki-resource-controls resource-stage-controls">
-        <div class="wiki-resource-tabs" id="wiki-resource-tabs" role="tablist" aria-label="收藏分类"></div>
-      </div>
+        <div class="wiki-resource-controls resource-stage-controls">
+          <div class="wiki-resource-tabs" id="wiki-resource-tabs" role="tablist" aria-label="收藏分类"></div>
+        </div>
 
-      <div class="wiki-resource-panel" id="wiki-resource-panel" aria-live="polite">
-        <p class="wiki-resource-empty">香奈美正在整理星光收藏室，稍等一下哦。</p>
-      </div>
-    </section>
+        <div class="wiki-resource-panel" id="wiki-resource-panel" aria-live="polite">
+          <p class="wiki-resource-empty">香奈美正在整理星光收藏室，稍等一下哦。</p>
+        </div>
+      </section>
+
+      <aside class="wiki-resource-toc" aria-labelledby="wiki-resource-toc-title">
+        <div class="wiki-resource-toc-title" id="wiki-resource-toc-title">香奈美的小目录</div>
+        <nav id="wiki-resource-toc" aria-label="星光收藏室目录"></nav>
+      </aside>
+    </div>
   </main>
+
+  <button class="wiki-back-top" id="wiki-back-top" type="button" aria-label="回到星光收藏室顶部" title="返回顶部">↑</button>
 
   <script>
     window.KANAMI_WIKI_BASE = "/res/WIKI/";
