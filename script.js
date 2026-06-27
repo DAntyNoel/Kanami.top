@@ -354,7 +354,21 @@ document.addEventListener("DOMContentLoaded", () => {
     renderPanel();
   }
 
+  function loadBundledResources() {
+    const bundled = window.KANAMI_WIKI_DATA;
+    if (!bundled) return false;
+    const missing = groups.some((group) => !bundled[group.id]);
+    if (missing) return false;
+    state.data = Object.fromEntries(groups.map((group) => [group.id, bundled[group.id]]));
+    for (const group of mediaGroups) {
+      state.flat[group.id] = flattenMedia(group.id, state.data[group.id] || {});
+    }
+    state.flat.oath = flattenOath(state.data.oath || {});
+    return true;
+  }
+
   async function loadResources() {
+    if (loadBundledResources()) return;
     const responses = await Promise.all(groups.map(async (group) => {
       const response = await fetch(wikiBase + group.file);
       if (!response.ok) throw new Error(`${group.file} ${response.status}`);

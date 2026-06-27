@@ -50,6 +50,20 @@ GALLERY_SECTION = "画廊"
 VOICE_FILE = "audio.json"
 VOICE_SECTION = "语音台词"
 OATH_TEXT_FILE = "oath_texts.json"
+DATA_BUNDLE_FILE = "wiki-data.js"
+DATA_BUNDLE_GROUPS = [
+    ("emotes", "emotes.json"),
+    ("wallpapers", "story_wallpapers.json"),
+    ("outfits", "outfits.json"),
+    ("audio", "audio.json"),
+    ("character", "character.json"),
+    ("weapons", "weapons.json"),
+    ("skills", "skills.json"),
+    ("imprints", "imprints.json"),
+    ("network", "amplification_network.json"),
+    ("updates", "update_history.json"),
+    ("oath", OATH_TEXT_FILE),
+]
 CONTENT_SELECTOR = "#mw-content-text"
 REQUEST_HEADERS = {
     "User-Agent": (
@@ -649,6 +663,24 @@ def write_oath_texts(oath_texts: dict[str, Any]) -> None:
     )
 
 
+def write_data_bundle(
+    resources: dict[str, OrderedDict[str, dict[str, Any]]],
+    oath_texts: dict[str, Any],
+) -> None:
+    payload: dict[str, Any] = {}
+    for group_id, filename in DATA_BUNDLE_GROUPS:
+        payload[group_id] = oath_texts if filename == OATH_TEXT_FILE else resources[filename]
+
+    output_dir = Path(__file__).resolve().parents[1]
+    path = output_dir / DATA_BUNDLE_FILE
+    path.write_text(
+        "window.KANAMI_WIKI_DATA="
+        + json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+        + ";\n",
+        encoding="utf-8",
+    )
+
+
 def main() -> None:
     resources = init_resources()
     build_main_resources(fetch_source(SOURCE_PAGE), resources)
@@ -657,6 +689,7 @@ def main() -> None:
     oath_texts = build_oath_texts(fetch_source(OATH_PAGE))
     write_resources(resources)
     write_oath_texts(oath_texts)
+    write_data_bundle(resources, oath_texts)
     total = sum(len(data) for data in resources.values())
     for filename, data in resources.items():
         print(f"{filename}: {len(data)}")
