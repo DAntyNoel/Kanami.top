@@ -117,6 +117,48 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function localWikiAssetUrl(url) {
+    try {
+      const localBase = window.KANAMI_WIKI_LOCAL_ASSET_BASE;
+      if (!localBase) return null;
+      const parsed = new URL(url);
+      if (parsed.hostname !== "patchwiki.biligame.com") return null;
+      const marker = "/images/klbq/";
+      const markerIndex = parsed.pathname.indexOf(marker);
+      if (markerIndex === -1) return null;
+      return `${localBase.replace(/\/$/, "")}${parsed.pathname.slice(markerIndex)}`;
+    } catch {
+      return null;
+    }
+  }
+
+  function useLocalWikiAssets() {
+    return window.KANAMI_WIKI_USE_LOCAL_ASSETS === true && Boolean(window.KANAMI_WIKI_LOCAL_ASSET_BASE);
+  }
+
+  function uniqueUrls(urls) {
+    return urls.filter(Boolean).filter((url, index, list) => list.indexOf(url) === index);
+  }
+
+  function mediaSourceCandidates(url, previewUrl) {
+    const remoteUrls = uniqueUrls([previewUrl, url]);
+    const localUrls = uniqueUrls(remoteUrls.map(localWikiAssetUrl));
+    return useLocalWikiAssets() ? uniqueUrls([...localUrls, ...remoteUrls]) : uniqueUrls(remoteUrls);
+  }
+
+  function applyFallbackSource(el, urls) {
+    const candidates = uniqueUrls(urls);
+    let index = 0;
+    if (!candidates.length) return;
+    el.src = candidates[index];
+    el.addEventListener("error", () => {
+      index += 1;
+      if (index < candidates.length) {
+        el.src = candidates[index];
+      }
+    });
+  }
+
   function flattenMedia(id, data) {
     return Object.entries(data).map(([url, meta]) => ({
       id: url,
@@ -235,15 +277,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const thumb = createEl("div", "wiki-resource-thumb");
     if (meta.mediaType === "image") {
       const img = document.createElement("img");
-      img.src = meta.thumbnailUrl || url;
       img.alt = title;
       img.loading = "lazy";
+      applyFallbackSource(img, mediaSourceCandidates(url, meta.thumbnailUrl));
       thumb.appendChild(img);
     } else if (meta.mediaType === "audio") {
       const audio = document.createElement("audio");
       audio.controls = true;
       audio.preload = "none";
-      audio.src = url;
+      applyFallbackSource(audio, mediaSourceCandidates(url));
       thumb.appendChild(audio);
     } else {
       thumb.appendChild(createEl("span", "wiki-resource-file", meta.extension || "FILE"));

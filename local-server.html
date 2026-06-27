@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="res/styles/style.css" />
   <link rel="stylesheet" href="res/styles/layers.css" />
   <link rel="stylesheet" href="res/styles/stamp.css" />
+  <link rel="stylesheet" href="res/styles/wiki-resources.css" />
   <!-- <link rel="stylesheet" href="res/styles/improve.css" /> -->
   <link rel="icon" type="image/png" href="res/images/favicon.png" />
 </head>
@@ -86,6 +87,32 @@
         <!-- 随机表情包会在这里生成 -->
       </div>
       <p>现在还没有多少图片哦～所以你怎么换也都只有这些啦</p>
+    </section>
+
+    <section class="section wiki-resources" id="wiki-resources" aria-labelledby="wiki-resources-title">
+      <div class="wiki-resources-head">
+        <div>
+          <h2 id="wiki-resources-title">KANAMI Local Resource Stage</h2>
+          <p class="wiki-resources-lead">香奈美把本地缓存好的 WIKI 素材也摆上舞台啦。</p>
+        </div>
+        <a class="wiki-source-link" href="https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E" target="_blank" rel="noopener noreferrer">WIKI</a>
+      </div>
+
+      <div class="wiki-resource-stats" id="wiki-resource-stats" aria-live="polite">
+        <span>加载中</span>
+      </div>
+
+      <div class="wiki-resource-controls">
+        <div class="wiki-resource-tabs" id="wiki-resource-tabs" role="tablist" aria-label="资源分类"></div>
+        <label class="wiki-resource-search">
+          <span>Search</span>
+          <input id="wiki-resource-search" type="search" placeholder="搜标题、分类、台词" autocomplete="off" />
+        </label>
+      </div>
+
+      <div class="wiki-resource-panel" id="wiki-resource-panel" aria-live="polite">
+        <p class="wiki-resource-empty">香奈美正在整理本地资源，稍等一下哦。</p>
+      </div>
     </section>
 
     <section class="section game">
@@ -180,6 +207,11 @@
 
   </main>
 
+  <script>
+    window.KANAMI_WIKI_USE_LOCAL_ASSETS = true;
+    window.KANAMI_WIKI_LOCAL_ASSET_BASE = "/files/WIKI";
+  </script>
+  <script src="res/WIKI/wiki-data.js"></script>
   <script src="script.js"></script>
   <script src="/auth/session.js"></script>
   <script src="/__reload-client.js"></script>
