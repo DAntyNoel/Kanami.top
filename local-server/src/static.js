@@ -32,6 +32,20 @@ const AUTH_ROUTES = new Map([
   ["/auth/profile", "auth/profile.html"]
 ]);
 
+const LOCAL_WIKI_DATA_FILES = new Set([
+  "WIKI/amplification_network.json",
+  "WIKI/audio.json",
+  "WIKI/character.json",
+  "WIKI/emotes.json",
+  "WIKI/imprints.json",
+  "WIKI/oath_texts.json",
+  "WIKI/outfits.json",
+  "WIKI/skills.json",
+  "WIKI/story_wallpapers.json",
+  "WIKI/update_history.json",
+  "WIKI/weapons.json"
+]);
+
 let reloadState = {
   token: String(Date.now()),
   next: ""
@@ -118,6 +132,21 @@ function sendFile(req, res, filePath, cacheControl) {
   fs.createReadStream(filePath).pipe(res);
 }
 
+function sendHtml(req, res, filePath, cacheControl, transform = (html) => html) {
+  const html = transform(fs.readFileSync(filePath, "utf8"));
+  res.writeHead(200, {
+    "Content-Type": "text/html; charset=utf-8",
+    "Cache-Control": cacheControl
+  });
+
+  if (req.method === "HEAD") {
+    res.end();
+    return;
+  }
+
+  res.end(html);
+}
+
 function resolveInside(baseDir, requestPath) {
   let decoded;
   try {
@@ -166,8 +195,58 @@ function hasAdminAccess(req, url) {
   return req.headers["x-kanami-admin-token"] === config.adminToken || url.searchParams.get("token") === config.adminToken;
 }
 
+function localRuntimeConfig(req, url) {
+  return {
+    enabled: true,
+    serviceName: config.serviceName,
+    remoteHost: config.remoteHost,
+    remoteUrl: config.remoteUrl,
+    remoteConnected: config.remoteConnected,
+    showAdminTools: hasAdminAccess(req, url),
+    wikiBase: "/files/WIKI/",
+    wikiUseLocalAssets: true,
+    wikiLocalAssetBase: "/files/WIKI/"
+  };
+}
+
+function localBootstrapScript(req, url) {
+  const json = JSON.stringify(localRuntimeConfig(req, url)).replace(/</g, "\\u003c");
+  return `<script>
+    window.KANAMI_LOCAL_SERVER = ${json};
+    window.KANAMI_WIKI_BASE = window.KANAMI_LOCAL_SERVER.wikiBase;
+    window.KANAMI_WIKI_USE_LOCAL_ASSETS = window.KANAMI_LOCAL_SERVER.wikiUseLocalAssets;
+    window.KANAMI_WIKI_LOCAL_ASSET_BASE = window.KANAMI_LOCAL_SERVER.wikiLocalAssetBase;
+  </script>`;
+}
+
+function localRuntimeScripts(req, url) {
+  const scripts = [
+    localBootstrapScript(req, url),
+    `<script src="/local-runtime.js"></script>`,
+    `<script src="/auth/session.js"></script>`
+  ];
+  if (hasAdminAccess(req, url)) {
+    scripts.push(`<script src="/__reload-client.js"></script>`);
+  }
+  return scripts.join("\n  ");
+}
+
+function prepareLocalHtml(req, url, html) {
+  let output = html
+    .replace(/<script>\s*window\.KANAMI_WIKI_BASE = "\/res\/WIKI\/";\s*<\/script>\s*/u, "")
+    .replace(/\s*<script src="\/res\/WIKI\/wiki-data\.js"><\/script>/u, "");
+
+  const scriptTagMatch = output.match(/<script src="\/?script\.js"><\/script>/u);
+  if (scriptTagMatch) {
+    return output.replace(scriptTagMatch[0], `${localRuntimeScripts(req, url)}\n  ${scriptTagMatch[0]}`);
+  }
+
+  return output.replace("</body>", `  ${localRuntimeScripts(req, url)}\n</body>`);
+}
+
 function isAllowedMappedPath(requested) {
   const normalized = requested.replace(/^\/+/, "");
+  if (LOCAL_WIKI_DATA_FILES.has(normalized)) return true;
   return config.fileAllowedPrefixes.some((prefix) => normalized === prefix.slice(0, -1) || normalized.startsWith(prefix));
 }
 
@@ -207,7 +286,7 @@ export function tryServeStatic(req, res, url) {
   }
 
   if (url.pathname === "/" || url.pathname === "/start") {
-    sendFile(req, res, paths.entryHtml, "no-store");
+    sendHtml(req, res, paths.entryHtml, "no-store", (html) => prepareLocalHtml(req, url, html));
     return true;
   }
 
@@ -221,7 +300,7 @@ export function tryServeStatic(req, res, url) {
   }
 
   if (url.pathname === "/resource" || url.pathname === "/resource/") {
-    sendFile(req, res, paths.resourceHtml, "no-store");
+    sendHtml(req, res, paths.resourceHtml, "no-store", (html) => prepareLocalHtml(req, url, html));
     return true;
   }
 

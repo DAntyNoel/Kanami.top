@@ -62,7 +62,7 @@ export const paths = {
   public: path.join(rootDir, "public"),
   sharedAssets: path.resolve(rootDir, "..", "res"),
   sharedGames: path.resolve(rootDir, "..", "games"),
-  entryHtml: path.resolve(rootDir, "..", "local-server.html"),
+  entryHtml: path.resolve(rootDir, "..", "index.html"),
   offlineHtml: path.resolve(rootDir, "..", "local-server-offline.html"),
   resourceHtml: path.resolve(rootDir, "..", "resource", "index.html"),
   sharedScript: path.resolve(rootDir, "..", "script.js"),
@@ -79,6 +79,19 @@ export const config = {
   remoteConnected: boolEnv("LOCAL_SERVER_REMOTE_CONNECTED", true),
   fileRoutePrefix: "/files/",
   publicFilesEnabled: boolEnv("LOCAL_SERVER_PUBLIC_FILES", true),
-  fileAllowedPrefixes: listEnv("LOCAL_SERVER_FILE_ALLOWED_PREFIXES", ["WIKI/images/"]),
+  fileAllowedPrefixes: listEnv("LOCAL_SERVER_FILE_ALLOWED_PREFIXES", [
+    "WIKI/images/",
+    "WIKI/amplification_network.json",
+    "WIKI/audio.json",
+    "WIKI/character.json",
+    "WIKI/emotes.json",
+    "WIKI/imprints.json",
+    "WIKI/oath_texts.json",
+    "WIKI/outfits.json",
+    "WIKI/skills.json",
+    "WIKI/story_wallpapers.json",
+    "WIKI/update_history.json",
+    "WIKI/weapons.json"
+  ]),
   adminToken: env("LOCAL_SERVER_ADMIN_TOKEN", "")
 };

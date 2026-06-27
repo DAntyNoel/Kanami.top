@@ -29,6 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // 随机表情包展示功能
 document.addEventListener("DOMContentLoaded", () => {
   const stampsDir = "res/images/stamps/";
+  const wikiBase = window.KANAMI_WIKI_BASE || "res/WIKI/";
   const fallbackStamps = [
     { src: `${stampsDir}001.png`, title: "香奈美表情 001" },
     { src: `${stampsDir}002.jpg`, title: "香奈美表情 002" },
@@ -42,6 +43,39 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let allStamps = fallbackStamps;
 
+  function wikiUrl(file) {
+    return `${wikiBase.replace(/\/?$/, "/")}${file}`;
+  }
+
+  function localWikiAssetUrl(url) {
+    try {
+      const localBase = window.KANAMI_WIKI_LOCAL_ASSET_BASE;
+      if (!localBase) return null;
+      const parsed = new URL(url);
+      if (parsed.hostname !== "patchwiki.biligame.com") return null;
+      const marker = "/images/klbq/";
+      const markerIndex = parsed.pathname.indexOf(marker);
+      if (markerIndex === -1) return null;
+      return `${localBase.replace(/\/$/, "")}${parsed.pathname.slice(markerIndex)}`;
+    } catch {
+      return null;
+    }
+  }
+
+  function useLocalWikiAssets() {
+    return window.KANAMI_WIKI_USE_LOCAL_ASSETS === true && Boolean(window.KANAMI_WIKI_LOCAL_ASSET_BASE);
+  }
+
+  function uniqueUrls(urls) {
+    return urls.filter(Boolean).filter((url, index, list) => list.indexOf(url) === index);
+  }
+
+  function stampSourceCandidates(url, previewUrl) {
+    const remoteUrls = uniqueUrls([previewUrl, url]);
+    const localUrls = uniqueUrls(remoteUrls.map(localWikiAssetUrl));
+    return useLocalWikiAssets() ? uniqueUrls([...localUrls, ...remoteUrls]) : uniqueUrls(remoteUrls);
+  }
+
   function randomStamps() {
     const count = Math.min(allStamps.length, Math.max(6, Math.floor(Math.random() * 7) + 6));
     return [...allStamps]
@@ -53,21 +87,30 @@ document.addEventListener("DOMContentLoaded", () => {
     const fragment = document.createDocumentFragment();
     for (const stamp of randomStamps()) {
       const img = document.createElement("img");
-      img.src = stamp.src;
+      const candidates = stamp.sources || [stamp.src];
+      let sourceIndex = 0;
+      img.src = candidates[sourceIndex];
       img.alt = stamp.title || "香奈美表情";
       img.loading = "lazy";
+      img.addEventListener("error", () => {
+        sourceIndex += 1;
+        if (sourceIndex < candidates.length) {
+          img.src = candidates[sourceIndex];
+        }
+      });
       fragment.appendChild(img);
     }
     grid.replaceChildren(fragment);
   }
 
   async function loadWikiStamps() {
-    const response = await fetch("res/WIKI/emotes.json", { cache: "no-store" });
+    const response = await fetch(wikiUrl("emotes.json"), { cache: "no-store" });
     if (!response.ok) throw new Error(`emotes.json ${response.status}`);
     const data = await response.json();
     const stamps = Object.entries(data)
       .map(([url, meta]) => ({
-        src: meta.thumbnailUrl || url,
+        src: stampSourceCandidates(url, meta.thumbnailUrl)[0],
+        sources: stampSourceCandidates(url, meta.thumbnailUrl),
         title: meta.title || "香奈美 WIKI 表情"
       }))
       .filter((stamp) => stamp.src);
@@ -354,7 +397,7 @@ document.addEventListener("DOMContentLoaded", () => {
       body.appendChild(createEl("p", "wiki-resource-text", meta.text));
     }
     const open = createEl("a", "wiki-resource-open", "打开资源");
-    open.href = url;
+    open.href = mediaSourceCandidates(url)[0] || url;
     open.target = "_blank";
     open.rel = "noopener noreferrer";
     body.appendChild(open);

@@ -1,8 +1,8 @@
 # Kanami Local Server
 
-`local-server` 目录只保留本地映射服务的后台逻辑。入口页面放在仓库根目录：
+`local-server` 目录只保留本地映射服务的后台逻辑。在线入口复用仓库根目录的主站页面：
 
-- `../local-server.html`：在线默认入口，视觉复用主站，只额外加入 `Remote Link` 区块。
+- `../index.html`：在线默认入口，服务返回时会注入本地登录、图库、刷新和本地 WIKI 资源配置。
 - `../local-server-offline.html`：服务离线展示页。
 
 服务默认监听 `127.0.0.1:12700`，未来用于通过 Cloudflare Tunnel 暴露到 `local-server.kanami.top`。
@@ -46,7 +46,7 @@ npm run cloudflare
 
 ## 路由
 
-- `/` 或 `/start`：读取根目录的 `local-server.html`。
+- `/` 或 `/start`：读取根目录的 `index.html`，并注入本地运行时增强。
 - `/offline`：读取根目录的 `local-server-offline.html`。
 - `/health`：公网安全的健康检查 JSON，只返回在线状态。
 - `/health/detail`：本地详细健康检查，包含本地端口、远程域名和文件映射目录状态。
@@ -56,8 +56,8 @@ npm run cloudflare
 - `/gallery/media/<folder>/<path>`：从 `LOCAL_SERVER_GALLERY_DIR` 中安全映射图片和缩略图。
 - `/__reload?next=<path>`：临时调试入口，仅本机或带 `LOCAL_SERVER_ADMIN_TOKEN` 可用，要求浏览器清理站点缓存后回到指定路径。
 - `/__reload/trigger?next=<path>`：终端或外部工具触发已打开页面自动刷新，仅本机或带管理口令可用。
-- `/files/<path>`：从 `LOCAL_SERVER_FILES_DIR` 指向的目录中安全映射文件，默认只公开 `LOCAL_SERVER_FILE_ALLOWED_PREFIXES` 列出的 `WIKI/images/` 素材目录。
+- `/files/<path>`：从 `LOCAL_SERVER_FILES_DIR` 指向的目录中安全映射文件，默认只公开 WIKI 图片目录和资源页需要的 WIKI JSON 文件。
 
-CSS、脚本、图片和游戏入口复用主站根目录资源；真实映射文件放在 `files/`，不会被提交。图库默认读取 `../KanamiBot/data/advanced_media`，可通过 `LOCAL_SERVER_GALLERY_DIR` 改到其他同结构目录。需要公开更多映射目录时，优先把明确的资源目录加入 `LOCAL_SERVER_FILE_ALLOWED_PREFIXES`，不要直接把整个 `files/` 放到公网。
+CSS、脚本、图片、游戏入口和资源页复用主站根目录资源。本地服务会把资源页的 WIKI 数据源切到 `/files/WIKI/`，并让图片优先从 `/files/WIKI/images/` 读取，缺失时再回退到 WIKI 远端地址。真实映射文件放在 `files/`，不会被提交。图库默认读取 `../KanamiBot/data/advanced_media`，可通过 `LOCAL_SERVER_GALLERY_DIR` 改到其他同结构目录。需要公开更多映射目录时，优先把明确的资源目录加入 `LOCAL_SERVER_FILE_ALLOWED_PREFIXES`，不要直接把整个 `files/` 放到公网。
 
 `/auth/*` 当前是本地调试资料页，账号和头像只保存在当前浏览器的 `localStorage` 中。它可以用于本地展示登录态，但不等同于公网服务端认证。
