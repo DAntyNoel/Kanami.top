@@ -16,6 +16,7 @@ from bs4 import BeautifulSoup, Tag
 
 SOURCE_PAGE = "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E"
 GALLERY_PAGE = "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E/%E7%94%BB%E5%BB%8A"
+VOICE_PAGE = "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E/%E8%AF%AD%E9%9F%B3%E5%8F%B0%E8%AF%8D"
 RESOURCE_HOST_MARKER = "patchwiki.biligame.com/images/klbq/"
 MEDIA_EXTENSIONS = {
     "png": "image",
@@ -45,7 +46,19 @@ SKIP_HEADINGS = {"香奈美", "WIKI功能", "目录"}
 GALLERY_FILE = "story_wallpapers.json"
 GALLERY_TYPE = "story_wallpaper"
 GALLERY_SECTION = "画廊"
+VOICE_FILE = "audio.json"
+VOICE_SECTION = "语音台词"
 CONTENT_SELECTOR = "#mw-content-text"
+REQUEST_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/126.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+    "Referer": SOURCE_PAGE,
+}
 
 
 def text_of(node: Tag | None) -> str:
@@ -58,7 +71,7 @@ def fetch_source(source_page: str) -> str:
     response = requests.get(
         source_page,
         timeout=30,
-        headers={"User-Agent": "Mozilla/5.0 KanamiTopResourceMapper/1.0"},
+        headers=REQUEST_HEADERS,
     )
     response.raise_for_status()
     return response.text
@@ -113,6 +126,26 @@ def title_from(tag: Tag, raw_url: str, normalized_url: str) -> str:
     source_name = unquote(urlparse(raw_url).path.rsplit("/", 1)[-1])
     normalized_name = unquote(urlparse(normalized_url).path.rsplit("/", 1)[-1])
     return source_name or normalized_name
+
+
+def media_file_name_from_link(link: Tag, raw_url: str, normalized_url: str) -> str:
+    label = text_of(link).removeprefix("媒体文件:").strip()
+    if label:
+        return label
+    return title_from(link, raw_url, normalized_url)
+
+
+def language_from_filename(filename: str) -> str:
+    stem = filename.rsplit(".", 1)[0]
+    if re.search(r"(?:^|[-_ ])JP(?:$|[-_ 0-9])", stem, re.IGNORECASE):
+        return "JP"
+    if re.search(r"(?:^|[-_ ])EN(?:$|[-_ 0-9])", stem, re.IGNORECASE):
+        return "EN"
+    if re.search(r"(?:^|[-_ ])CN(?:$|[-_ 0-9])", stem, re.IGNORECASE) or re.search(
+        r"CN$", stem, re.IGNORECASE
+    ):
+        return "CN"
+    return "CN"
 
 
 def int_attr(tag: Tag, name: str) -> int | None:
@@ -170,6 +203,9 @@ def merge_metadata(existing: dict[str, Any], incoming: dict[str, Any]) -> None:
         existing["height"] = incoming["height"]
     for key in ("title", "width", "height"):
         if not existing.get(key) and incoming.get(key):
+            existing[key] = incoming[key]
+    for key in ("language", "text", "voiceType", "voiceTag"):
+        if incoming.get(key):
             existing[key] = incoming[key]
 
 
@@ -293,6 +329,77 @@ def build_gallery_resources(
                 target[normalized_url] = metadata
 
 
+def build_voice_resources(
+    html: str,
+    resources: dict[str, OrderedDict[str, dict[str, Any]]],
+) -> None:
+    soup = BeautifulSoup(html, "html.parser")
+    content = soup.select_one(CONTENT_SELECTOR) or soup
+    target = resources[VOICE_FILE]
+
+    for table in content.select("table.voice-table"):
+        heading = table.find_previous("h2")
+        voice_type = text_of(heading) if heading else None
+        if not voice_type or voice_type in SKIP_HEADINGS:
+            continue
+
+        current_tag: str | None = None
+        for row in table.find_all("tr"):
+            cells = row.find_all(["th", "td"], recursive=False)
+            if len(cells) < 2:
+                continue
+
+            media_cell_index = next(
+                (
+                    index
+                    for index, cell in enumerate(cells)
+                    if any(collect_urls(link, VOICE_PAGE) for link in cell.find_all("a"))
+                ),
+                None,
+            )
+            if media_cell_index is None:
+                continue
+
+            if media_cell_index > 0:
+                current_tag = text_of(cells[0])
+
+            voice_tag = current_tag or ""
+            text_cell = cells[media_cell_index + 1] if media_cell_index + 1 < len(cells) else None
+            voice_text = text_of(text_cell)
+
+            for link in cells[media_cell_index].find_all("a"):
+                for raw_url in collect_urls(link, VOICE_PAGE):
+                    normalized_url = normalize_url(raw_url, VOICE_PAGE)
+                    extension = extension_of(normalized_url)
+                    media_type = MEDIA_EXTENSIONS[extension]
+                    if media_type != "audio":
+                        continue
+
+                    title = media_file_name_from_link(link, raw_url, normalized_url)
+                    metadata: dict[str, Any] = {
+                        "title": title,
+                        "type": "audio",
+                        "section": VOICE_SECTION,
+                        "subsection": voice_type,
+                        "mediaType": media_type,
+                        "extension": extension,
+                        "thumbnailUrl": None,
+                        "sourcePage": VOICE_PAGE,
+                        "width": None,
+                        "height": None,
+                        "occurrences": 1,
+                        "language": language_from_filename(title),
+                        "text": voice_text,
+                        "voiceType": voice_type,
+                        "voiceTag": voice_tag,
+                    }
+
+                    if normalized_url in target:
+                        merge_metadata(target[normalized_url], metadata)
+                    else:
+                        target[normalized_url] = metadata
+
+
 def write_resources(resources: dict[str, OrderedDict[str, dict[str, Any]]]) -> None:
     output_dir = Path(__file__).resolve().parents[1]
     for filename, data in resources.items():
@@ -307,6 +414,7 @@ def main() -> None:
     resources = init_resources()
     build_main_resources(fetch_source(SOURCE_PAGE), resources)
     build_gallery_resources(fetch_source(GALLERY_PAGE), resources)
+    build_voice_resources(fetch_source(VOICE_PAGE), resources)
     write_resources(resources)
     total = sum(len(data) for data in resources.values())
     for filename, data in resources.items():
