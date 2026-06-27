@@ -29,10 +29,179 @@ body {
     url("/res/images/backgrounds/Be-Shinning.png") center / cover fixed;
 }
 
+:root {
+  --kanami-header-width: calc(100vw - clamp(20px, 6vw, 72px));
+  --kanami-header-logo-column: clamp(116px, 18vw, 220px);
+  --kanami-header-action-column: clamp(48px, 26vw, 340px);
+}
+
 button,
 textarea,
 a {
   font: inherit;
+}
+
+.kanami-chat-site-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: minmax(0, var(--kanami-header-logo-column)) minmax(0, 1fr) minmax(44px, var(--kanami-header-action-column));
+  align-items: center;
+  gap: 16px;
+  width: var(--kanami-header-width);
+  min-height: 64px;
+  margin: 0 auto;
+  padding: 10px clamp(14px, 4vw, 34px);
+  border-bottom: 1px solid var(--line);
+  border-radius: 0 0 8px 8px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 32px rgba(47, 38, 52, 0.14);
+  backdrop-filter: blur(14px);
+}
+
+.kanami-header-logo,
+.kanami-header-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border: 1px solid rgba(72, 55, 84, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.kanami-header-logo {
+  justify-self: start;
+  width: 100%;
+  min-width: 0;
+  gap: 10px;
+  padding: 0 12px 0 8px;
+}
+
+.kanami-header-logo img {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.kanami-header-logo span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kanami-header-copy {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.kanami-header-copy h1,
+.kanami-header-copy p {
+  width: max-content;
+  max-width: none;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.kanami-header-copy h1 {
+  font-size: clamp(1rem, 1.8vw, 1.25rem);
+  font-weight: 850;
+  line-height: 1.12;
+}
+
+.kanami-header-copy p {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.kanami-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  justify-self: end;
+  width: 100%;
+  min-width: 0;
+  gap: 10px;
+}
+
+.kanami-header-actions a {
+  min-width: 0;
+  max-width: 150px;
+  padding: 0 13px;
+  white-space: nowrap;
+}
+
+.kanami-header-menu {
+  position: relative;
+  justify-self: end;
+}
+
+.kanami-header-menu summary {
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  height: 40px;
+  border: 1px solid rgba(72, 55, 84, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.76);
+  cursor: pointer;
+  list-style: none;
+}
+
+.kanami-header-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.kanami-header-menu summary span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--ink);
+}
+
+.kanami-header-menu-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 100;
+  display: grid;
+  gap: 8px;
+  width: min(78vw, 280px);
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 18px 46px rgba(47, 38, 52, 0.2);
+}
+
+.kanami-header-menu-panel a {
+  width: 100%;
+  max-width: none;
+}
+
+[data-header-overflow-line="true"] {
+  animation: kanamiHeaderTicker 8s ease-in-out infinite alternate;
+}
+
+@keyframes kanamiHeaderTicker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(var(--kanami-marquee-distance, -40px));
+  }
 }
 
 .chat-shell {
@@ -40,7 +209,7 @@ a {
   grid-template-columns: minmax(260px, 0.8fr) minmax(320px, 1.2fr);
   gap: 24px;
   width: min(1120px, calc(100vw - 32px));
-  min-height: 100vh;
+  min-height: calc(100vh - 64px);
   margin: 0 auto;
   padding: 40px 0;
   align-items: center;
@@ -232,11 +401,13 @@ textarea:focus {
 
 .offline-body {
   display: grid;
-  place-items: center;
+  grid-template-rows: auto 1fr;
+  place-items: start center;
   padding: 24px;
 }
 
 .offline-page {
+  align-self: center;
   width: min(680px, 100%);
   padding: 44px;
   border: 1px solid rgba(255, 255, 255, 0.72);
@@ -302,6 +473,25 @@ textarea:focus {
 }
 
 @media (max-width: 520px) {
+  :root {
+    --kanami-header-width: calc(100vw - 16px);
+    --kanami-header-logo-column: 46px;
+    --kanami-header-action-column: 46px;
+  }
+
+  .kanami-chat-site-header {
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .kanami-header-logo {
+    padding: 0;
+  }
+
+  .kanami-header-logo span {
+    display: none;
+  }
+
   .chat-shell {
     width: min(100vw - 20px, 1120px);
   }

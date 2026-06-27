@@ -5,8 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>香奈美正在准备中</title>
   <link rel="stylesheet" href="/styles.css" />
+  <link rel="icon" type="image/png" href="/res/images/favicon.png" />
 </head>
 <body class="offline-body">
+  <header class="kanami-chat-site-header" aria-label="站点页眉">
+    <a href="https://kanami.top/" class="kanami-header-logo" aria-label="回到 kanami.top 主站">
+      <img src="/res/images/favicon.png" alt="" />
+      <span>kanami.top</span>
+    </a>
+    <div class="kanami-header-copy" aria-label="当前页面">
+      <h1>香奈美的聊天入口</h1>
+    </div>
+    <nav class="kanami-header-actions" aria-label="快捷入口">
+      <a href="/start">再试一次</a>
+      <a href="https://kanami.top/">主站</a>
+    </nav>
+  </header>
+
   <main class="offline-page">
     <p class="eyebrow">KANAMI IS OFFLINE</p>
     <h1>后台的舞台灯暂时暗下来了。</h1>
@@ -16,5 +31,6 @@
       <a class="offline-action offline-action-secondary" href="https://kanami.top/">回到我的主页</a>
     </div>
   </main>
+  <script src="/res/scripts/header.js"></script>
 </body>
 </html>

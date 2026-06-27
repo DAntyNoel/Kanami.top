@@ -36,11 +36,13 @@
     const nav = header?.querySelector(".site-nav");
     const logo = header?.querySelector(".site-logo");
     const logoText = header?.querySelector(".site-logo-text");
+    const headerTitle = header?.querySelector(".site-header-copy h1");
     if (!header || !nav || !logo || !logoText) return;
 
     header.dataset.siteHeader = "local-server";
     logo.setAttribute("aria-label", "回到香奈美本地舞台");
     logoText.textContent = "本地舞台";
+    if (headerTitle) headerTitle.textContent = "香奈美的本地舞台";
 
     nav.querySelectorAll("[data-local-runtime-nav]").forEach((item) => item.remove());
 

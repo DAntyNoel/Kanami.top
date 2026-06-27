@@ -8,6 +8,21 @@
   <link rel="icon" type="image/png" href="/res/images/favicon.png" />
 </head>
 <body>
+  <header class="kanami-chat-site-header" aria-label="站点页眉">
+    <a href="https://kanami.top/" class="kanami-header-logo" aria-label="回到 kanami.top 主站">
+      <img src="/res/images/favicon.png" alt="" />
+      <span>kanami.top</span>
+    </a>
+    <div class="kanami-header-copy" aria-label="当前页面">
+      <h1>香奈美的聊天入口</h1>
+    </div>
+    <nav class="kanami-header-actions" aria-label="快捷入口">
+      <a href="https://kanami.top/resource/">星光收藏室</a>
+      <a href="https://kanami.top/#games">小游戏</a>
+      <a href="https://kanami.top/">主站</a>
+    </nav>
+  </header>
+
   <main class="chat-shell">
     <section class="profile" aria-label="香奈美">
       <div class="profile-art">
@@ -39,5 +54,6 @@
   </main>
 
   <script src="/app.js" type="module"></script>
+  <script src="/res/scripts/header.js"></script>
 </body>
 </html>

@@ -13,6 +13,12 @@ body {
     position: relative;
 }
 
+:root {
+    --kanami-header-width: calc(100vw - clamp(20px, 6vw, 72px));
+    --kanami-header-logo-column: clamp(116px, 18vw, 220px);
+    --kanami-header-action-column: clamp(48px, 26vw, 340px);
+}
+
 .eyebrow {
     margin-bottom: 8px;
     color: #7b5380;
@@ -40,15 +46,17 @@ body {
     position: sticky;
     top: 0;
     z-index: 20;
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, var(--kanami-header-logo-column)) minmax(0, 1fr) minmax(44px, var(--kanami-header-action-column));
     align-items: center;
-    justify-content: space-between;
     gap: 16px;
-    width: 100%;
+    width: var(--kanami-header-width);
     min-height: 64px;
+    margin: 0 auto;
     padding: 10px clamp(14px, 4vw, 34px);
     background: rgba(255, 255, 255, 0.92);
     border-bottom: 1px solid rgba(102, 126, 234, 0.16);
+    border-radius: 0 0 8px 8px;
     box-shadow: 0 12px 32px rgba(69, 51, 95, 0.12);
     backdrop-filter: blur(14px);
 }
@@ -56,6 +64,8 @@ body {
 .site-logo {
     display: inline-flex;
     align-items: center;
+    justify-self: start;
+    width: 100%;
     min-width: 0;
     gap: 10px;
     color: #45335f;
@@ -79,10 +89,42 @@ body {
     white-space: nowrap;
 }
 
+.site-header-copy {
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+}
+
+.site-header-copy h1,
+.site-header-copy p {
+    width: max-content;
+    max-width: none;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.site-header-copy h1 {
+    color: #45335f;
+    font-size: clamp(1rem, 1.8vw, 1.25rem);
+    font-weight: 850;
+    line-height: 1.12;
+}
+
+.site-header-copy p {
+    margin-top: 4px;
+    color: #704a75;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
 .site-nav {
     display: flex;
     align-items: center;
     justify-content: flex-end;
+    justify-self: end;
+    width: 100%;
     min-width: 0;
     gap: 10px;
 }
@@ -122,6 +164,72 @@ body {
     max-width: 112px;
     background: rgba(255, 255, 255, 0.64);
     color: #5b66c4;
+}
+
+.kanami-header-menu {
+    position: relative;
+    justify-self: end;
+}
+
+.kanami-header-menu summary {
+    display: inline-grid;
+    place-items: center;
+    width: 42px;
+    height: 40px;
+    border: 1px solid rgba(118, 75, 162, 0.22);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.76);
+    cursor: pointer;
+    list-style: none;
+}
+
+.kanami-header-menu summary::-webkit-details-marker {
+    display: none;
+}
+
+.kanami-header-menu summary span {
+    display: block;
+    width: 18px;
+    height: 2px;
+    border-radius: 999px;
+    background: #45335f;
+}
+
+.kanami-header-menu-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 100;
+    display: grid;
+    gap: 8px;
+    width: min(78vw, 320px);
+    padding: 10px;
+    border: 1px solid rgba(118, 75, 162, 0.18);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 18px 46px rgba(69, 51, 95, 0.2);
+}
+
+.kanami-header-menu-panel .site-nav-link {
+    width: 100%;
+    max-width: none;
+}
+
+.site-nav[data-collapsed-menu="true"] {
+    overflow: visible;
+}
+
+[data-header-overflow-line="true"] {
+    animation: kanamiHeaderTicker 8s ease-in-out infinite alternate;
+}
+
+@keyframes kanamiHeaderTicker {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(var(--kanami-marquee-distance, -40px));
+    }
 }
 
 .site-user-avatar {
@@ -382,13 +490,19 @@ p {
 }
 
 @media (max-width: 520px) {
+    :root {
+        --kanami-header-width: calc(100vw - 16px);
+        --kanami-header-logo-column: 46px;
+        --kanami-header-action-column: 46px;
+    }
+
     .site-header {
         gap: 8px;
         padding: 8px 10px;
     }
 
     .site-logo-text {
-        max-width: 84px;
+        display: none;
     }
 
     .site-nav {
@@ -400,10 +514,6 @@ p {
         max-width: 118px;
         padding: 0 9px;
         font-size: 0.86rem;
-    }
-
-    .site-header[data-site-header="local-server"] .site-logo-text {
-        display: none;
     }
 
     .site-nav-link-reload {
