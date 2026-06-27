@@ -1,0 +1,5 @@
+[analysis]
+allowed-unresolved-imports = [
+  "bs4",
+  "requests",
+]
