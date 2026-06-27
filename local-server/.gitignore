@@ -8,3 +8,7 @@ __pycache__/
 
 files/*
 !files/.gitkeep
+!files/WIKI/
+!files/WIKI/scripts/
+!files/WIKI/scripts/download_wiki_resources.py
+!files/WIKI/requirements.txt
