@@ -436,14 +436,41 @@
     const confirmed = window.confirm(`香奈美要批量删除 ${ids.length} 项收藏吗？这个动作会立刻改写当前 WIKI 映射。`);
     if (!confirmed) return;
     try {
-      const payload = await api("/bulk-delete", {
-        method: "POST",
-        body: JSON.stringify({
-          group: state.activeGroup,
-          ids,
-          deleteFiles: els.bulkDeleteFiles.checked
-        })
-      });
+      let payload;
+      try {
+        payload = await api("/bulk-delete", {
+          method: "POST",
+          body: JSON.stringify({
+            group: state.activeGroup,
+            ids,
+            deleteFiles: els.bulkDeleteFiles.checked
+          })
+        });
+      } catch (error) {
+        if (error.payload?.error !== "API_NOT_FOUND") throw error;
+        const deleted = [];
+        const missing = [];
+        let filesDeleted = 0;
+        for (const id of ids) {
+          try {
+            const query = encodeQuery({
+              group: state.activeGroup,
+              id,
+              deleteFile: String(els.bulkDeleteFiles.checked)
+            });
+            const result = await api(`/item?${query}`, { method: "DELETE" });
+            deleted.push(id);
+            if (result.fileDeleted) filesDeleted += 1;
+          } catch (singleError) {
+            if (singleError.payload?.error === "ITEM_NOT_FOUND") {
+              missing.push(id);
+              continue;
+            }
+            throw singleError;
+          }
+        }
+        payload = { deleted, missing, filesDeleted };
+      }
       state.selectedIds.clear();
       if (ids.includes(state.selectedId)) state.selectedId = "";
       await refreshAll();
