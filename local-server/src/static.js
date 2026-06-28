@@ -305,6 +305,11 @@ export function tryServeStatic(req, res, url) {
     return true;
   }
 
+  if (url.pathname === "/resource/manage" || url.pathname === "/resource/manage/") {
+    sendFile(req, res, paths.resourceManageHtml, "no-store");
+    return true;
+  }
+
   const authRoute = AUTH_ROUTES.get(url.pathname);
   if (authRoute) {
     const authPath = path.join(paths.public, authRoute);

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>香奈美的资源管理台</title>
+  <link rel="stylesheet" href="/res/styles/style.css" />
+  <link rel="stylesheet" href="/res/styles/layers.css" />
+  <link rel="stylesheet" href="/resource-manage/manage.css" />
+  <link rel="icon" type="image/png" href="/res/images/favicon.png" />
+</head>
+<body>
+  <div class="background"></div>
+
+  <header class="site-header resource-manage-header">
+    <a href="/" class="site-logo" aria-label="回到香奈美主页">
+      <img src="/res/images/favicon.png" alt="kanami.top logo" />
+      <span class="site-logo-text">后台</span>
+    </a>
+    <div class="site-header-copy" aria-label="当前页面">
+      <h1>香奈美的资源管理台</h1>
+      <p>我会把收藏室整理得闪闪发光</p>
+    </div>
+    <nav class="site-nav" aria-label="资源管理快捷入口">
+      <a class="site-nav-link" href="/resource/">查看收藏室</a>
+      <a class="site-nav-link site-nav-link-primary" href="/">返回主页</a>
+    </nav>
+  </header>
+
+  <main class="resource-manage-app" data-manage-app>
+    <section class="resource-login" data-login-panel>
+      <div>
+        <p class="resource-kicker">管理口令</p>
+        <h1>香奈美先确认一下身份</h1>
+        <p>输入管理口令后，就可以整理 WIKI 映射资源。若你正在本机访问，我也可以直接带你进去。</p>
+      </div>
+      <form class="resource-login-form" data-login-form>
+        <label>
+          <span>管理口令</span>
+          <input name="token" type="password" autocomplete="current-password" placeholder="LOCAL_SERVER_ADMIN_TOKEN" />
+        </label>
+        <div class="resource-login-actions">
+          <button class="resource-button resource-button-primary" type="submit">进入管理台</button>
+          <button class="resource-button" type="button" data-local-login>本机直接进入</button>
+        </div>
+        <p class="resource-message" data-login-message role="status"></p>
+      </form>
+    </section>
+
+    <section class="resource-workbench" data-workbench hidden>
+      <aside class="resource-sidebar" aria-label="资源分类">
+        <div class="resource-sidebar-head">
+          <p class="resource-kicker">分类</p>
+          <button class="resource-icon-button" type="button" title="刷新分类" aria-label="刷新分类" data-refresh-groups>↻</button>
+        </div>
+        <nav class="resource-group-list" data-group-list></nav>
+      </aside>
+
+      <section class="resource-list-pane" aria-label="资源列表">
+        <div class="resource-toolbar">
+          <div>
+            <p class="resource-kicker" data-active-group-kicker>资源</p>
+            <h2 data-active-group-title>收藏列表</h2>
+          </div>
+          <div class="resource-toolbar-actions">
+            <label class="resource-search">
+              <span>搜索</span>
+              <input type="search" data-search placeholder="按标题、分区或文件名查找" />
+            </label>
+            <button class="resource-button resource-button-primary" type="button" data-open-upload>上传资源</button>
+          </div>
+        </div>
+
+        <div class="resource-upload-panel" data-upload-panel hidden>
+          <form data-upload-form>
+            <div class="resource-form-grid">
+              <label>
+                <span>文件</span>
+                <input name="file" type="file" required />
+              </label>
+              <label>
+                <span>标题</span>
+                <input name="title" type="text" placeholder="香奈美的新收藏" />
+              </label>
+              <label>
+                <span>分区</span>
+                <input name="section" type="text" placeholder="香奈美管理台" />
+              </label>
+              <label>
+                <span>小分区</span>
+                <input name="subsection" type="text" placeholder="管理上传" />
+              </label>
+            </div>
+            <div class="resource-login-actions">
+              <button class="resource-button resource-button-primary" type="submit">上传并加入当前分类</button>
+              <button class="resource-button" type="button" data-close-upload>收起</button>
+            </div>
+            <p class="resource-message" data-upload-message role="status"></p>
+          </form>
+        </div>
+
+        <div class="resource-list-meta" data-list-meta>香奈美正在读取收藏。</div>
+        <div class="resource-item-list" data-item-list></div>
+      </section>
+
+      <aside class="resource-detail-pane" aria-label="资源详情">
+        <div class="resource-detail-empty" data-empty-detail>
+          <p class="resource-kicker">详情</p>
+          <h2>选中一项收藏吧</h2>
+          <p>香奈美会在这里显示预览、编辑项和移动按钮。</p>
+        </div>
+
+        <form class="resource-detail-form" data-detail-form hidden>
+          <div class="resource-preview" data-preview></div>
+          <label>
+            <span>标题</span>
+            <input name="title" type="text" />
+          </label>
+          <div class="resource-form-grid">
+            <label>
+              <span>类型</span>
+              <input name="type" type="text" />
+            </label>
+            <label>
+              <span>分区</span>
+              <input name="section" type="text" />
+            </label>
+            <label>
+              <span>小分区</span>
+              <input name="subsection" type="text" />
+            </label>
+            <label>
+              <span>移动到</span>
+              <select name="targetGroup" data-move-target></select>
+            </label>
+          </div>
+          <label>
+            <span>来源页</span>
+            <input name="sourcePage" type="text" />
+          </label>
+          <label>
+            <span>备注文本</span>
+            <textarea name="text" rows="4"></textarea>
+          </label>
+          <div class="resource-detail-actions">
+            <button class="resource-button resource-button-primary" type="submit">保存修改</button>
+            <button class="resource-button" type="button" data-move-item>移动</button>
+            <button class="resource-button" type="button" data-move-up>上移</button>
+            <button class="resource-button" type="button" data-move-down>下移</button>
+            <button class="resource-button resource-button-danger" type="button" data-delete-item>删除</button>
+          </div>
+          <label class="resource-delete-file">
+            <input type="checkbox" data-delete-file />
+            <span>删除由管理台上传的本地文件</span>
+          </label>
+          <p class="resource-message" data-detail-message role="status"></p>
+        </form>
+      </aside>
+    </section>
+  </main>
+
+  <script src="/auth/session.js"></script>
+  <script src="/res/scripts/header.js"></script>
+  <script src="/resource-manage/manage.js"></script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>香奈美的资源管理入口</title>
+  <link rel="stylesheet" href="/res/styles/style.css" />
+  <link rel="stylesheet" href="/res/styles/layers.css" />
+  <link rel="icon" type="image/png" href="/res/images/favicon.png" />
+  <style>
+    .manage-entry {
+      display: grid;
+      gap: 18px;
+      width: min(720px, calc(100vw - 32px));
+      margin: 56px auto;
+      padding: 28px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 20px 60px rgba(69, 51, 95, 0.18);
+      text-align: left;
+    }
+
+    .manage-entry-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .manage-entry-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 0 14px;
+      border: 1px solid rgba(118, 75, 162, 0.22);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.78);
+      color: #45335f;
+      font-weight: 850;
+      text-decoration: none;
+    }
+
+    .manage-entry-button-primary {
+      background: linear-gradient(135deg, rgba(247, 200, 224, 0.95), rgba(255, 238, 172, 0.94));
+    }
+  </style>
+</head>
+<body>
+  <div class="background"></div>
+
+  <header class="site-header">
+    <a href="/" class="site-logo" aria-label="回到香奈美主页">
+      <img src="/res/images/favicon.png" alt="kanami.top logo" />
+      <span class="site-logo-text">资源管理</span>
+    </a>
+    <div class="site-header-copy" aria-label="当前页面">
+      <h1>香奈美的资源管理入口</h1>
+      <p>我把会改写资源的按钮收进后台啦</p>
+    </div>
+    <nav class="site-nav" aria-label="资源管理入口">
+      <a class="site-nav-link" href="/resource/">星光收藏室</a>
+      <a class="site-nav-link site-nav-link-primary" href="/">返回主页</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="manage-entry">
+      <div>
+        <h1>请从后台管理台进入</h1>
+        <p>香奈美不会在静态公网页面直接改写 WIKI 资源。管理员请打开 local-server 管理台，登录管理口令后再调整顺序、上传、移动或删除收藏。</p>
+      </div>
+      <div class="manage-entry-actions">
+        <a class="manage-entry-button manage-entry-button-primary" href="https://local-server.kanami.top/resource/manage">打开后台管理台</a>
+        <a class="manage-entry-button" href="http://127.0.0.1:12700/resource/manage">打开本机管理台</a>
+      </div>
+    </section>
+  </main>
+
+  <script src="/res/scripts/header.js"></script>
+</body>
+</html>

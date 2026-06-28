@@ -2,6 +2,7 @@ import fs from "node:fs";
 import http from "node:http";
 import { config, paths } from "./config.js";
 import { galleryStatus } from "./gallery.js";
+import { tryHandleResourceManageApi } from "./resourceManage.js";
 import { sendJson, tryServeMappedFile, tryServeStatic } from "./static.js";
 
 function filesRootReady() {
@@ -49,16 +50,20 @@ function isDetailedHealthAllowed(req, url) {
   return req.headers["x-kanami-admin-token"] === config.adminToken || url.searchParams.get("token") === config.adminToken;
 }
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
 
     if (req.method === "OPTIONS") {
       res.writeHead(204, {
-        "Access-Control-Allow-Methods": "GET,HEAD,OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type"
+        "Access-Control-Allow-Methods": "GET,HEAD,POST,PATCH,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type,X-Kanami-Admin-Token"
       });
       res.end();
+      return;
+    }
+
+    if (await tryHandleResourceManageApi(req, res, url)) {
       return;
     }
 
