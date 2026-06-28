@@ -269,7 +269,7 @@
 
   function renderBulkBar() {
     const selectedCount = state.selectedIds.size;
-    els.bulkBar.hidden = selectedCount === 0 && state.items.length === 0;
+    els.bulkBar.hidden = false;
     els.selectedCount.textContent = selectedCount ? `已选择 ${selectedCount} 项` : "还没有选择收藏";
     els.selectAll.checked = state.items.length > 0 && state.items.every((item) => state.selectedIds.has(item.id));
     els.selectAll.indeterminate = selectedCount > 0 && !els.selectAll.checked;

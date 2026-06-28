@@ -6,7 +6,7 @@
   <title>香奈美的资源管理台</title>
   <link rel="stylesheet" href="/res/styles/style.css" />
   <link rel="stylesheet" href="/res/styles/layers.css" />
-  <link rel="stylesheet" href="/resource-manage/manage.css?v=20260628-custom-groups" />
+  <link rel="stylesheet" href="/resource-manage/manage.css?v=20260628-detail-tools" />
   <link rel="icon" type="image/png" href="/res/images/favicon.png" />
 </head>
 <body>
@@ -64,12 +64,6 @@
             <h2 data-active-group-title>收藏列表</h2>
           </div>
           <div class="resource-toolbar-actions">
-            <label class="resource-search">
-              <span>搜索</span>
-              <input type="search" data-search placeholder="按标题、分区或文件名查找" />
-            </label>
-            <button class="resource-button" type="button" data-open-csv>导入 CSV</button>
-            <button class="resource-button resource-button-danger" type="button" data-bulk-delete-toolbar>批量删除</button>
             <button class="resource-button resource-button-primary" type="button" data-open-upload>上传资源</button>
           </div>
         </div>
@@ -127,41 +121,6 @@
           </form>
         </div>
 
-        <div class="resource-upload-panel" data-csv-panel hidden>
-          <form data-csv-form>
-            <div class="resource-form-grid">
-              <label>
-                <span>CSV 文件</span>
-                <input name="csvFile" type="file" accept=".csv,text/csv,text/plain" />
-              </label>
-              <label>
-                <span>说明</span>
-                <input type="text" value="字段：url,title,type,section,subsection,mediaType,extension,thumbnailUrl,sourcePage,width,height,text" readonly />
-              </label>
-            </div>
-            <label>
-              <span>CSV 内容</span>
-              <textarea name="csvText" rows="7" placeholder="url,title,section,subsection&#10;/files/WIKI/images/example.png,香奈美的新收藏,管理导入,CSV"></textarea>
-            </label>
-            <div class="resource-login-actions">
-              <button class="resource-button resource-button-primary" type="submit">导入到当前分类</button>
-              <button class="resource-button" type="button" data-close-csv>收起</button>
-            </div>
-            <p class="resource-message" data-csv-message role="status"></p>
-          </form>
-        </div>
-
-        <div class="resource-bulk-bar" data-bulk-bar hidden>
-          <label class="resource-select-all">
-            <input type="checkbox" data-select-all />
-            <span data-selected-count>已选择 0 项</span>
-          </label>
-          <button class="resource-button resource-button-danger" type="button" data-bulk-delete>批量删除</button>
-          <label class="resource-delete-file">
-            <input type="checkbox" data-bulk-delete-files />
-            <span>同时清理管理台上传文件</span>
-          </label>
-        </div>
         <div class="resource-list-meta" data-list-meta>香奈美正在读取收藏。</div>
         <div class="resource-item-list" data-item-list></div>
       </section>
@@ -219,12 +178,57 @@
           </label>
           <p class="resource-message" data-detail-message role="status"></p>
         </form>
+
+        <div class="resource-detail-tools" aria-label="资源快捷操作">
+          <label class="resource-search">
+            <span>搜索</span>
+            <input type="search" data-search placeholder="按标题、分区或文件名查找" />
+          </label>
+          <div class="resource-detail-tool-actions">
+            <button class="resource-button" type="button" data-open-csv>导入 CSV</button>
+            <button class="resource-button resource-button-danger" type="button" data-bulk-delete-toolbar>批量删除</button>
+          </div>
+          <div class="resource-upload-panel" data-csv-panel hidden>
+            <form data-csv-form>
+              <div class="resource-form-grid">
+                <label>
+                  <span>CSV 文件</span>
+                  <input name="csvFile" type="file" accept=".csv,text/csv,text/plain" />
+                </label>
+                <label>
+                  <span>说明</span>
+                  <input type="text" value="字段：url,title,type,section,subsection,mediaType,extension,thumbnailUrl,sourcePage,width,height,text" readonly />
+                </label>
+              </div>
+              <label>
+                <span>CSV 内容</span>
+                <textarea name="csvText" rows="7" placeholder="url,title,section,subsection&#10;/files/WIKI/images/example.png,香奈美的新收藏,管理导入,CSV"></textarea>
+              </label>
+              <div class="resource-login-actions">
+                <button class="resource-button resource-button-primary" type="submit">导入到当前分类</button>
+                <button class="resource-button" type="button" data-close-csv>收起</button>
+              </div>
+              <p class="resource-message" data-csv-message role="status"></p>
+            </form>
+          </div>
+          <div class="resource-bulk-bar" data-bulk-bar>
+            <label class="resource-select-all">
+              <input type="checkbox" data-select-all />
+              <span data-selected-count>已选择 0 项</span>
+            </label>
+            <button class="resource-button resource-button-danger" type="button" data-bulk-delete>批量删除</button>
+            <label class="resource-delete-file">
+              <input type="checkbox" data-bulk-delete-files />
+              <span>同时清理管理台上传文件</span>
+            </label>
+          </div>
+        </div>
       </aside>
     </section>
   </main>
 
   <script src="/auth/session.js"></script>
   <script src="/res/scripts/header.js"></script>
-  <script src="/resource-manage/manage.js?v=20260628-custom-groups"></script>
+  <script src="/resource-manage/manage.js?v=20260628-detail-tools"></script>
 </body>
 </html>

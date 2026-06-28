@@ -55,6 +55,12 @@
     padding: 16px;
 }
 
+.resource-detail-form {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+}
+
 .resource-login-form label,
 .resource-upload-panel label,
 .resource-detail-form label,
@@ -182,6 +188,13 @@
     overflow: auto;
 }
 
+.resource-detail-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: hidden;
+}
+
 .resource-sidebar-head,
 .resource-toolbar {
     display: flex;
@@ -242,6 +255,36 @@
 
 .resource-search {
     width: min(320px, 40vw);
+}
+
+.resource-detail-tools {
+    flex: 0 0 auto;
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid rgba(118, 75, 162, 0.16);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 -10px 28px rgba(69, 51, 95, 0.08);
+}
+
+.resource-detail-tool-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.resource-detail-tools .resource-search {
+    width: 100%;
+}
+
+.resource-detail-tools .resource-upload-panel {
+    padding: 12px;
+    box-shadow: none;
+}
+
+.resource-detail-tools .resource-form-grid {
+    grid-template-columns: 1fr;
 }
 
 .resource-form-grid {
@@ -378,6 +421,9 @@
 }
 
 .resource-detail-empty {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
     padding: 8px;
 }
 
@@ -426,6 +472,12 @@
         grid-column: 1 / -1;
         position: static;
         max-height: none;
+        overflow: visible;
+    }
+
+    .resource-detail-form,
+    .resource-detail-empty {
+        overflow: visible;
     }
 }
 
