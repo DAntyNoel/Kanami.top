@@ -146,6 +146,12 @@ function fail() {
   if (round > bestRound()) localStorage.setItem(bestKey, String(round));
   updateHud();
   messageEl.textContent = tuning.text.fail(round);
+  window.KanamiGameScore?.record({
+    gameId: "kanami-simon",
+    gameTitle: "香奈美记忆灯",
+    score: round,
+    detail: { rounds: round }
+  });
 }
 
 function press(index) {

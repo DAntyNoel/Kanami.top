@@ -225,6 +225,12 @@ function endGame() {
   startButton.textContent = "再来";
   setMessage(messages.end, 5);
   updateHud();
+  window.KanamiGameScore?.record({
+    gameId: "endless-encore",
+    gameTitle: "Endless Encore",
+    score,
+    detail: { distance: Math.floor(game.distance), combo: game.combo }
+  });
 }
 
 function addBonus(points, label, x, y, keepsCombo = true) {

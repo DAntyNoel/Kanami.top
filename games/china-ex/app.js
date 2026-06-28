@@ -52,12 +52,23 @@
 
   function saveLevels() {
     const levels = {};
+    let total = 0;
+    let visited = 0;
     regions.forEach((region) => {
-      levels[region.id] = Number(region.dataset.level || 0);
+      const level = Number(region.dataset.level || 0);
+      levels[region.id] = level;
+      total += level;
+      if (level > 0) visited += 1;
     });
 
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(levels));
+      window.KanamiGameScore?.record({
+        gameId: "china-ex",
+        gameTitle: "香奈美中国制霸",
+        score: total,
+        detail: { visited, totalRegions: regions.length }
+      });
     } catch (error) {
       message.textContent = "本地存储暂时不可用，不过这次舞台上的颜色我会先保留到刷新前。";
     }

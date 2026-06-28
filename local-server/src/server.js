@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import http from "node:http";
+import { tryHandleAuthApi } from "./auth.js";
 import { config, paths } from "./config.js";
 import { galleryStatus } from "./gallery.js";
 import { tryHandleResourceManageApi } from "./resourceManage.js";
@@ -60,6 +61,10 @@ const server = http.createServer(async (req, res) => {
         "Access-Control-Allow-Headers": "Content-Type,X-Kanami-Admin-Token"
       });
       res.end();
+      return;
+    }
+
+    if (await tryHandleAuthApi(req, res, url)) {
       return;
     }
 

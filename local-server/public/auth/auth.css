@@ -1,5 +1,7 @@
 body {
-    background: #f6f4ef;
+    background:
+        linear-gradient(120deg, rgba(255, 255, 255, 0.84), rgba(243, 248, 246, 0.76)),
+        url("/res/images/lovekanami.jpg") center / cover fixed;
 }
 
 .auth-shell {
@@ -11,17 +13,30 @@ body {
 }
 
 .auth-card {
-    width: min(430px, 100%);
+    position: relative;
+    width: min(460px, 100%);
+    overflow: hidden;
     padding: 30px;
-    border: 1px solid rgba(32, 42, 54, 0.12);
+    border: 1px solid rgba(32, 42, 54, 0.1);
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.96);
-    box-shadow: 0 24px 70px rgba(32, 42, 54, 0.18);
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 24px 70px rgba(32, 42, 54, 0.22);
     text-align: left;
+    backdrop-filter: blur(18px);
+}
+
+body[data-auth-page="login"] .auth-card::before {
+    content: "";
+    display: block;
+    height: 190px;
+    margin: -30px -30px 24px;
+    background:
+        linear-gradient(180deg, rgba(14, 34, 44, 0.08), rgba(255, 255, 255, 0.96)),
+        url("/res/images/lovekanami.jpg") center 28% / cover;
 }
 
 .auth-card-wide {
-    width: min(640px, 100%);
+    width: min(780px, 100%);
 }
 
 .auth-brand {
@@ -52,7 +67,7 @@ body {
 .auth-card h1 {
     margin: 0;
     color: #202a36;
-    font-size: 1.9rem;
+    font-size: 1.86rem;
 }
 
 .auth-form {
@@ -92,6 +107,138 @@ body {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px;
+}
+
+.auth-field-row-three {
+    grid-template-columns: 1.05fr 1.35fr 0.8fr;
+}
+
+.auth-dashboard {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+    gap: 12px;
+    align-items: stretch;
+}
+
+.auth-stat,
+.auth-score-panel,
+.auth-admin-panel {
+    border: 1px solid rgba(39, 117, 107, 0.16);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.74);
+}
+
+.auth-stat {
+    padding: 12px;
+}
+
+.auth-stat span {
+    display: block;
+    color: #5f6772;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.auth-stat strong {
+    display: block;
+    margin-top: 4px;
+    color: #202a36;
+    font-size: 1.2rem;
+    line-height: 1.2;
+}
+
+.auth-checkin {
+    align-self: stretch;
+    min-width: 112px;
+}
+
+.auth-score-panel,
+.auth-admin-panel {
+    display: grid;
+    gap: 12px;
+    padding: 14px;
+}
+
+.auth-section-head {
+    display: grid;
+    gap: 3px;
+}
+
+.auth-section-head h2 {
+    margin: 0;
+    color: #202a36;
+    font-size: 1rem;
+}
+
+.auth-score-list,
+.auth-user-list {
+    display: grid;
+    gap: 8px;
+}
+
+.auth-score-list p,
+.auth-user-list p {
+    margin: 0;
+    color: #5f6772;
+    font-weight: 700;
+}
+
+.auth-score-row,
+.auth-user-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid rgba(32, 42, 54, 0.1);
+    border-radius: 8px;
+    background: rgba(255, 254, 250, 0.9);
+}
+
+.auth-score-row span,
+.auth-user-row span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.auth-score-row strong {
+    color: #dd705f;
+}
+
+.auth-score-row small,
+.auth-user-row small {
+    color: #5f6772;
+    font-weight: 800;
+}
+
+.auth-admin-panel {
+    margin-top: 16px;
+}
+
+.auth-admin-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.auth-admin-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 43px;
+    text-decoration: none;
+}
+
+.auth-user-row {
+    grid-template-columns: minmax(0, 1fr) minmax(130px, 0.7fr);
+}
+
+.auth-user-row strong,
+.auth-user-row span,
+.auth-user-row small {
+    min-width: 0;
 }
 
 .auth-avatar-preview {
@@ -199,6 +346,15 @@ body {
     }
 
     .auth-field-row {
+        grid-template-columns: 1fr;
+    }
+
+    .auth-dashboard {
+        grid-template-columns: 1fr;
+    }
+
+    .auth-score-row,
+    .auth-user-row {
         grid-template-columns: 1fr;
     }
 }

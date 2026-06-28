@@ -96,6 +96,7 @@ let nextTileId = 1;
 let touchStart = null;
 let moveLocked = false;
 let unlockTimer = 0;
+let gameScoreRecorded = false;
 const tileElements = new Map();
 
 function emptyGrid() {
@@ -292,6 +293,15 @@ function updateMessage(gained) {
     messageEl.textContent = "2048 达成！香奈美的歌声已经传到世界尽头啦。";
   } else if (!canMove()) {
     messageEl.textContent = "没有可移动的格子了。香奈美整理一下舞台，我们再来一局吧。";
+    if (!gameScoreRecorded) {
+      gameScoreRecorded = true;
+      window.KanamiGameScore?.record({
+        gameId: "kanami-2048",
+        gameTitle: "香奈美 2048",
+        score,
+        detail: { maxTile: Math.max(...grid.flat().map((tile) => tile?.value || 0)) }
+      });
+    }
   } else {
     messageEl.textContent = gained ? `合成 +${gained}，这一下很漂亮。` : "继续滑动，香奈美在看着棋盘呢。";
   }
@@ -332,6 +342,7 @@ function restart() {
   tileElements.clear();
   grid = emptyGrid();
   score = 0;
+  gameScoreRecorded = false;
   nextTileId = 1;
   addTile();
   addTile();

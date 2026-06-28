@@ -231,6 +231,12 @@ function endGame() {
   canDrop = false;
   dropButton.disabled = true;
   messageEl.textContent = tuning.text.gameOver(score);
+  window.KanamiGameScore?.record({
+    gameId: "big-kanami",
+    gameTitle: "合成大奈美",
+    score,
+    detail: { balls: balls.length }
+  });
 }
 
 function drawImageCover(context, image, x, y, size) {

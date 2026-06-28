@@ -189,14 +189,20 @@ function revealAll() {
 function finish(win) {
   gameOver = true;
   window.clearInterval(timerId);
+  const time = elapsedSeconds();
   if (win) {
-    const time = elapsedSeconds();
     updateBest(time);
     messageEl.textContent = tuning.text.win(formatSeconds(time));
   } else {
     revealAll();
     messageEl.textContent = tuning.text.lose;
   }
+  window.KanamiGameScore?.record({
+    gameId: "kanami-sweeper",
+    gameTitle: "香奈美扫雷",
+    score: win ? Math.max(1, 9999 - time) : 0,
+    detail: { win, time, mines: activeMineCount }
+  });
   render();
 }
 

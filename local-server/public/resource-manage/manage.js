@@ -1,7 +1,5 @@
 (() => {
-  const tokenKey = "kanami.resourceManage.adminToken";
   const state = {
-    token: sessionStorage.getItem(tokenKey) || "",
     groups: [],
     requiredFields: [],
     activeGroup: "",
@@ -14,7 +12,6 @@
   const els = {
     loginPanel: document.querySelector("[data-login-panel]"),
     loginForm: document.querySelector("[data-login-form]"),
-    localLogin: document.querySelector("[data-local-login]"),
     loginMessage: document.querySelector("[data-login-message]"),
     workbench: document.querySelector("[data-workbench]"),
     groupList: document.querySelector("[data-group-list]"),
@@ -67,7 +64,6 @@
   function headers(extra = {}) {
     return {
       "Content-Type": "application/json",
-      ...(state.token ? { "X-Kanami-Admin-Token": state.token } : {}),
       ...extra
     };
   }
@@ -667,16 +663,13 @@
     }
   }
 
-  async function loginWithToken(token) {
-    state.token = token || "";
-    if (state.token) sessionStorage.setItem(tokenKey, state.token);
+  async function checkAdminSession() {
     try {
       await api("/session");
       showWorkbench();
       await refreshAll();
       message(els.loginMessage, "");
     } catch (error) {
-      if (state.token) sessionStorage.removeItem(tokenKey);
       showLogin(error.message);
     }
   }
@@ -684,9 +677,8 @@
   function wireEvents() {
     els.loginForm.addEventListener("submit", async (event) => {
       event.preventDefault();
-      await loginWithToken(els.loginForm.elements.token.value.trim());
+      await checkAdminSession();
     });
-    els.localLogin.addEventListener("click", async () => loginWithToken(""));
     els.refreshGroups.addEventListener("click", refreshAll);
     els.openGroup.addEventListener("click", () => {
       els.groupPanel.hidden = false;
@@ -733,6 +725,6 @@
 
   document.addEventListener("DOMContentLoaded", async () => {
     wireEvents();
-    await loginWithToken(state.token);
+    await checkAdminSession();
   });
 })();

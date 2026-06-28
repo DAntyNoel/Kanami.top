@@ -2,6 +2,7 @@
   const defaultAvatar = "/res/images/favicon.png";
   const accountsKey = "kanami.localServer.auth.accounts";
   const sessionKey = "kanami.localServer.auth.session";
+  let cachedUser = null;
 
   function parseJson(key, fallback) {
     try {
@@ -11,16 +12,50 @@
     }
   }
 
-  function currentUser() {
+  function accountKey(user) {
+    return (user?.email || user?.username || user?.id || "").toLowerCase();
+  }
+
+  function mirrorUser(user) {
+    cachedUser = user || null;
+    if (!user) {
+      localStorage.removeItem(sessionKey);
+      return;
+    }
+    const key = accountKey(user);
+    const accounts = parseJson(accountsKey, {});
+    accounts[key] = user;
+    localStorage.setItem(accountsKey, JSON.stringify(accounts));
+    localStorage.setItem(sessionKey, JSON.stringify({ email: key, signedInAt: new Date().toISOString() }));
+  }
+
+  function fallbackUser() {
     const session = parseJson(sessionKey, null);
     if (!session || !session.email) return null;
     const accounts = parseJson(accountsKey, {});
-    return accounts[session.email.toLowerCase()] || null;
+    return accounts[String(session.email).toLowerCase()] || null;
+  }
+
+  function currentUser() {
+    return cachedUser || fallbackUser();
+  }
+
+  async function refreshSession() {
+    try {
+      const response = await fetch("/api/auth/session", { cache: "no-store" });
+      if (!response.ok) return currentUser();
+      const payload = await response.json();
+      mirrorUser(payload.user || null);
+      renderAuthEntry();
+      return currentUser();
+    } catch {
+      return currentUser();
+    }
   }
 
   function displayName(user) {
     if (!user) return "";
-    return user.nickname || (user.qq ? `QQ ${user.qq}` : user.email);
+    return user.nickname || user.username || (user.qq ? `QQ ${user.qq}` : user.email);
   }
 
   function setImage(image, src) {
@@ -48,6 +83,10 @@
     });
   }
 
-  document.addEventListener("DOMContentLoaded", renderAuthEntry);
-  window.KanamiLocalAuthSession = { currentUser, renderAuthEntry };
+  document.addEventListener("DOMContentLoaded", () => {
+    renderAuthEntry();
+    refreshSession();
+  });
+
+  window.KanamiLocalAuthSession = { currentUser, refreshSession, renderAuthEntry, mirrorUser };
 })();

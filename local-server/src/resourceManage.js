@@ -1,7 +1,8 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { config, paths } from "./config.js";
+import { isSuperAdmin } from "./auth.js";
+import { paths } from "./config.js";
 import { sendJson } from "./static.js";
 
 export const REQUIRED_RESOURCE_FIELDS = [
@@ -55,20 +56,6 @@ const MIME_EXTENSIONS = new Map([
   ["application/zip", "zip"],
   ["text/plain", "txt"]
 ]);
-
-function requestHost(req) {
-  return String(req.headers.host || "").split(":")[0].toLowerCase();
-}
-
-function isLocalHost(req) {
-  return ["localhost", "127.0.0.1", "::1", "[::1]"].includes(requestHost(req));
-}
-
-function hasAdminAccess(req, url) {
-  if (isLocalHost(req)) return true;
-  if (!config.adminToken) return false;
-  return req.headers["x-kanami-admin-token"] === config.adminToken || url.searchParams.get("token") === config.adminToken;
-}
 
 function wikiRootPath() {
   return path.join(paths.files, "WIKI");
@@ -732,15 +719,15 @@ async function handleCsvImport(req, res, body) {
 export async function tryHandleResourceManageApi(req, res, url) {
   if (!url.pathname.startsWith(API_PREFIX)) return false;
 
-  if (!hasAdminAccess(req, url)) {
-    sendManageError(req, res, 401, "ADMIN_ACCESS_REQUIRED", "香奈美把资源管理台锁好啦，请先输入管理口令。");
+  if (!isSuperAdmin(req)) {
+    sendManageError(req, res, 401, "ADMIN_ACCESS_REQUIRED", "香奈美把资源管理台锁好啦，请先登录超管账号。");
     return true;
   }
 
   try {
     const route = url.pathname.slice(API_PREFIX.length) || "/";
     if (req.method === "GET" && route === "/session") {
-      sendJson(req, res, 200, { ok: true, admin: true, local: isLocalHost(req) });
+      sendJson(req, res, 200, { ok: true, admin: true });
       return true;
     }
     if (req.method === "GET" && route === "/groups") {

@@ -8,13 +8,13 @@ import path from "node:path";
 const rootDir = path.resolve(import.meta.dirname, "..");
 const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "kanami-resource-manage-"));
 const filesRoot = path.join(tempRoot, "files");
+const authRoot = path.join(tempRoot, "auth");
 const wikiRoot = path.join(filesRoot, "WIKI");
 const port = 19270 + Math.floor(Math.random() * 1000);
-const token = "test-admin-token";
 const baseUrl = `http://127.0.0.1:${port}`;
+let sessionCookie = "";
 const remoteHeaders = {
-  Host: "local-server.kanami.top",
-  "X-Kanami-Admin-Token": token
+  Host: "local-server.kanami.top"
 };
 
 const groupFiles = [
@@ -111,6 +111,7 @@ async function request(pathname, options = {}) {
     ...options,
     headers: {
       ...remoteHeaders,
+      ...(sessionCookie ? { Cookie: sessionCookie } : {}),
       ...(options.body ? { "Content-Type": "application/json" } : {}),
       ...(options.headers || {})
     }
@@ -151,7 +152,7 @@ async function main() {
       LOCAL_SERVER_HOST: "127.0.0.1",
       LOCAL_SERVER_PORT: String(port),
       LOCAL_SERVER_FILES_DIR: filesRoot,
-      LOCAL_SERVER_ADMIN_TOKEN: token,
+      LOCAL_SERVER_AUTH_DIR: authRoot,
       LOCAL_SERVER_PUBLIC_FILES: "true"
     },
     stdio: ["ignore", "pipe", "pipe"]
@@ -171,7 +172,40 @@ async function main() {
     const deniedStatus = await rawStatus("/api/resource/manage/session", {
       Host: "local-server.kanami.top"
     });
-    assert.equal(deniedStatus, 401, "remote management API requires admin token");
+    assert.equal(deniedStatus, 401, "remote management API requires superadmin login");
+
+    const register = await request("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        email: "fan@example.com",
+        username: "kanami-fan",
+        password: "123456",
+        nickname: "普通应援者"
+      })
+    });
+    assert.equal(register.response.status, 201);
+    assert.equal(register.json.user.role, "user");
+    sessionCookie = register.response.headers.get("set-cookie")?.split(";")[0] || "";
+    const userCheckin = await request("/api/auth/checkin", { method: "POST", body: "{}" });
+    assert.equal(userCheckin.response.status, 200);
+    assert.equal(userCheckin.json.user.points, 10);
+    const userScore = await request("/api/auth/score", {
+      method: "POST",
+      body: JSON.stringify({ gameId: "catch-kanami", gameTitle: "Catch Kanami", score: 8 })
+    });
+    assert.equal(userScore.response.status, 200);
+    assert.equal(userScore.json.score.highScore, 8);
+    const userManageSession = await request("/api/resource/manage/session");
+    assert.equal(userManageSession.response.status, 401);
+
+    const login = await request("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ account: "admin", password: "123" })
+    });
+    assert.equal(login.response.status, 200);
+    assert.equal(login.json.user.role, "superadmin");
+    sessionCookie = login.response.headers.get("set-cookie")?.split(";")[0] || "";
+    assert.ok(sessionCookie.startsWith("kanami_session="));
 
     const session = await request("/api/resource/manage/session");
     assert.equal(session.response.status, 200);

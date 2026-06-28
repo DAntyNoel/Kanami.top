@@ -40,10 +40,38 @@
       </div>
 
       <form class="auth-form" data-auth-form="profile">
-        <label>
-          <span>账号邮箱</span>
-          <input name="email" type="email" readonly />
-        </label>
+        <div class="auth-field-row auth-field-row-three">
+          <label>
+            <span>账号</span>
+            <input name="account" type="text" readonly />
+          </label>
+          <label>
+            <span>邮箱</span>
+            <input name="email" type="email" readonly />
+          </label>
+          <label>
+            <span>身份</span>
+            <input name="role" type="text" readonly />
+          </label>
+        </div>
+        <section class="auth-dashboard" aria-label="积分与成绩">
+          <div class="auth-stat">
+            <span>应援积分</span>
+            <strong data-auth-points>0</strong>
+          </div>
+          <div class="auth-stat">
+            <span>上次签到</span>
+            <strong data-auth-last-checkin>还没有签到</strong>
+          </div>
+          <button type="button" class="auth-submit auth-checkin" data-auth-checkin>今天签到</button>
+        </section>
+        <section class="auth-score-panel" aria-label="小游戏成绩">
+          <div class="auth-section-head">
+            <p class="auth-kicker">小游戏成绩</p>
+            <h2>香奈美记录下来的舞台成绩</h2>
+          </div>
+          <div class="auth-score-list" data-auth-scores></div>
+        </section>
         <div class="auth-field-row">
           <label>
             <span>昵称</span>
@@ -72,10 +100,22 @@
           <button type="button" class="auth-secondary" data-auth-logout>退出登录</button>
         </div>
       </form>
+      <section class="auth-admin-panel" data-auth-admin-panel hidden>
+        <div class="auth-section-head">
+          <p class="auth-kicker">超管后台</p>
+          <h2>全体用户与资源管理</h2>
+        </div>
+        <div class="auth-admin-actions">
+          <a class="auth-submit auth-admin-link" href="/resource/manage">打开资源管理台</a>
+          <button type="button" class="auth-secondary" data-auth-admin-refresh>刷新用户列表</button>
+        </div>
+        <div class="auth-user-list" data-auth-admin-users></div>
+      </section>
     </section>
   </main>
 
   <script src="/res/scripts/header.js"></script>
+  <script src="/auth/session.js"></script>
   <script src="/auth/auth.js"></script>
   <script src="/__reload-client.js"></script>
 </body>

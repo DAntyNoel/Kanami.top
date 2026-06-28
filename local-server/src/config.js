@@ -67,6 +67,7 @@ export const paths = {
   resourceHtml: path.resolve(rootDir, "..", "resource", "index.html"),
   resourceManageHtml: path.join(rootDir, "public", "resource-manage", "index.html"),
   sharedScript: path.resolve(rootDir, "..", "script.js"),
+  authData: resolveFromRoot(env("LOCAL_SERVER_AUTH_DIR", "./data/auth")),
   gallery: resolveFromRoot(env("LOCAL_SERVER_GALLERY_DIR", "../KanamiBot/data/advanced_media")),
   files: resolveFromRoot(env("LOCAL_SERVER_FILES_DIR", "./files"))
 };

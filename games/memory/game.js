@@ -153,6 +153,12 @@ function finishGame() {
   } else {
     messageEl.textContent = tuning.text.finished(moves, formatTime(time));
   }
+  window.KanamiGameScore?.record({
+    gameId: "kanami-memory",
+    gameTitle: "香奈美翻牌记忆",
+    score: Math.max(1, 10000 - moves * 100 - time),
+    detail: { moves, time }
+  });
 }
 
 function restart() {

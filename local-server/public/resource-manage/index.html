@@ -30,18 +30,14 @@
   <main class="resource-manage-app" data-manage-app>
     <section class="resource-login" data-login-panel>
       <div>
-        <p class="resource-kicker">管理口令</p>
+        <p class="resource-kicker">超管账号</p>
         <h1>香奈美先确认一下身份</h1>
-        <p>输入管理口令后，就可以整理 WIKI 映射资源。若你正在本机访问，我也可以直接带你进去。</p>
+        <p>资源管理只开放给已经登录的超管账号。请先使用 admin 账号登录，再回来整理 WIKI 映射资源。</p>
       </div>
       <form class="resource-login-form" data-login-form>
-        <label>
-          <span>管理口令</span>
-          <input name="token" type="password" autocomplete="current-password" placeholder="LOCAL_SERVER_ADMIN_TOKEN" />
-        </label>
         <div class="resource-login-actions">
-          <button class="resource-button resource-button-primary" type="submit">进入管理台</button>
-          <button class="resource-button" type="button" data-local-login>本机直接进入</button>
+          <a class="resource-button resource-button-primary resource-button-link" href="/auth/login">去登录超管账号</a>
+          <button class="resource-button" type="submit">我已登录，重新检查</button>
         </div>
         <p class="resource-message" data-login-message role="status"></p>
       </form>

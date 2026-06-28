@@ -275,6 +275,12 @@ function finish() {
   updateHud();
   startButton.textContent = tuning.text.restartButton;
   messageEl.textContent = tuning.text.finish(score);
+  window.KanamiGameScore?.record({
+    gameId: "catch-kanami",
+    gameTitle: "Catch Kanami",
+    score,
+    detail: { durationSeconds: tuning.durationSeconds }
+  });
 }
 
 function start() {
