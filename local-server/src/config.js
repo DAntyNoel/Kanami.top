@@ -89,6 +89,7 @@ export const config = {
     "WIKI/imprints.json",
     "WIKI/oath_texts.json",
     "WIKI/outfits.json",
+    "WIKI/resource_groups.json",
     "WIKI/skills.json",
     "WIKI/story_wallpapers.json",
     "WIKI/update_history.json",

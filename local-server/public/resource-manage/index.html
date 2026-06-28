@@ -6,7 +6,7 @@
   <title>香奈美的资源管理台</title>
   <link rel="stylesheet" href="/res/styles/style.css" />
   <link rel="stylesheet" href="/res/styles/layers.css" />
-  <link rel="stylesheet" href="/resource-manage/manage.css?v=20260628-bulk-toolbar" />
+  <link rel="stylesheet" href="/resource-manage/manage.css?v=20260628-custom-groups" />
   <link rel="icon" type="image/png" href="/res/images/favicon.png" />
 </head>
 <body>
@@ -54,6 +54,7 @@
           <button class="resource-icon-button" type="button" title="刷新分类" aria-label="刷新分类" data-refresh-groups>↻</button>
         </div>
         <nav class="resource-group-list" data-group-list></nav>
+        <button class="resource-button resource-sidebar-create" type="button" data-open-group>新建分类组</button>
       </aside>
 
       <section class="resource-list-pane" aria-label="资源列表">
@@ -71,6 +72,31 @@
             <button class="resource-button resource-button-danger" type="button" data-bulk-delete-toolbar>批量删除</button>
             <button class="resource-button resource-button-primary" type="button" data-open-upload>上传资源</button>
           </div>
+        </div>
+
+        <div class="resource-upload-panel" data-group-panel hidden>
+          <form data-group-form>
+            <div class="resource-form-grid">
+              <label>
+                <span>分类名称</span>
+                <input name="label" type="text" placeholder="香奈美的特别收藏" required />
+              </label>
+              <label>
+                <span>分类 ID</span>
+                <input name="id" type="text" placeholder="special-collection" />
+              </label>
+            </div>
+            <label>
+              <span>自定义字段</span>
+              <textarea name="fields" rows="5" placeholder="每行一个字段，例如：&#10;rarity,稀有度&#10;eventName,活动名称"></textarea>
+            </label>
+            <p class="resource-field-note">香奈美会保留标题、类型、分区、来源页这些必填组件；这里填写的是额外字段。</p>
+            <div class="resource-login-actions">
+              <button class="resource-button resource-button-primary" type="submit">创建分类组</button>
+              <button class="resource-button" type="button" data-close-group>收起</button>
+            </div>
+            <p class="resource-message" data-group-message role="status"></p>
+          </form>
         </div>
 
         <div class="resource-upload-panel" data-upload-panel hidden>
@@ -179,6 +205,7 @@
             <span>备注文本</span>
             <textarea name="text" rows="4"></textarea>
           </label>
+          <div class="resource-custom-fields" data-custom-fields></div>
           <div class="resource-detail-actions">
             <button class="resource-button resource-button-primary" type="submit">保存修改</button>
             <button class="resource-button" type="button" data-move-item>移动</button>
@@ -198,6 +225,6 @@
 
   <script src="/auth/session.js"></script>
   <script src="/res/scripts/header.js"></script>
-  <script src="/resource-manage/manage.js?v=20260628-bulk-toolbar"></script>
+  <script src="/resource-manage/manage.js?v=20260628-custom-groups"></script>
 </body>
 </html>

@@ -4,23 +4,43 @@ import path from "node:path";
 import { config, paths } from "./config.js";
 import { sendJson } from "./static.js";
 
+export const REQUIRED_RESOURCE_FIELDS = [
+  { key: "title", label: "标题", required: true },
+  { key: "type", label: "类型", required: true },
+  { key: "section", label: "分区", required: true },
+  { key: "sourcePage", label: "来源页", required: true }
+];
+
 export const RESOURCE_GROUPS = [
-  { id: "emotes", label: "表情包", file: "emotes.json", manageable: true },
-  { id: "wallpapers", label: "壁纸", file: "story_wallpapers.json", manageable: true },
-  { id: "outfits", label: "时装建模", file: "outfits.json", manageable: true },
-  { id: "audio", label: "语音音乐", file: "audio.json", manageable: true },
-  { id: "character", label: "角色设定", file: "character.json", manageable: true },
-  { id: "weapons", label: "武器", file: "weapons.json", manageable: true },
-  { id: "skills", label: "技能", file: "skills.json", manageable: true },
-  { id: "imprints", label: "印迹", file: "imprints.json", manageable: true },
-  { id: "network", label: "增幅网络", file: "amplification_network.json", manageable: true },
-  { id: "updates", label: "更新图", file: "update_history.json", manageable: true },
-  { id: "oath", label: "誓约文本", file: "oath_texts.json", manageable: false }
+  { id: "emotes", label: "表情包", file: "emotes.json", manageable: true, custom: false, fields: [] },
+  { id: "wallpapers", label: "壁纸", file: "story_wallpapers.json", manageable: true, custom: false, fields: [] },
+  { id: "outfits", label: "时装建模", file: "outfits.json", manageable: true, custom: false, fields: [] },
+  { id: "audio", label: "语音音乐", file: "audio.json", manageable: true, custom: false, fields: [] },
+  { id: "character", label: "角色设定", file: "character.json", manageable: true, custom: false, fields: [] },
+  { id: "weapons", label: "武器", file: "weapons.json", manageable: true, custom: false, fields: [] },
+  { id: "skills", label: "技能", file: "skills.json", manageable: true, custom: false, fields: [] },
+  { id: "imprints", label: "印迹", file: "imprints.json", manageable: true, custom: false, fields: [] },
+  { id: "network", label: "增幅网络", file: "amplification_network.json", manageable: true, custom: false, fields: [] },
+  { id: "updates", label: "更新图", file: "update_history.json", manageable: true, custom: false, fields: [] },
+  { id: "oath", label: "誓约文本", file: "oath_texts.json", manageable: false, custom: false, fields: [] }
 ];
 
 const API_PREFIX = "/api/resource/manage";
 const MAX_JSON_BYTES = 26 * 1024 * 1024;
 const MANAGED_MEDIA_PREFIX = "/files/WIKI/images/managed/";
+const GROUPS_FILE = "resource_groups.json";
+const RESERVED_FIELD_KEYS = new Set([
+  ...REQUIRED_RESOURCE_FIELDS.map((field) => field.key),
+  "url",
+  "id",
+  "subsection",
+  "mediaType",
+  "extension",
+  "thumbnailUrl",
+  "width",
+  "height",
+  "occurrences"
+]);
 const MIME_EXTENSIONS = new Map([
   ["image/png", "png"],
   ["image/jpeg", "jpg"],
@@ -50,16 +70,96 @@ function hasAdminAccess(req, url) {
   return req.headers["x-kanami-admin-token"] === config.adminToken || url.searchParams.get("token") === config.adminToken;
 }
 
+function wikiRootPath() {
+  return path.join(paths.files, "WIKI");
+}
+
+function groupsFilePath() {
+  return path.join(wikiRootPath(), GROUPS_FILE);
+}
+
+function normalizeId(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+}
+
+function normalizeFieldKey(value) {
+  return String(value || "")
+    .trim()
+    .replace(/[^a-zA-Z0-9_]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 48);
+}
+
+function sanitizeCustomFields(fields) {
+  if (!Array.isArray(fields)) return [];
+  const seen = new Set();
+  const normalized = [];
+  for (const field of fields) {
+    const key = normalizeFieldKey(field?.key);
+    if (!key || RESERVED_FIELD_KEYS.has(key) || seen.has(key)) continue;
+    seen.add(key);
+    normalized.push({
+      key,
+      label: safeTitle(field?.label, key),
+      required: field?.required === true
+    });
+  }
+  return normalized.slice(0, 24);
+}
+
+function readCustomGroups() {
+  const payload = readJsonFile(groupsFilePath(), { groups: [] });
+  const groups = Array.isArray(payload) ? payload : payload.groups;
+  if (!Array.isArray(groups)) return [];
+  const builtInIds = new Set(RESOURCE_GROUPS.map((group) => group.id));
+  const builtInFiles = new Set(RESOURCE_GROUPS.map((group) => group.file));
+  const seen = new Set();
+  return groups
+    .map((group) => {
+      const id = normalizeId(group?.id);
+      const file = String(group?.file || `custom_${id}.json`).trim();
+      if (!id || builtInIds.has(id) || seen.has(id)) return null;
+      if (!/^custom_[a-z0-9_-]+\.json$/u.test(file) || builtInFiles.has(file) || file === GROUPS_FILE) return null;
+      seen.add(id);
+      return {
+        id,
+        label: safeTitle(group?.label, id),
+        file,
+        manageable: true,
+        custom: true,
+        fields: sanitizeCustomFields(group?.fields)
+      };
+    })
+    .filter(Boolean);
+}
+
+function writeCustomGroups(groups) {
+  writeJsonFile(groupsFilePath(), {
+    version: 1,
+    requiredFields: REQUIRED_RESOURCE_FIELDS,
+    groups
+  });
+}
+
+function allResourceGroups() {
+  return [...RESOURCE_GROUPS, ...readCustomGroups()];
+}
+
 function groupById(id) {
-  return RESOURCE_GROUPS.find((group) => group.id === id) || null;
+  return allResourceGroups().find((group) => group.id === id) || null;
 }
 
 function wikiFilePath(group) {
-  return path.join(paths.files, "WIKI", group.file);
+  return path.join(wikiRootPath(), group.file);
 }
 
 function managedMediaDir() {
-  return path.join(paths.files, "WIKI", "images", "managed");
+  return path.join(wikiRootPath(), "images", "managed");
 }
 
 function readJsonFile(filePath, fallback) {
@@ -313,11 +413,58 @@ function deleteManagedFile(url) {
 }
 
 async function handleGroups(req, res) {
-  const groups = RESOURCE_GROUPS.map((group) => ({
+  const groups = allResourceGroups().map((group) => ({
     ...group,
     count: groupCount(group)
   }));
-  sendJson(req, res, 200, { ok: true, groups });
+  sendJson(req, res, 200, { ok: true, groups, requiredFields: REQUIRED_RESOURCE_FIELDS });
+}
+
+async function handleCreateGroup(req, res, body) {
+  const id = normalizeId(body.id || body.label);
+  const label = safeTitle(body.label, id);
+  if (!id || !label) {
+    sendManageError(req, res, 400, "INVALID_GROUP", "香奈美需要分类 ID 和分类名称。");
+    return;
+  }
+
+  const existing = allResourceGroups();
+  if (existing.some((group) => group.id === id)) {
+    sendManageError(req, res, 409, "GROUP_EXISTS", "这个分类组已经存在啦。");
+    return;
+  }
+
+  const file = `custom_${id}.json`;
+  if (existing.some((group) => group.file === file) || file === GROUPS_FILE) {
+    sendManageError(req, res, 409, "GROUP_FILE_EXISTS", "这个分类组文件已经被占用啦。");
+    return;
+  }
+
+  const customGroups = readCustomGroups();
+  const group = {
+    id,
+    label,
+    file,
+    manageable: true,
+    custom: true,
+    fields: sanitizeCustomFields(body.fields)
+  };
+  customGroups.push(group);
+  writeCustomGroups(customGroups);
+
+  const filePath = wikiFilePath(group);
+  if (!fs.existsSync(filePath)) {
+    writeGroupData(group, {});
+  }
+
+  sendJson(req, res, 201, {
+    ok: true,
+    group: {
+      ...group,
+      count: 0
+    },
+    requiredFields: REQUIRED_RESOURCE_FIELDS
+  });
 }
 
 async function handleItems(req, res, url) {
@@ -598,6 +745,10 @@ export async function tryHandleResourceManageApi(req, res, url) {
     }
     if (req.method === "GET" && route === "/groups") {
       await handleGroups(req, res);
+      return true;
+    }
+    if (req.method === "POST" && route === "/group") {
+      await handleCreateGroup(req, res, await readRequestJson(req));
       return true;
     }
     if (req.method === "GET" && route === "/items") {

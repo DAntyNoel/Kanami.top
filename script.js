@@ -133,7 +133,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!tabs || !panel || !search || !stats) return;
 
   const wikiBase = window.KANAMI_WIKI_BASE || "res/WIKI/";
-  const mediaGroups = [
+  let mediaGroups = [
     { id: "emotes", label: "表情包", file: "emotes.json" },
     { id: "wallpapers", label: "壁纸", file: "story_wallpapers.json" },
     { id: "outfits", label: "时装建模", file: "outfits.json" },
@@ -146,7 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
     { id: "updates", label: "更新图", file: "update_history.json" }
   ];
   const textGroup = { id: "oath", label: "誓约文本", file: "oath_texts.json" };
-  const groups = [...mediaGroups, textGroup];
+  let groups = [...mediaGroups, textGroup];
   const state = {
     active: "emotes",
     query: "",
@@ -519,6 +519,37 @@ document.addEventListener("DOMContentLoaded", () => {
     renderPanel();
   }
 
+  function normalizeCustomGroups(payload) {
+    const customGroups = Array.isArray(payload) ? payload : payload?.groups;
+    if (!Array.isArray(customGroups)) return [];
+    const known = new Set(groups.map((group) => group.id));
+    return customGroups
+      .map((group) => ({
+        id: String(group?.id || "").trim(),
+        label: String(group?.label || group?.id || "").trim(),
+        file: String(group?.file || "").trim()
+      }))
+      .filter((group) => group.id && group.label && /^custom_[a-z0-9_-]+\.json$/u.test(group.file))
+      .filter((group) => {
+        if (known.has(group.id)) return false;
+        known.add(group.id);
+        return true;
+      });
+  }
+
+  async function loadGroupConfig() {
+    try {
+      const response = await fetch(`${wikiBase}resource_groups.json`, { cache: "no-store" });
+      if (!response.ok) return;
+      const customGroups = normalizeCustomGroups(await response.json());
+      if (!customGroups.length) return;
+      mediaGroups = [...mediaGroups, ...customGroups];
+      groups = [...mediaGroups, textGroup];
+    } catch {
+      // 自定义分类是可选增强，读取失败时保留内置分类。
+    }
+  }
+
   function loadBundledResources() {
     const bundled = window.KANAMI_WIKI_DATA;
     if (!bundled) return false;
@@ -533,9 +564,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function loadResources() {
+    await loadGroupConfig();
     if (loadBundledResources()) return;
     const responses = await Promise.all(groups.map(async (group) => {
       const response = await fetch(wikiBase + group.file);
+      if (!response.ok && group.file.startsWith("custom_")) return [group.id, {}];
       if (!response.ok) throw new Error(`${group.file} ${response.status}`);
       return [group.id, await response.json()];
     }));

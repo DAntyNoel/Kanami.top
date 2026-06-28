@@ -180,6 +180,48 @@ async function main() {
     const groups = await request("/api/resource/manage/groups");
     assert.equal(groups.response.status, 200);
     assert.equal(groups.json.groups.find((group) => group.id === "emotes").count, 2);
+    assert.ok(groups.json.requiredFields.some((field) => field.key === "title"));
+
+    const customGroup = await request("/api/resource/manage/group", {
+      method: "POST",
+      body: JSON.stringify({
+        id: "special-stage",
+        label: "特别舞台",
+        fields: [
+          { key: "rarity", label: "稀有度" },
+          { key: "eventName", label: "活动名称" },
+          { key: "title", label: "不能覆盖标题" }
+        ]
+      })
+    });
+    assert.equal(customGroup.response.status, 201);
+    assert.equal(customGroup.json.group.id, "special-stage");
+    assert.equal(customGroup.json.group.file, "custom_special-stage.json");
+    assert.deepEqual(customGroup.json.group.fields.map((field) => field.key), ["rarity", "eventName"]);
+
+    const customConfig = await request("/files/WIKI/resource_groups.json");
+    assert.equal(customConfig.response.status, 200);
+    assert.equal(customConfig.json.groups[0].id, "special-stage");
+
+    const customImport = await request("/api/resource/manage/csv-import", {
+      method: "POST",
+      body: JSON.stringify({
+        group: "special-stage",
+        csv: [
+          "url,title,type,section,sourcePage,mediaType,extension,rarity,eventName",
+          "/files/WIKI/images/special-stage.png,特别舞台图,stage,自定义分区,/resource/manage-test,image,png,SSR,夏日"
+        ].join("\n")
+      })
+    });
+    assert.equal(customImport.response.status, 200);
+    assert.equal(customImport.json.created, 1);
+    const customItems = await request("/api/resource/manage/items?group=special-stage");
+    assert.equal(customItems.json.items.length, 1);
+    assert.equal(customItems.json.items[0].meta.rarity, "SSR");
+    assert.equal(customItems.json.items[0].meta.eventName, "夏日");
+    const customData = await request("/files/WIKI/custom_special-stage.json");
+    assert.equal(customData.response.status, 200);
+    assert.equal(Object.keys(customData.json).length, 1);
 
     const beforeItems = await request("/api/resource/manage/items?group=emotes");
     assert.equal(beforeItems.json.items.length, 2);

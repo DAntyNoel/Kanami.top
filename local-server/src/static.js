@@ -40,6 +40,7 @@ const LOCAL_WIKI_DATA_FILES = new Set([
   "WIKI/imprints.json",
   "WIKI/oath_texts.json",
   "WIKI/outfits.json",
+  "WIKI/resource_groups.json",
   "WIKI/skills.json",
   "WIKI/story_wallpapers.json",
   "WIKI/update_history.json",
@@ -248,6 +249,7 @@ function prepareLocalHtml(req, url, html) {
 function isAllowedMappedPath(requested) {
   const normalized = requested.replace(/^\/+/, "");
   if (LOCAL_WIKI_DATA_FILES.has(normalized)) return true;
+  if (/^WIKI\/custom_[a-z0-9_-]+\.json$/u.test(normalized)) return true;
   return config.fileAllowedPrefixes.some((prefix) => normalized === prefix.slice(0, -1) || normalized.startsWith(prefix));
 }
 

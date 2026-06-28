@@ -3,6 +3,7 @@
   const state = {
     token: sessionStorage.getItem(tokenKey) || "",
     groups: [],
+    requiredFields: [],
     activeGroup: "",
     items: [],
     selectedId: "",
@@ -18,6 +19,11 @@
     workbench: document.querySelector("[data-workbench]"),
     groupList: document.querySelector("[data-group-list]"),
     refreshGroups: document.querySelector("[data-refresh-groups]"),
+    openGroup: document.querySelector("[data-open-group]"),
+    groupPanel: document.querySelector("[data-group-panel]"),
+    closeGroup: document.querySelector("[data-close-group]"),
+    groupForm: document.querySelector("[data-group-form]"),
+    groupMessage: document.querySelector("[data-group-message]"),
     activeGroupKicker: document.querySelector("[data-active-group-kicker]"),
     activeGroupTitle: document.querySelector("[data-active-group-title]"),
     search: document.querySelector("[data-search]"),
@@ -42,6 +48,7 @@
     emptyDetail: document.querySelector("[data-empty-detail]"),
     detailForm: document.querySelector("[data-detail-form]"),
     detailMessage: document.querySelector("[data-detail-message]"),
+    customFields: document.querySelector("[data-custom-fields]"),
     preview: document.querySelector("[data-preview]"),
     moveTarget: document.querySelector("[data-move-target]"),
     moveItem: document.querySelector("[data-move-item]"),
@@ -82,6 +89,43 @@
 
   function activeGroup() {
     return state.groups.find((group) => group.id === state.activeGroup) || null;
+  }
+
+  function normalizeGroupId(value) {
+    return String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 48);
+  }
+
+  function normalizeFieldKey(value) {
+    return String(value || "")
+      .trim()
+      .replace(/[^a-zA-Z0-9_]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 48);
+  }
+
+  function parseFieldLines(value) {
+    const reserved = new Set(["url", "id", "title", "type", "section", "sourcePage", "subsection", "mediaType", "extension", "thumbnailUrl", "width", "height", "occurrences"]);
+    const seen = new Set();
+    return String(value || "")
+      .split(/\r?\n/u)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const [rawKey, ...labelParts] = line.split(",");
+        const key = normalizeFieldKey(rawKey);
+        const label = labelParts.join(",").trim() || key;
+        return { key, label };
+      })
+      .filter((field) => {
+        if (!field.key || reserved.has(field.key) || seen.has(field.key)) return false;
+        seen.add(field.key);
+        return true;
+      });
   }
 
   function selectedItem() {
@@ -136,7 +180,7 @@
       button.type = "button";
       button.className = "resource-group-button";
       button.setAttribute("aria-current", String(group.id === state.activeGroup));
-      button.innerHTML = `<span>${group.label}</span><span class="resource-group-count">${group.count}</span>`;
+      button.innerHTML = `<span>${group.label}${group.custom ? " · 自定义" : ""}</span><span class="resource-group-count">${group.count}</span>`;
       button.addEventListener("click", () => selectGroup(group.id));
       els.groupList.appendChild(button);
 
@@ -262,10 +306,14 @@
 
   function renderDetail() {
     const item = selectedItem();
+    const group = activeGroup();
     els.emptyDetail.hidden = Boolean(item);
     els.detailForm.hidden = !item;
     message(els.detailMessage, "");
-    if (!item) return;
+    if (!item) {
+      els.customFields.innerHTML = "";
+      return;
+    }
 
     const form = els.detailForm;
     form.elements.title.value = item.meta.title || item.title || "";
@@ -276,12 +324,38 @@
     form.elements.text.value = item.meta.text || "";
     form.elements.targetGroup.value = state.activeGroup;
     els.deleteFile.checked = item.url.startsWith("/files/WIKI/images/managed/");
+    renderCustomFields(group, item);
     renderPreview(item);
+  }
+
+  function renderCustomFields(group, item) {
+    els.customFields.innerHTML = "";
+    const fields = Array.isArray(group?.fields) ? group.fields : [];
+    if (!fields.length) return;
+
+    const note = document.createElement("p");
+    note.className = "resource-field-note";
+    note.textContent = "这个分类组的自定义字段";
+    els.customFields.appendChild(note);
+
+    fields.forEach((field) => {
+      const label = document.createElement("label");
+      const text = document.createElement("span");
+      text.textContent = field.label || field.key;
+      const input = document.createElement("input");
+      input.name = `custom_${field.key}`;
+      input.type = "text";
+      input.dataset.customField = field.key;
+      input.value = item?.meta?.[field.key] ?? "";
+      label.append(text, input);
+      els.customFields.appendChild(label);
+    });
   }
 
   async function loadGroups() {
     const payload = await api("/groups");
     state.groups = payload.groups;
+    state.requiredFields = payload.requiredFields || [];
     if (!state.activeGroup || !state.groups.some((group) => group.id === state.activeGroup && group.manageable)) {
       state.activeGroup = state.groups.find((group) => group.manageable)?.id || "";
     }
@@ -333,7 +407,7 @@
 
   function formMetadata() {
     const form = els.detailForm;
-    return {
+    const metadata = {
       title: form.elements.title.value.trim(),
       type: form.elements.type.value.trim(),
       section: form.elements.section.value.trim(),
@@ -341,6 +415,10 @@
       sourcePage: form.elements.sourcePage.value.trim(),
       text: form.elements.text.value.trim()
     };
+    els.customFields.querySelectorAll("[data-custom-field]").forEach((input) => {
+      metadata[input.dataset.customField] = input.value.trim();
+    });
+    return metadata;
   }
 
   async function saveDetail(event) {
@@ -579,6 +657,33 @@
     }
   }
 
+  async function createGroup(event) {
+    event.preventDefault();
+    const form = els.groupForm;
+    const label = form.elements.label.value.trim();
+    const id = normalizeGroupId(form.elements.id.value || label);
+    const fields = parseFieldLines(form.elements.fields.value);
+    if (!label || !id) {
+      message(els.groupMessage, "分类名称和 ID 要填好哦。", "error");
+      return;
+    }
+
+    try {
+      const payload = await api("/group", {
+        method: "POST",
+        body: JSON.stringify({ id, label, fields })
+      });
+      form.reset();
+      state.activeGroup = payload.group.id;
+      state.selectedId = "";
+      state.selectedIds.clear();
+      message(els.groupMessage, `香奈美已经创建「${payload.group.label}」。`, "success");
+      await refreshAll();
+    } catch (error) {
+      message(els.groupMessage, error.message, "error");
+    }
+  }
+
   async function loginWithToken(token) {
     state.token = token || "";
     if (state.token) sessionStorage.setItem(tokenKey, state.token);
@@ -600,6 +705,18 @@
     });
     els.localLogin.addEventListener("click", async () => loginWithToken(""));
     els.refreshGroups.addEventListener("click", refreshAll);
+    els.openGroup.addEventListener("click", () => {
+      els.groupPanel.hidden = false;
+      els.groupForm.elements.label.focus();
+    });
+    els.closeGroup.addEventListener("click", () => {
+      els.groupPanel.hidden = true;
+    });
+    els.groupForm.elements.label.addEventListener("input", () => {
+      if (!els.groupForm.elements.id.value.trim()) {
+        els.groupForm.elements.id.placeholder = normalizeGroupId(els.groupForm.elements.label.value) || "special-collection";
+      }
+    });
     els.search.addEventListener("input", () => {
       state.query = els.search.value.trim();
       loadItems();
@@ -620,6 +737,7 @@
     });
     els.uploadForm.addEventListener("submit", uploadResource);
     els.csvForm.addEventListener("submit", importCsv);
+    els.groupForm.addEventListener("submit", createGroup);
     els.detailForm.addEventListener("submit", saveDetail);
     els.moveItem.addEventListener("click", moveSelected);
     els.moveUp.addEventListener("click", () => moveBy(-1));
