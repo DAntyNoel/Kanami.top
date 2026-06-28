@@ -68,6 +68,7 @@
 
 .resource-login-form input,
 .resource-upload-panel input,
+.resource-upload-panel textarea,
 .resource-detail-form input,
 .resource-detail-form select,
 .resource-detail-form textarea,
@@ -85,6 +86,10 @@
 }
 
 .resource-detail-form textarea {
+    resize: vertical;
+}
+
+.resource-upload-panel textarea {
     resize: vertical;
 }
 
@@ -129,6 +134,11 @@
     border-color: rgba(190, 61, 80, 0.28);
     background: rgba(255, 235, 238, 0.9);
     color: #9b2338;
+}
+
+.resource-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.54;
 }
 
 .resource-message {
@@ -239,6 +249,33 @@
     font-weight: 750;
 }
 
+.resource-bulk-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid rgba(118, 75, 162, 0.14);
+    border-radius: 8px;
+    background: rgba(183, 213, 255, 0.16);
+}
+
+.resource-select-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #45335f;
+    font-weight: 850;
+}
+
+.resource-select-all input,
+.resource-row-check input {
+    width: 16px;
+    height: 16px;
+    accent-color: #764ba2;
+}
+
 .resource-item-list {
     display: grid;
     gap: 8px;
@@ -246,7 +283,7 @@
 
 .resource-item-row {
     display: grid;
-    grid-template-columns: 44px minmax(0, 1fr) auto;
+    grid-template-columns: 24px 44px minmax(0, 1fr) auto;
     gap: 10px;
     align-items: center;
     min-height: 58px;
@@ -256,6 +293,11 @@
     background: rgba(255, 255, 255, 0.82);
     color: #45335f;
     cursor: pointer;
+}
+
+.resource-row-check {
+    display: grid;
+    place-items: center;
 }
 
 .resource-item-row[aria-selected="true"] {

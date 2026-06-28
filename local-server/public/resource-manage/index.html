@@ -67,6 +67,7 @@
               <span>搜索</span>
               <input type="search" data-search placeholder="按标题、分区或文件名查找" />
             </label>
+            <button class="resource-button" type="button" data-open-csv>导入 CSV</button>
             <button class="resource-button resource-button-primary" type="button" data-open-upload>上传资源</button>
           </div>
         </div>
@@ -99,6 +100,41 @@
           </form>
         </div>
 
+        <div class="resource-upload-panel" data-csv-panel hidden>
+          <form data-csv-form>
+            <div class="resource-form-grid">
+              <label>
+                <span>CSV 文件</span>
+                <input name="csvFile" type="file" accept=".csv,text/csv,text/plain" />
+              </label>
+              <label>
+                <span>说明</span>
+                <input type="text" value="字段：url,title,type,section,subsection,mediaType,extension,thumbnailUrl,sourcePage,width,height,text" readonly />
+              </label>
+            </div>
+            <label>
+              <span>CSV 内容</span>
+              <textarea name="csvText" rows="7" placeholder="url,title,section,subsection&#10;/files/WIKI/images/example.png,香奈美的新收藏,管理导入,CSV"></textarea>
+            </label>
+            <div class="resource-login-actions">
+              <button class="resource-button resource-button-primary" type="submit">导入到当前分类</button>
+              <button class="resource-button" type="button" data-close-csv>收起</button>
+            </div>
+            <p class="resource-message" data-csv-message role="status"></p>
+          </form>
+        </div>
+
+        <div class="resource-bulk-bar" data-bulk-bar hidden>
+          <label class="resource-select-all">
+            <input type="checkbox" data-select-all />
+            <span data-selected-count>已选择 0 项</span>
+          </label>
+          <button class="resource-button resource-button-danger" type="button" data-bulk-delete>批量删除</button>
+          <label class="resource-delete-file">
+            <input type="checkbox" data-bulk-delete-files />
+            <span>同时清理管理台上传文件</span>
+          </label>
+        </div>
         <div class="resource-list-meta" data-list-meta>香奈美正在读取收藏。</div>
         <div class="resource-item-list" data-item-list></div>
       </section>

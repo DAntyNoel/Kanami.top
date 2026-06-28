@@ -6,6 +6,7 @@
     activeGroup: "",
     items: [],
     selectedId: "",
+    selectedIds: new Set(),
     query: ""
   };
 
@@ -21,10 +22,20 @@
     activeGroupTitle: document.querySelector("[data-active-group-title]"),
     search: document.querySelector("[data-search]"),
     openUpload: document.querySelector("[data-open-upload]"),
+    openCsv: document.querySelector("[data-open-csv]"),
     uploadPanel: document.querySelector("[data-upload-panel]"),
     closeUpload: document.querySelector("[data-close-upload]"),
     uploadForm: document.querySelector("[data-upload-form]"),
     uploadMessage: document.querySelector("[data-upload-message]"),
+    csvPanel: document.querySelector("[data-csv-panel]"),
+    closeCsv: document.querySelector("[data-close-csv]"),
+    csvForm: document.querySelector("[data-csv-form]"),
+    csvMessage: document.querySelector("[data-csv-message]"),
+    bulkBar: document.querySelector("[data-bulk-bar]"),
+    selectAll: document.querySelector("[data-select-all]"),
+    selectedCount: document.querySelector("[data-selected-count]"),
+    bulkDelete: document.querySelector("[data-bulk-delete]"),
+    bulkDeleteFiles: document.querySelector("[data-bulk-delete-files]"),
     listMeta: document.querySelector("[data-list-meta]"),
     itemList: document.querySelector("[data-item-list]"),
     emptyDetail: document.querySelector("[data-empty-detail]"),
@@ -143,14 +154,31 @@
       ? `香奈美已经展开 ${group.label}，可以拖拽排序，也可以点选后编辑。`
       : "香奈美正在读取收藏。";
     els.itemList.innerHTML = "";
+    state.selectedIds = new Set([...state.selectedIds].filter((id) => state.items.some((item) => item.id === id)));
 
     state.items.forEach((item) => {
-      const row = document.createElement("button");
-      row.type = "button";
+      const row = document.createElement("div");
+      row.tabIndex = 0;
+      row.setAttribute("role", "button");
       row.className = "resource-item-row";
       row.draggable = true;
       row.dataset.id = item.id;
       row.setAttribute("aria-selected", String(item.id === state.selectedId));
+      const checkboxWrap = document.createElement("span");
+      checkboxWrap.className = "resource-row-check";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = state.selectedIds.has(item.id);
+      checkbox.setAttribute("aria-label", `选择 ${item.title || item.id}`);
+      checkbox.addEventListener("click", (event) => {
+        event.stopPropagation();
+      });
+      checkbox.addEventListener("change", (event) => {
+        event.stopPropagation();
+        setItemChecked(item.id, checkbox.checked);
+      });
+      checkboxWrap.appendChild(checkbox);
+      row.appendChild(checkboxWrap);
       row.appendChild(createThumb(item));
 
       const main = document.createElement("span");
@@ -170,6 +198,12 @@
       row.appendChild(index);
 
       row.addEventListener("click", () => selectItem(item.id));
+      row.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          selectItem(item.id);
+        }
+      });
       row.addEventListener("dragstart", (event) => {
         event.dataTransfer.setData("text/plain", item.id);
       });
@@ -184,7 +218,17 @@
       els.itemList.appendChild(row);
     });
 
+    renderBulkBar();
     renderDetail();
+  }
+
+  function renderBulkBar() {
+    const selectedCount = state.selectedIds.size;
+    els.bulkBar.hidden = selectedCount === 0 && state.items.length === 0;
+    els.selectedCount.textContent = selectedCount ? `已选择 ${selectedCount} 项` : "还没有选择收藏";
+    els.selectAll.checked = state.items.length > 0 && state.items.every((item) => state.selectedIds.has(item.id));
+    els.selectAll.indeterminate = selectedCount > 0 && !els.selectAll.checked;
+    els.bulkDelete.disabled = selectedCount === 0;
   }
 
   function renderPreview(item) {
@@ -260,12 +304,27 @@
   async function selectGroup(groupId) {
     state.activeGroup = groupId;
     state.selectedId = "";
+    state.selectedIds.clear();
     renderGroups();
     await loadItems();
   }
 
   function selectItem(id) {
     state.selectedId = id;
+    renderItems();
+  }
+
+  function setItemChecked(id, checked) {
+    if (checked) state.selectedIds.add(id);
+    else state.selectedIds.delete(id);
+    renderItems();
+  }
+
+  function setAllChecked(checked) {
+    state.selectedIds.clear();
+    if (checked) {
+      state.items.forEach((item) => state.selectedIds.add(item.id));
+    }
     renderItems();
   }
 
@@ -360,10 +419,34 @@
       });
       await api(`/item?${query}`, { method: "DELETE" });
       state.selectedId = "";
+      state.selectedIds.delete(item.id);
       await refreshAll();
       message(els.listMeta, "香奈美已经删除这项收藏。", "success");
     } catch (error) {
       message(els.detailMessage, error.message, "error");
+    }
+  }
+
+  async function bulkDeleteSelected() {
+    const ids = [...state.selectedIds];
+    if (!ids.length) return;
+    const confirmed = window.confirm(`香奈美要批量删除 ${ids.length} 项收藏吗？这个动作会立刻改写当前 WIKI 映射。`);
+    if (!confirmed) return;
+    try {
+      const payload = await api("/bulk-delete", {
+        method: "POST",
+        body: JSON.stringify({
+          group: state.activeGroup,
+          ids,
+          deleteFiles: els.bulkDeleteFiles.checked
+        })
+      });
+      state.selectedIds.clear();
+      if (ids.includes(state.selectedId)) state.selectedId = "";
+      await refreshAll();
+      message(els.listMeta, `香奈美已经批量删除 ${payload.deleted.length} 项收藏。`, "success");
+    } catch (error) {
+      message(els.listMeta, error.message, "error");
     }
   }
 
@@ -390,6 +473,15 @@
       reader.addEventListener("load", () => resolve(String(reader.result || "")));
       reader.addEventListener("error", () => reject(new Error("香奈美读取文件失败了。")));
       reader.readAsDataURL(file);
+    });
+  }
+
+  function readFileText(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.addEventListener("load", () => resolve(String(reader.result || "")));
+      reader.addEventListener("error", () => reject(new Error("香奈美读取 CSV 失败了。")));
+      reader.readAsText(file);
     });
   }
 
@@ -430,6 +522,33 @@
     }
   }
 
+  async function importCsv(event) {
+    event.preventDefault();
+    const form = els.csvForm;
+    const file = form.elements.csvFile.files?.[0];
+    try {
+      message(els.csvMessage, "香奈美正在读取 CSV。");
+      const csv = file ? await readFileText(file) : form.elements.csvText.value;
+      const payload = await api("/csv-import", {
+        method: "POST",
+        body: JSON.stringify({
+          group: state.activeGroup,
+          csv
+        })
+      });
+      form.reset();
+      state.selectedIds.clear();
+      message(
+        els.csvMessage,
+        `导入完成：新增 ${payload.created} 项，更新 ${payload.updated} 项，跳过 ${payload.skipped.length} 行。`,
+        "success"
+      );
+      await refreshAll();
+    } catch (error) {
+      message(els.csvMessage, error.message, "error");
+    }
+  }
+
   async function loginWithToken(token) {
     state.token = token || "";
     if (state.token) sessionStorage.setItem(tokenKey, state.token);
@@ -459,15 +578,25 @@
       els.uploadPanel.hidden = false;
       els.uploadForm.elements.file.focus();
     });
+    els.openCsv.addEventListener("click", () => {
+      els.csvPanel.hidden = false;
+      els.csvForm.elements.csvText.focus();
+    });
     els.closeUpload.addEventListener("click", () => {
       els.uploadPanel.hidden = true;
     });
+    els.closeCsv.addEventListener("click", () => {
+      els.csvPanel.hidden = true;
+    });
     els.uploadForm.addEventListener("submit", uploadResource);
+    els.csvForm.addEventListener("submit", importCsv);
     els.detailForm.addEventListener("submit", saveDetail);
     els.moveItem.addEventListener("click", moveSelected);
     els.moveUp.addEventListener("click", () => moveBy(-1));
     els.moveDown.addEventListener("click", () => moveBy(1));
     els.deleteItem.addEventListener("click", deleteSelected);
+    els.selectAll.addEventListener("change", () => setAllChecked(els.selectAll.checked));
+    els.bulkDelete.addEventListener("click", bulkDeleteSelected);
   }
 
   document.addEventListener("DOMContentLoaded", async () => {

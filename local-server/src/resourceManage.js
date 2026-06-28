@@ -201,6 +201,79 @@ function mediaTypeFromMime(mimeType) {
   return "file";
 }
 
+function mediaTypeFromExtension(extension) {
+  const normalized = String(extension || "").toLowerCase();
+  if (["png", "jpg", "jpeg", "webp", "gif", "svg"].includes(normalized)) return "image";
+  if (["mp3", "wav", "ogg", "m4a"].includes(normalized)) return "audio";
+  return "file";
+}
+
+function extensionFromUrl(url) {
+  try {
+    const pathname = new URL(String(url), "http://kanami.local").pathname;
+    const extension = path.extname(pathname).replace(".", "").toLowerCase();
+    return /^[a-z0-9]{1,8}$/.test(extension) ? extension : "";
+  } catch {
+    return "";
+  }
+}
+
+function csvCellValue(key, value) {
+  const trimmed = String(value ?? "").trim();
+  if (trimmed === "") return undefined;
+  if (["width", "height", "occurrences"].includes(String(key))) {
+    const number = Number(trimmed);
+    return Number.isFinite(number) ? number : undefined;
+  }
+  if (trimmed.toLowerCase() === "null") return null;
+  return trimmed;
+}
+
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let quoted = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const next = text[index + 1];
+    if (quoted) {
+      if (char === "\"" && next === "\"") {
+        cell += "\"";
+        index += 1;
+      } else if (char === "\"") {
+        quoted = false;
+      } else {
+        cell += char;
+      }
+    } else if (char === "\"") {
+      quoted = true;
+    } else if (char === ",") {
+      row.push(cell);
+      cell = "";
+    } else if (char === "\n") {
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = "";
+    } else if (char !== "\r") {
+      cell += char;
+    }
+  }
+
+  row.push(cell);
+  if (row.some((value) => String(value).trim() !== "") || rows.length === 0) rows.push(row);
+  const [headerRow, ...dataRows] = rows;
+  const headers = headerRow.map((value) => String(value || "").trim());
+  return dataRows
+    .map((values, index) => ({
+      line: index + 2,
+      record: Object.fromEntries(headers.map((header, column) => [header, values[column] ?? ""]))
+    }))
+    .filter(({ record }) => Object.values(record).some((value) => String(value).trim() !== ""));
+}
+
 function parseUploadPayload(body) {
   if (body.dataUrl) {
     const match = String(body.dataUrl).match(/^data:([^;,]+)?(?:;[^,]*)?;base64,(.+)$/u);
@@ -228,6 +301,15 @@ function managedFilePathFromUrl(url) {
   const relativePath = path.relative(paths.files, absolutePath);
   if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) return null;
   return absolutePath;
+}
+
+function deleteManagedFile(url) {
+  const filePath = managedFilePathFromUrl(url);
+  if (filePath && fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+    return true;
+  }
+  return false;
 }
 
 async function handleGroups(req, res) {
@@ -388,14 +470,116 @@ async function handleDeleteItem(req, res, url) {
 
   let fileDeleted = false;
   if (url.searchParams.get("deleteFile") === "true") {
-    const filePath = managedFilePathFromUrl(id);
-    if (filePath && fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-      fileDeleted = true;
-    }
+    fileDeleted = deleteManagedFile(id);
   }
 
   sendJson(req, res, 200, { ok: true, group: group.id, id, fileDeleted });
+}
+
+async function handleBulkDelete(req, res, body) {
+  const group = groupById(body.group);
+  const ids = Array.isArray(body.ids) ? body.ids.map(String).filter(Boolean) : [];
+  if (!group || !group.manageable || !ids.length) {
+    sendManageError(req, res, 400, "INVALID_BULK_DELETE", "香奈美需要知道要批量删除哪些收藏。");
+    return;
+  }
+
+  const data = readGroupData(group);
+  const deleted = [];
+  const missing = [];
+  let filesDeleted = 0;
+
+  for (const id of ids) {
+    if (!data[id]) {
+      missing.push(id);
+      continue;
+    }
+    delete data[id];
+    deleted.push(id);
+    if (body.deleteFiles === true && deleteManagedFile(id)) filesDeleted += 1;
+  }
+
+  writeGroupData(group, data);
+  sendJson(req, res, 200, {
+    ok: true,
+    group: group.id,
+    deleted,
+    missing,
+    filesDeleted
+  });
+}
+
+function importMetaFromRecord(record) {
+  const url = String(record.url || record.id || "").trim();
+  if (!url) return null;
+  const extension = String(csvCellValue("extension", record.extension) || extensionFromUrl(url) || "file").toLowerCase();
+  const mediaType = String(csvCellValue("mediaType", record.mediaType) || mediaTypeFromExtension(extension));
+  const meta = {
+    title: safeTitle(record.title, path.basename(url)),
+    type: csvCellValue("type", record.type),
+    section: csvCellValue("section", record.section),
+    subsection: csvCellValue("subsection", record.subsection),
+    mediaType,
+    extension,
+    thumbnailUrl: csvCellValue("thumbnailUrl", record.thumbnailUrl) ?? null,
+    sourcePage: csvCellValue("sourcePage", record.sourcePage) || "/resource/manage",
+    width: csvCellValue("width", record.width) ?? null,
+    height: csvCellValue("height", record.height) ?? null,
+    occurrences: csvCellValue("occurrences", record.occurrences) ?? 1
+  };
+
+  for (const [key, value] of Object.entries(record)) {
+    if (["url", "id", "title", "type", "section", "subsection", "mediaType", "extension", "thumbnailUrl", "sourcePage", "width", "height", "occurrences"].includes(key)) {
+      continue;
+    }
+    const normalizedValue = csvCellValue(key, value);
+    if (normalizedValue !== undefined) meta[key] = normalizedValue;
+  }
+
+  return { url, meta };
+}
+
+async function handleCsvImport(req, res, body) {
+  const group = groupById(body.group);
+  if (!group || !group.manageable || !body.csv) {
+    sendManageError(req, res, 400, "INVALID_CSV_IMPORT", "香奈美需要一个目标分类和 CSV 内容。");
+    return;
+  }
+
+  const rows = parseCsv(String(body.csv));
+  if (!rows.length) {
+    sendManageError(req, res, 400, "EMPTY_CSV", "CSV 里还没有可以导入的收藏。");
+    return;
+  }
+
+  const data = readGroupData(group);
+  let nextData = data;
+  let created = 0;
+  let updated = 0;
+  const skipped = [];
+
+  for (const { line, record } of rows) {
+    const imported = importMetaFromRecord(record);
+    if (!imported) {
+      skipped.push({ line, reason: "缺少 url" });
+      continue;
+    }
+    const exists = Object.hasOwn(nextData, imported.url);
+    const meta = exists ? { ...nextData[imported.url], ...imported.meta } : imported.meta;
+    nextData = insertObjectEntry(nextData, imported.url, meta, body.toIndex);
+    if (exists) updated += 1;
+    else created += 1;
+  }
+
+  writeGroupData(group, nextData);
+  sendJson(req, res, 200, {
+    ok: true,
+    group: group.id,
+    created,
+    updated,
+    skipped,
+    total: rows.length
+  });
 }
 
 export async function tryHandleResourceManageApi(req, res, url) {
@@ -434,6 +618,14 @@ export async function tryHandleResourceManageApi(req, res, url) {
     }
     if (req.method === "DELETE" && route === "/item") {
       await handleDeleteItem(req, res, url);
+      return true;
+    }
+    if (req.method === "POST" && route === "/bulk-delete") {
+      await handleBulkDelete(req, res, await readRequestJson(req));
+      return true;
+    }
+    if (req.method === "POST" && route === "/csv-import") {
+      await handleCsvImport(req, res, await readRequestJson(req));
       return true;
     }
 

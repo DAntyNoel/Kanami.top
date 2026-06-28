@@ -245,9 +245,39 @@ async function main() {
     assert.equal(remove.json.fileDeleted, true);
     assert.equal(fs.existsSync(path.join(filesRoot, uploadedId.slice("/files/".length))), false);
 
+    const csvImport = await request("/api/resource/manage/csv-import", {
+      method: "POST",
+      body: JSON.stringify({
+        group: "emotes",
+        csv: [
+          "url,title,section,subsection,mediaType,extension,width,height",
+          "/files/WIKI/images/seed-a.png,Seed A CSV,CSV 导入,更新,image,png,1,1",
+          "/files/WIKI/images/csv-a.png,CSV A,CSV 导入,新增,image,png,1,1"
+        ].join("\n")
+      })
+    });
+    assert.equal(csvImport.response.status, 200);
+    assert.equal(csvImport.json.created, 1);
+    assert.equal(csvImport.json.updated, 1);
+    const afterCsv = await request("/api/resource/manage/items?group=emotes&query=CSV");
+    assert.equal(afterCsv.json.total, 2);
+
+    const bulkDelete = await request("/api/resource/manage/bulk-delete", {
+      method: "POST",
+      body: JSON.stringify({
+        group: "emotes",
+        ids: ["/files/WIKI/images/csv-a.png", "/files/WIKI/images/missing.png"],
+        deleteFiles: true
+      })
+    });
+    assert.equal(bulkDelete.response.status, 200);
+    assert.deepEqual(bulkDelete.json.deleted, ["/files/WIKI/images/csv-a.png"]);
+    assert.deepEqual(bulkDelete.json.missing, ["/files/WIKI/images/missing.png"]);
+
     const finalEmotes = JSON.parse(fs.readFileSync(path.join(wikiRoot, "emotes.json"), "utf8"));
     const finalWallpapers = JSON.parse(fs.readFileSync(path.join(wikiRoot, "story_wallpapers.json"), "utf8"));
     assert.equal(Object.keys(finalEmotes).length, 2);
+    assert.equal(finalEmotes["/files/WIKI/images/seed-a.png"].title, "Seed A CSV");
     assert.equal(Object.keys(finalWallpapers).length, 1);
 
     const resourcePage = await request("/resource/");
