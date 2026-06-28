@@ -63,6 +63,7 @@ function offlineHtml() {
       color: #fff;
       font-weight: 800;
       text-decoration: none;
+      white-space: nowrap;
       background: linear-gradient(135deg, #ee8ab4, #77a7df);
       box-shadow: 0 10px 26px rgba(119,167,223,.28);
     }
@@ -70,6 +71,25 @@ function offlineHtml() {
       color: #2f2634;
       background: rgba(255,255,255,.78);
       box-shadow: inset 0 0 0 1px rgba(119,167,223,.34);
+    }
+    @media (max-width: 520px) {
+      body { padding: 14px; }
+      main { padding: 28px; }
+      h1 {
+        font-size: clamp(2rem, 12vw, 2.8rem);
+        line-height: 1.08;
+      }
+      main > p {
+        font-size: .96rem;
+        line-height: 1.62;
+      }
+      .offline-actions {
+        gap: 10px;
+        margin-top: 22px;
+      }
+      a {
+        padding: 0 16px;
+      }
     }
   </style>
 </head>
