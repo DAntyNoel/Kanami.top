@@ -35,6 +35,7 @@
     selectAll: document.querySelector("[data-select-all]"),
     selectedCount: document.querySelector("[data-selected-count]"),
     bulkDelete: document.querySelector("[data-bulk-delete]"),
+    bulkDeleteToolbar: document.querySelector("[data-bulk-delete-toolbar]"),
     bulkDeleteFiles: document.querySelector("[data-bulk-delete-files]"),
     listMeta: document.querySelector("[data-list-meta]"),
     itemList: document.querySelector("[data-item-list]"),
@@ -229,6 +230,8 @@
     els.selectAll.checked = state.items.length > 0 && state.items.every((item) => state.selectedIds.has(item.id));
     els.selectAll.indeterminate = selectedCount > 0 && !els.selectAll.checked;
     els.bulkDelete.disabled = selectedCount === 0;
+    els.bulkDeleteToolbar.disabled = selectedCount === 0;
+    els.bulkDeleteToolbar.textContent = selectedCount ? `批量删除 ${selectedCount} 项` : "批量删除";
   }
 
   function renderPreview(item) {
@@ -597,6 +600,7 @@
     els.deleteItem.addEventListener("click", deleteSelected);
     els.selectAll.addEventListener("change", () => setAllChecked(els.selectAll.checked));
     els.bulkDelete.addEventListener("click", bulkDeleteSelected);
+    els.bulkDeleteToolbar.addEventListener("click", bulkDeleteSelected);
   }
 
   document.addEventListener("DOMContentLoaded", async () => {

@@ -137,8 +137,10 @@
 }
 
 .resource-button:disabled {
+    background: rgba(255, 255, 255, 0.72);
+    color: #8a789a;
     cursor: not-allowed;
-    opacity: 0.54;
+    opacity: 0.86;
 }
 
 .resource-message {

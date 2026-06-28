@@ -6,7 +6,7 @@
   <title>香奈美的资源管理台</title>
   <link rel="stylesheet" href="/res/styles/style.css" />
   <link rel="stylesheet" href="/res/styles/layers.css" />
-  <link rel="stylesheet" href="/resource-manage/manage.css" />
+  <link rel="stylesheet" href="/resource-manage/manage.css?v=20260628-bulk-toolbar" />
   <link rel="icon" type="image/png" href="/res/images/favicon.png" />
 </head>
 <body>
@@ -68,6 +68,7 @@
               <input type="search" data-search placeholder="按标题、分区或文件名查找" />
             </label>
             <button class="resource-button" type="button" data-open-csv>导入 CSV</button>
+            <button class="resource-button resource-button-danger" type="button" data-bulk-delete-toolbar>批量删除</button>
             <button class="resource-button resource-button-primary" type="button" data-open-upload>上传资源</button>
           </div>
         </div>
@@ -197,6 +198,6 @@
 
   <script src="/auth/session.js"></script>
   <script src="/res/scripts/header.js"></script>
-  <script src="/resource-manage/manage.js"></script>
+  <script src="/resource-manage/manage.js?v=20260628-bulk-toolbar"></script>
 </body>
 </html>

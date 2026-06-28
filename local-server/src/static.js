@@ -366,7 +366,8 @@ export function tryServeStatic(req, res, url) {
   if (publicPath && isReadableFile(publicPath)) {
     const isAuthAsset = url.pathname.startsWith("/auth/");
     const isGalleryAsset = url.pathname.startsWith("/gallery/");
-    const cacheControl = path.extname(publicPath).toLowerCase() === ".html" || isAuthAsset || isGalleryAsset
+    const isResourceManageAsset = url.pathname.startsWith("/resource-manage/");
+    const cacheControl = path.extname(publicPath).toLowerCase() === ".html" || isAuthAsset || isGalleryAsset || isResourceManageAsset
       ? "no-store"
       : "public, max-age=3600";
     sendFile(req, res, publicPath, cacheControl);
