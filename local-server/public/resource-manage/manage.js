@@ -224,6 +224,12 @@
       });
       checkboxWrap.appendChild(checkbox);
       row.appendChild(checkboxWrap);
+
+      const index = document.createElement("span");
+      index.className = "resource-item-index";
+      index.textContent = `#${item.index + 1}`;
+      row.appendChild(index);
+
       row.appendChild(createThumb(item));
 
       const main = document.createElement("span");
@@ -236,11 +242,6 @@
       url.textContent = item.url;
       main.append(title, url);
       row.appendChild(main);
-
-      const index = document.createElement("span");
-      index.className = "resource-item-index";
-      index.textContent = `#${item.index + 1}`;
-      row.appendChild(index);
 
       row.addEventListener("click", () => selectItem(item.id));
       row.addEventListener("keydown", (event) => {

@@ -346,8 +346,9 @@
 
 .resource-item-row {
     display: grid;
-    grid-template-columns: 24px 44px minmax(0, 1fr) auto;
-    gap: 10px;
+    grid-template-columns: 24px auto 44px minmax(0, 1fr);
+    column-gap: 10px;
+    row-gap: 4px;
     align-items: center;
     min-height: 58px;
     padding: 8px;
@@ -408,16 +409,24 @@
 }
 
 .resource-item-url {
+    display: none;
     margin-top: 4px;
     color: #7b5380;
     font-size: 0.78rem;
     font-weight: 650;
 }
 
+.resource-item-row:hover .resource-item-url,
+.resource-item-row:focus .resource-item-url,
+.resource-item-row:focus-within .resource-item-url {
+    display: block;
+}
+
 .resource-item-index {
     color: #7b5380;
     font-size: 0.78rem;
     font-weight: 900;
+    white-space: nowrap;
 }
 
 .resource-detail-empty {
