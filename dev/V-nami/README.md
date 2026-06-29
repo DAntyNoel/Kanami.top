@@ -20,6 +20,14 @@ conda install -n main -c conda-forge ffmpeg
 - `ffmpeg`：把音轨转成 mp3。
 - `qrcode`：在终端显示登录二维码，缺失时也会打印扫码链接。
 
+## 参考实现
+
+这版不再把 B 站搜索和下载细节完全手写，核心参考这些成熟项目的做法：
+
+- `yt-dlp/yt-dlp`：复用 Bilibili extractor、`bilisearch` 搜索入口、cookie 文件和 `FFmpegExtractAudio` mp3 转码链路。
+- `Nemo2011/bilibili-api`：参考 B 站网页登录、搜索和视频信息接口的封装边界。
+- `SocialSisterYi/bilibili-API-collect`：作为 B 站 Web API 形态的补充参考；具体实现仍以 `yt-dlp` 当前代码和实测接口为准。
+
 ## 本地凭证
 
 B 站登录 cookie 只保存在本目录的 `.private/` 下：
@@ -36,12 +44,28 @@ python crawler.py login
 python crawler.py status
 ```
 
+未登录或 cookie 失效时，B 站搜索/详情接口可能返回 `HTTP 412 Precondition Failed`。深度搜索和 mp3 下载前应先确认 `status` 是已登录状态。
+
 ## 采集
 
 默认会用多组关键词搜索，并要求已有登录 cookie：
 
 ```bash
 python crawler.py crawl --pages 3 --output data/kanami_ai_covers.json
+```
+
+全站深度搜索建议使用 `yt-dlp` 搜索后端和较高候选上限：
+
+```bash
+python crawler.py crawl --deep-search --max-results-per-keyword 1000 --output data/kanami_ai_covers.json
+```
+
+搜索后端可以切换：
+
+```bash
+python crawler.py crawl --search-backend both
+python crawler.py crawl --search-backend yt-dlp
+python crawler.py crawl --search-backend api
 ```
 
 如果只想验证搜索和导出，不下载 mp3：
