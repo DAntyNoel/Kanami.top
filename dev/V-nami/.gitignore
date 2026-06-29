@@ -1,0 +1,7 @@
+.private/
+data/*.json
+data/audio/
+data/downloads/
+*.log
+__pycache__/
+.pytest_cache/
