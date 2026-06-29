@@ -5,9 +5,12 @@ import html
 import json
 import math
 import os
+import queue
+import random
 import re
 import shutil
 import time
+import threading
 import uuid
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
@@ -23,6 +26,8 @@ PRIVATE_DIR = Path(os.environ.get("VNAMI_PRIVATE_DIR", PROJECT_ROOT / ".private"
 DATA_DIR = Path(os.environ.get("VNAMI_DATA_DIR", PROJECT_ROOT / "data"))
 DEFAULT_OUTPUT = DATA_DIR / "kanami_ai_covers.json"
 DEFAULT_AUDIO_DIR = DATA_DIR / "audio"
+DEFAULT_CHECKPOINT = DATA_DIR / "crawl_checkpoint.json"
+DEFAULT_RAW_CANDIDATES = DATA_DIR / "raw_candidates.jsonl"
 COOKIE_JSON = PRIVATE_DIR / "bilibili_cookies.json"
 COOKIE_TXT = PRIVATE_DIR / "bilibili_cookies.txt"
 
@@ -160,6 +165,76 @@ class FilterResult:
     accepted: bool
     matched_keywords: list[str]
     notes: list[str]
+
+
+class CrawlPacer:
+    def __init__(self, request_delay: float, request_jitter: float, cooldown_seconds: float) -> None:
+        self.request_delay = max(0.0, request_delay)
+        self.request_jitter = max(0.0, request_jitter)
+        self.cooldown_seconds = max(0.0, cooldown_seconds)
+
+    def wait(self, label: str, base_delay: float | None = None, jitter: float | None = None) -> None:
+        delay = self.request_delay if base_delay is None else max(0.0, base_delay)
+        spread = self.request_jitter if jitter is None else max(0.0, jitter)
+        total = delay + (random.uniform(0.0, spread) if spread else 0.0)
+        if total <= 0:
+            return
+        print(f"sleep {total:.1f}s before {label}")
+        time.sleep(total)
+
+    def cooldown(self, reason: str) -> None:
+        if self.cooldown_seconds <= 0:
+            return
+        print(f"cooldown {self.cooldown_seconds:.0f}s: {reason}")
+        time.sleep(self.cooldown_seconds)
+
+
+class BackgroundDownloader:
+    def __init__(
+        self,
+        *,
+        audio_dir: Path,
+        overwrite: bool,
+        delay: float,
+        jitter: float,
+        on_update: Any | None = None,
+    ) -> None:
+        self.audio_dir = audio_dir
+        self.overwrite = overwrite
+        self.delay = max(0.0, delay)
+        self.jitter = max(0.0, jitter)
+        self.on_update = on_update
+        self.jobs: queue.Queue[CoverItem | None] = queue.Queue()
+        self.thread = threading.Thread(target=self._run, name="vnami-audio-downloader", daemon=True)
+        self.errors: list[str] = []
+
+    def start(self) -> None:
+        self.thread.start()
+
+    def submit(self, item: CoverItem) -> None:
+        self.jobs.put(item)
+
+    def close(self) -> None:
+        self.jobs.put(None)
+        self.thread.join()
+
+    def _run(self) -> None:
+        while True:
+            item = self.jobs.get()
+            if item is None:
+                self.jobs.task_done()
+                return
+            try:
+                wait_with_jitter(self.delay, self.jitter, f"download {item.bvid}")
+                download_item_audio(item, audio_dir=self.audio_dir, overwrite=self.overwrite)
+            except RuntimeError as exc:
+                message = f"{item.bvid}: {exc}"
+                self.errors.append(message)
+                item.filter_notes.append(f"audio-download-failed:{exc}")
+            finally:
+                if self.on_update:
+                    self.on_update(item)
+                self.jobs.task_done()
 
 
 class CredentialStore:
@@ -352,60 +427,130 @@ class BilibiliClient:
 
 
 def crawl(args: argparse.Namespace) -> int:
+    if args.download_only:
+        return download_only(args)
+
     keywords = args.keywords or list(DEFAULT_KEYWORDS)
     include_terms = [*DEFAULT_INCLUDE_TERMS, *args.include_term]
     exclude_terms = [*DEFAULT_EXCLUDE_TERMS, *args.exclude_term]
-    by_bvid: dict[str, CoverItem] = {}
+    by_bvid: dict[str, CoverItem] = load_existing_items(args.output) if args.resume else {}
+    processed_keys = load_processed_keys(args.checkpoint) if args.resume else set()
+    output_lock = threading.Lock()
     page_size = max(1, min(int(args.page_size), 50))
     max_results = resolve_max_results(args, page_size)
+    pacer = CrawlPacer(
+        request_delay=args.request_delay,
+        request_jitter=args.request_jitter,
+        cooldown_seconds=args.cooldown_seconds,
+    )
+    should_download = not args.no_audio and not args.search_only
+    candidates_this_run = 0
+    accepted_this_run = 0
+
+    def persist() -> None:
+        with output_lock:
+            write_crawl_output(
+                output=args.output,
+                items=list(by_bvid.values()),
+                keywords=keywords,
+                pages=max(1, args.pages),
+                search_backend=args.search_backend,
+                max_results_per_keyword=max_results,
+            )
+            write_checkpoint(args.checkpoint, processed_keys)
+
+    downloader: BackgroundDownloader | None = None
+    if should_download and args.background_download:
+        downloader = BackgroundDownloader(
+            audio_dir=args.audio_dir,
+            overwrite=args.overwrite_audio,
+            delay=args.download_delay,
+            jitter=args.download_jitter,
+            on_update=lambda _item: persist(),
+        )
+        downloader.start()
 
     with BilibiliClient() as bilibili:
         if not args.allow_anonymous and not bilibili.is_logged_in():
             raise RuntimeError("Bilibili login is required. Run: python crawler.py login")
 
         for keyword in keywords:
-            hits = collect_search_hits(
-                bilibili=bilibili,
-                keyword=keyword,
-                backend=args.search_backend,
-                pages=max(1, args.pages),
-                page_size=page_size,
-                max_results=max_results,
-            )
-            for hit in hits:
-                if hit.bvid and hit.bvid in by_bvid:
-                    if keyword not in by_bvid[hit.bvid].matched_keywords:
-                        by_bvid[hit.bvid].matched_keywords.append(keyword)
-                    continue
-                item = item_from_hit(
+            try:
+                hits = collect_search_hits(
                     bilibili=bilibili,
-                    hit=hit,
                     keyword=keyword,
-                    include_terms=include_terms,
-                    exclude_terms=exclude_terms,
-                    audio_dir=args.audio_dir,
-                    resource_url_prefix=args.resource_url_prefix,
+                    backend=args.search_backend,
+                    pages=max(1, args.pages),
+                    page_size=page_size,
+                    max_results=max_results,
+                    pacer=pacer,
                 )
+            except Exception as exc:
+                if is_cooldown_exception(exc):
+                    pacer.cooldown(f"search failed for {keyword}: {exc}")
+                    continue
+                raise
+
+            for hit in hits:
+                candidate_key = search_hit_key(hit)
+                if not candidate_key or candidate_key in processed_keys:
+                    continue
+                if args.max_candidates_per_run and candidates_this_run >= args.max_candidates_per_run:
+                    persist()
+                    finish_downloader(downloader)
+                    return 0
+
+                candidates_this_run += 1
+                try:
+                    item, raw_record = item_from_hit(
+                        bilibili=bilibili,
+                        hit=hit,
+                        keyword=keyword,
+                        include_terms=include_terms,
+                        exclude_terms=exclude_terms,
+                        audio_dir=args.audio_dir,
+                        resource_url_prefix=args.resource_url_prefix,
+                        pacer=pacer,
+                    )
+                except Exception as exc:
+                    append_jsonl(args.raw_candidates, raw_error_record(keyword, hit, exc))
+                    processed_keys.add(candidate_key)
+                    persist()
+                    if is_cooldown_exception(exc):
+                        pacer.cooldown(f"candidate failed for {candidate_key}: {exc}")
+                        continue
+                    raise
+
+                append_jsonl(args.raw_candidates, raw_record)
+                processed_keys.add(candidate_key)
+                if raw_record.get("bvid"):
+                    processed_keys.add(str(raw_record["bvid"]))
+
                 if item and item.bvid in by_bvid:
                     if keyword not in by_bvid[item.bvid].matched_keywords:
                         by_bvid[item.bvid].matched_keywords.append(keyword)
                 elif item:
                     by_bvid[item.bvid] = item
+                    accepted_this_run += 1
+                    if downloader:
+                        downloader.submit(item)
+                    elif should_download:
+                        wait_with_jitter(args.download_delay, args.download_jitter, f"download {item.bvid}")
+                        try:
+                            download_item_audio(item, audio_dir=args.audio_dir, overwrite=args.overwrite_audio)
+                        except RuntimeError as exc:
+                            item.filter_notes.append(f"audio-download-failed:{exc}")
+                persist()
+                if args.max_accepted_per_run and accepted_this_run >= args.max_accepted_per_run:
+                    finish_downloader(downloader)
+                    persist()
+                    return 0
 
+    finish_downloader(downloader)
+    persist()
     items = sorted(by_bvid.values(), key=lambda item: item.pubdate or 0, reverse=True)
-    if not args.no_audio:
-        download_items(items, audio_dir=args.audio_dir, overwrite=args.overwrite_audio)
-
-    payload = build_dataset(
-        items=items,
-        keywords=keywords,
-        pages=max(1, args.pages),
-        search_backend=args.search_backend,
-        max_results_per_keyword=max_results,
-    )
-    write_json(args.output, payload)
     print(f"Wrote {len(items)} items to {args.output}.")
-    print(f"resourceMap entries: {len(payload['resourceMap'])}.")
+    print(f"resourceMap entries: {len(build_resource_map(items))}.")
     return 0
 
 
@@ -417,6 +562,7 @@ def collect_search_hits(
     pages: int,
     page_size: int,
     max_results: int,
+    pacer: CrawlPacer,
 ) -> list[SearchHit]:
     hits: list[SearchHit] = []
     seen: set[str] = set()
@@ -431,6 +577,7 @@ def collect_search_hits(
 
     if backend in {"yt-dlp", "both"}:
         try:
+            pacer.wait(f"yt-dlp search {keyword}")
             append(bilibili.search_videos_ytdlp(keyword, max_results=max_results))
         except Exception as exc:
             if backend == "yt-dlp":
@@ -440,6 +587,7 @@ def collect_search_hits(
     if backend in {"api", "both"} and len(hits) < max_results:
         api_pages = min(pages, max(1, math.ceil(max_results / page_size)))
         for page in range(1, api_pages + 1):
+            pacer.wait(f"api search {keyword} page {page}")
             candidates = bilibili.search_videos(keyword=keyword, page=page, page_size=page_size)
             if not candidates:
                 break
@@ -458,17 +606,20 @@ def item_from_hit(
     exclude_terms: list[str],
     audio_dir: Path,
     resource_url_prefix: str,
-) -> CoverItem | None:
+    pacer: CrawlPacer,
+) -> tuple[CoverItem | None, dict[str, Any]]:
+    pacer.wait(f"video detail {search_hit_key(hit)}")
     view = bilibili.video_view(bvid=hit.bvid, aid=hit.aid)
     bvid = str(view.get("bvid") or hit.bvid or "")
     if not bvid:
-        return None
+        return None, raw_candidate_record(keyword, hit, view, None, accepted=False, notes=["missing-bvid"])
     title = str(view.get("title") or hit.title)
     owner = view.get("owner") or {}
     author = str(owner.get("name") or hit.author or "")
     pubdate = int_or_none(view.get("pubdate")) or hit.pubdate
     description = str(view.get("desc") or hit.description or "")
     aid = int_or_none(view.get("aid")) or hit.aid
+    pacer.wait(f"video tags {bvid}")
     tags = bilibili.video_tags(bvid, aid)
     if hit.tag_text:
         tags.extend([tag.strip() for tag in hit.tag_text.split(",") if tag.strip()])
@@ -482,10 +633,12 @@ def item_from_hit(
         exclude_terms=exclude_terms,
     )
     if not filter_result.accepted:
-        return None
+        raw_record = raw_candidate_record(keyword, hit, view, filter_result, accepted=False, notes=filter_result.notes)
+        raw_record["tags"] = tags
+        return None, raw_record
 
     audio_resource_url = f"{resource_url_prefix.rstrip('/')}/{audio_file_name(bvid)}"
-    return CoverItem(
+    item = CoverItem(
         bvid=bvid,
         video_url=f"https://www.bilibili.com/video/{bvid}",
         author=author,
@@ -502,21 +655,27 @@ def item_from_hit(
         filter_notes=filter_result.notes,
         search_source=hit.source,
     )
+    raw_record = raw_candidate_record(keyword, hit, view, filter_result, accepted=True, notes=filter_result.notes)
+    raw_record["tags"] = tags
+    return item, raw_record
 
 
 def download_items(items: list[CoverItem], *, audio_dir: Path, overwrite: bool) -> None:
     for item in items:
         try:
-            path = download_audio_mp3(
-                video_url=item.video_url,
-                bvid=item.bvid,
-                audio_dir=audio_dir,
-                overwrite=overwrite,
-            )
+            download_item_audio(item, audio_dir=audio_dir, overwrite=overwrite)
         except RuntimeError as exc:
             item.filter_notes.append(f"audio-download-failed:{exc}")
-            continue
-        item.audio_file = relative_path(path)
+
+
+def download_item_audio(item: CoverItem, *, audio_dir: Path, overwrite: bool) -> None:
+    path = download_audio_mp3(
+        video_url=item.video_url,
+        bvid=item.bvid,
+        audio_dir=audio_dir,
+        overwrite=overwrite,
+    )
+    item.audio_file = relative_path(path)
 
 
 def download_audio_mp3(*, video_url: str, bvid: str, audio_dir: Path, overwrite: bool = False) -> Path:
@@ -675,6 +834,213 @@ def build_resource_map(items: list[CoverItem]) -> dict[str, dict[str, Any]]:
     return resource_map
 
 
+def download_only(args: argparse.Namespace) -> int:
+    payload = read_json_file(args.output, {})
+    items = list(load_existing_items(args.output).values())
+    if not items:
+        print(f"No items found in {args.output}.")
+        return 0
+
+    def persist() -> None:
+        write_crawl_output(
+            output=args.output,
+            items=items,
+            keywords=payload.get("keywords") or list(DEFAULT_KEYWORDS),
+            pages=int(payload.get("pagesPerKeyword") or max(1, args.pages)),
+            search_backend=str(payload.get("searchBackend") or args.search_backend),
+            max_results_per_keyword=payload.get("maxResultsPerKeyword") or resolve_max_results(args, max(1, min(int(args.page_size), 50))),
+        )
+
+    targets = [item for item in items if args.overwrite_audio or not audio_file_exists(item)]
+    if args.background_download:
+        downloader = BackgroundDownloader(
+            audio_dir=args.audio_dir,
+            overwrite=args.overwrite_audio,
+            delay=args.download_delay,
+            jitter=args.download_jitter,
+            on_update=lambda _item: persist(),
+        )
+        downloader.start()
+        for item in targets:
+            downloader.submit(item)
+        finish_downloader(downloader)
+    else:
+        for item in targets:
+            wait_with_jitter(args.download_delay, args.download_jitter, f"download {item.bvid}")
+            try:
+                download_item_audio(item, audio_dir=args.audio_dir, overwrite=args.overwrite_audio)
+            except RuntimeError as exc:
+                item.filter_notes.append(f"audio-download-failed:{exc}")
+            persist()
+
+    persist()
+    print(f"Download-only processed {len(targets)} items from {args.output}.")
+    return 0
+
+
+def load_existing_items(path: Path) -> dict[str, CoverItem]:
+    payload = read_json_file(path, {})
+    items = payload.get("items") if isinstance(payload, dict) else None
+    if not isinstance(items, list):
+        return {}
+    by_bvid: dict[str, CoverItem] = {}
+    for raw in items:
+        if not isinstance(raw, dict):
+            continue
+        item = cover_item_from_json(raw)
+        if item.bvid:
+            by_bvid[item.bvid] = item
+    return by_bvid
+
+
+def cover_item_from_json(data: dict[str, Any]) -> CoverItem:
+    return CoverItem(
+        bvid=str(data.get("bvid") or ""),
+        video_url=str(data.get("videoUrl") or ""),
+        author=str(data.get("author") or ""),
+        original_song_name=str(data.get("originalSongName") or "未识别曲目"),
+        video_title=str(data.get("videoTitle") or ""),
+        published_at=str(data.get("publishedAt") or ""),
+        pubdate=int_or_none(data.get("pubdate")),
+        audio_file=data.get("audioFile"),
+        audio_resource_url=data.get("audioResourceUrl"),
+        tags=[str(tag) for tag in data.get("tags") or []],
+        description=str(data.get("description") or ""),
+        cover_url=data.get("coverUrl"),
+        matched_keywords=[str(keyword) for keyword in data.get("matchedKeywords") or []],
+        filter_notes=[str(note) for note in data.get("filterNotes") or []],
+        search_source=str(data.get("searchSource") or "resume"),
+    )
+
+
+def write_crawl_output(
+    *,
+    output: Path,
+    items: list[CoverItem],
+    keywords: list[str],
+    pages: int,
+    search_backend: str,
+    max_results_per_keyword: int | None,
+) -> None:
+    sorted_items = sorted(items, key=lambda item: item.pubdate or 0, reverse=True)
+    payload = build_dataset(
+        items=sorted_items,
+        keywords=keywords,
+        pages=pages,
+        search_backend=search_backend,
+        max_results_per_keyword=max_results_per_keyword,
+    )
+    write_json(output, payload)
+
+
+def load_processed_keys(path: Path) -> set[str]:
+    payload = read_json_file(path, {})
+    keys = payload.get("processedKeys") if isinstance(payload, dict) else None
+    return {str(key) for key in keys or []}
+
+
+def write_checkpoint(path: Path, processed_keys: set[str]) -> None:
+    write_json(path, {
+        "version": 1,
+        "updatedAt": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
+        "processedKeys": sorted(processed_keys),
+    })
+
+
+def raw_candidate_record(
+    keyword: str,
+    hit: SearchHit,
+    view: dict[str, Any],
+    filter_result: FilterResult | None,
+    *,
+    accepted: bool,
+    notes: list[str],
+) -> dict[str, Any]:
+    bvid = str(view.get("bvid") or hit.bvid or "")
+    aid = int_or_none(view.get("aid")) or hit.aid
+    title = str(view.get("title") or hit.title or "")
+    owner = view.get("owner") or {}
+    pubdate = int_or_none(view.get("pubdate")) or hit.pubdate
+    return {
+        "checkedAt": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
+        "keyword": keyword,
+        "candidateKey": search_hit_key(hit),
+        "accepted": accepted,
+        "notes": notes,
+        "matchedKeywords": filter_result.matched_keywords if filter_result else [],
+        "searchSource": hit.source,
+        "bvid": bvid,
+        "aid": aid,
+        "videoUrl": f"https://www.bilibili.com/video/{bvid}" if bvid else hit.arcurl,
+        "author": str(owner.get("name") or hit.author or ""),
+        "videoTitle": title,
+        "publishedAt": iso_from_pubdate(pubdate),
+        "tags": [],
+        "description": str(view.get("desc") or hit.description or ""),
+    }
+
+
+def raw_error_record(keyword: str, hit: SearchHit, exc: Exception) -> dict[str, Any]:
+    return {
+        "checkedAt": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
+        "keyword": keyword,
+        "candidateKey": search_hit_key(hit),
+        "accepted": False,
+        "notes": ["error"],
+        "searchSource": hit.source,
+        "bvid": hit.bvid,
+        "aid": hit.aid,
+        "videoUrl": hit.arcurl,
+        "videoTitle": hit.title,
+        "error": str(exc),
+    }
+
+
+def append_jsonl(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(payload, ensure_ascii=False) + "\n")
+
+
+def read_json_file(path: Path, fallback: Any) -> Any:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return fallback
+
+
+def audio_file_exists(item: CoverItem) -> bool:
+    if not item.audio_file:
+        return False
+    path = Path(item.audio_file)
+    if not path.is_absolute():
+        path = PROJECT_ROOT / path
+    return path.exists()
+
+
+def finish_downloader(downloader: BackgroundDownloader | None) -> None:
+    if not downloader:
+        return
+    downloader.close()
+    if downloader.errors:
+        print(f"background download errors: {len(downloader.errors)}")
+
+
+def wait_with_jitter(delay: float, jitter: float, label: str) -> None:
+    total = max(0.0, delay) + (random.uniform(0.0, max(0.0, jitter)) if jitter > 0 else 0.0)
+    if total <= 0:
+        return
+    print(f"sleep {total:.1f}s before {label}")
+    time.sleep(total)
+
+
+def is_cooldown_exception(exc: Exception) -> bool:
+    if isinstance(exc, httpx.HTTPStatusError):
+        return exc.response.status_code in {403, 412, 418, 429}
+    text = str(exc).lower()
+    return any(marker in text for marker in [" 403", " 412", " 418", " 429", "precondition failed", "too many requests", "rate limit"])
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Crawl Bilibili Kanami AI cover songs.")
     sub = parser.add_subparsers(dest="command")
@@ -691,6 +1057,19 @@ def build_parser() -> argparse.ArgumentParser:
     crawl_parser.add_argument("--max-results-per-keyword", type=int, default=0, help="Hard cap for each keyword. Overrides pages * page-size when set.")
     crawl_parser.add_argument("--deep-search", action="store_true", help="Search up to 1000 candidates per keyword unless --max-results-per-keyword is set.")
     crawl_parser.add_argument("--search-backend", choices=["both", "yt-dlp", "api"], default="both", help="Search backend. both uses yt-dlp first and Bilibili API as fallback/supplement.")
+    crawl_parser.add_argument("--resume", action="store_true", help="Resume from existing output JSON and checkpoint.")
+    crawl_parser.add_argument("--checkpoint", type=Path, default=DEFAULT_CHECKPOINT, help="Checkpoint JSON path for processed candidate keys.")
+    crawl_parser.add_argument("--raw-candidates", type=Path, default=DEFAULT_RAW_CANDIDATES, help="JSONL audit log for every checked candidate.")
+    crawl_parser.add_argument("--search-only", action="store_true", help="Only search and write metadata; do not download mp3 files.")
+    crawl_parser.add_argument("--download-only", action="store_true", help="Load existing output JSON and only download missing mp3 files.")
+    crawl_parser.add_argument("--background-download", action="store_true", help="Use one background thread to download accepted items while search continues.")
+    crawl_parser.add_argument("--request-delay", type=float, default=5.0, help="Base seconds to wait before Bilibili search/detail/tag requests.")
+    crawl_parser.add_argument("--request-jitter", type=float, default=4.0, help="Random extra seconds added to request delay.")
+    crawl_parser.add_argument("--cooldown-seconds", type=float, default=900.0, help="Pause this long after 403/412/418/429 style risk responses.")
+    crawl_parser.add_argument("--download-delay", type=float, default=20.0, help="Base seconds to wait before each mp3 download.")
+    crawl_parser.add_argument("--download-jitter", type=float, default=20.0, help="Random extra seconds added before each mp3 download.")
+    crawl_parser.add_argument("--max-candidates-per-run", type=int, default=0, help="Stop after checking this many candidates in one run. 0 means unlimited.")
+    crawl_parser.add_argument("--max-accepted-per-run", type=int, default=0, help="Stop after accepting this many items in one run. 0 means unlimited.")
     crawl_parser.add_argument("--include-term", action="append", default=[], help="Extra include term for rough filtering.")
     crawl_parser.add_argument("--exclude-term", action="append", default=[], help="Extra exclude term for rough filtering.")
     crawl_parser.add_argument("--no-audio", action="store_true", help="Skip mp3 download and only write metadata.")

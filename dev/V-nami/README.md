@@ -46,7 +46,7 @@ python crawler.py status
 
 未登录或 cookie 失效时，B 站搜索/详情接口可能返回 `HTTP 412 Precondition Failed`。深度搜索和 mp3 下载前应先确认 `status` 是已登录状态。
 
-## 采集
+## 采集策略
 
 默认会用多组关键词搜索，并要求已有登录 cookie：
 
@@ -54,10 +54,43 @@ python crawler.py status
 python crawler.py crawl --pages 3 --output data/kanami_ai_covers.json
 ```
 
-全站深度搜索建议使用 `yt-dlp` 搜索后端和较高候选上限：
+正式采集建议先只搜元数据，不下载 mp3。这样可以慢速、可恢复地建立候选池，并把所有候选写入 `data/raw_candidates.jsonl` 供后续复核：
 
 ```bash
-python crawler.py crawl --deep-search --max-results-per-keyword 1000 --output data/kanami_ai_covers.json
+python crawler.py crawl \
+  --search-only \
+  --resume \
+  --deep-search \
+  --max-results-per-keyword 1000 \
+  --request-delay 8 \
+  --request-jitter 6 \
+  --max-candidates-per-run 80 \
+  --output data/kanami_ai_covers.json
+```
+
+确认候选后，再单独补下载：
+
+```bash
+python crawler.py crawl \
+  --download-only \
+  --background-download \
+  --download-delay 30 \
+  --download-jitter 30 \
+  --output data/kanami_ai_covers.json
+```
+
+如果希望搜索时顺便下载，可以开启单线程后台下载队列。后台下载只有一个 worker 线程，搜索线程会继续前进，退出前会等待下载队列收尾：
+
+```bash
+python crawler.py crawl \
+  --resume \
+  --background-download \
+  --request-delay 8 \
+  --request-jitter 6 \
+  --download-delay 30 \
+  --download-jitter 30 \
+  --max-candidates-per-run 80 \
+  --output data/kanami_ai_covers.json
 ```
 
 搜索后端可以切换：
@@ -68,17 +101,16 @@ python crawler.py crawl --search-backend yt-dlp
 python crawler.py crawl --search-backend api
 ```
 
-如果只想验证搜索和导出，不下载 mp3：
-
-```bash
-python crawler.py crawl --pages 1 --no-audio --output data/kanami_ai_covers.json
-```
-
 输出 JSON 顶层包含：
 
 - `items`：爬虫自己的结构化记录。
 - `resourceMap`：星光收藏室可用的对象映射，key 是音频资源 URL，value 是资源 metadata。
 - `resourceGroup`：建议加入 `resource_groups.json` 的自定义分类配置。
+
+运行时还会维护：
+
+- `data/crawl_checkpoint.json`：已处理候选 key，用于 `--resume`。
+- `data/raw_candidates.jsonl`：每个候选的视频信息、筛选结果和拒绝原因。
 
 必要字段会保留：
 
@@ -118,3 +150,5 @@ python scripts/sync_to_wiki.py --input data/kanami_ai_covers.json --wiki-root ..
 ## 当前限制
 
 当前筛选逻辑是粗筛：标题、标签和简介中需要同时命中香奈美和 AI/翻唱相关词，并过滤少量明显不是纯歌曲翻唱的内容。是否真的是“单纯歌曲翻唱”仍需要后续人工复核或更强的内容识别规则。
+
+不要用高并发、代理池或短时间全量冲刺。当前策略是低频登录态访问，遇到 `403/412/418/429` 会按 `--cooldown-seconds` 冷却暂停。

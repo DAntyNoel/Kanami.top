@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from crawler import CoverItem, build_dataset, evaluate_candidate, extract_original_song_name
+from crawler import CoverItem, build_dataset, evaluate_candidate, extract_original_song_name, search_hit_from_ytdlp
 
 
 def main() -> None:
@@ -31,6 +31,13 @@ def main() -> None:
     assert resource["sourcePage"] == item.video_url
     assert resource["mediaType"] == "audio"
     assert resource["originalSongName"] == "群青"
+    hit = search_hit_from_ytdlp({
+        "id": "116826180688720",
+        "url": "http://www.bilibili.com/video/av116826180688720",
+        "ie_key": "BiliBili",
+    })
+    assert hit.aid == 116826180688720
+    assert hit.bvid == ""
 
 
 if __name__ == "__main__":
