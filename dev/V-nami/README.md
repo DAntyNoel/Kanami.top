@@ -73,24 +73,20 @@ python crawler.py crawl \
 ```bash
 python crawler.py crawl \
   --download-only \
-  --background-download \
   --download-delay 30 \
   --download-jitter 30 \
   --output data/kanami_ai_covers.json
 ```
 
-如果希望搜索时顺便下载，可以开启单线程后台下载队列。后台下载只有一个 worker 线程，搜索线程会继续前进，退出前会等待下载队列收尾：
+如果希望搜索时旁路下载，单独启动下载 worker。它会轮询 `data/kanami_ai_covers.json`，检测到新增或仍缺 mp3 的条目就下载；如果 30 分钟没有 JSON 更新或新增待下载项，会自动退出：
 
 ```bash
-python crawler.py crawl \
-  --resume \
-  --background-download \
-  --request-delay 8 \
-  --request-jitter 6 \
+python download_worker.py \
+  --input data/kanami_ai_covers.json \
+  --poll-interval 60 \
+  --idle-timeout 1800 \
   --download-delay 30 \
-  --download-jitter 30 \
-  --max-candidates-per-run 80 \
-  --output data/kanami_ai_covers.json
+  --download-jitter 30
 ```
 
 搜索后端可以切换：

@@ -5,12 +5,10 @@ import html
 import json
 import math
 import os
-import queue
 import random
 import re
 import shutil
 import time
-import threading
 import uuid
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
@@ -187,54 +185,6 @@ class CrawlPacer:
             return
         print(f"cooldown {self.cooldown_seconds:.0f}s: {reason}")
         time.sleep(self.cooldown_seconds)
-
-
-class BackgroundDownloader:
-    def __init__(
-        self,
-        *,
-        audio_dir: Path,
-        overwrite: bool,
-        delay: float,
-        jitter: float,
-        on_update: Any | None = None,
-    ) -> None:
-        self.audio_dir = audio_dir
-        self.overwrite = overwrite
-        self.delay = max(0.0, delay)
-        self.jitter = max(0.0, jitter)
-        self.on_update = on_update
-        self.jobs: queue.Queue[CoverItem | None] = queue.Queue()
-        self.thread = threading.Thread(target=self._run, name="vnami-audio-downloader", daemon=True)
-        self.errors: list[str] = []
-
-    def start(self) -> None:
-        self.thread.start()
-
-    def submit(self, item: CoverItem) -> None:
-        self.jobs.put(item)
-
-    def close(self) -> None:
-        self.jobs.put(None)
-        self.thread.join()
-
-    def _run(self) -> None:
-        while True:
-            item = self.jobs.get()
-            if item is None:
-                self.jobs.task_done()
-                return
-            try:
-                wait_with_jitter(self.delay, self.jitter, f"download {item.bvid}")
-                download_item_audio(item, audio_dir=self.audio_dir, overwrite=self.overwrite)
-            except RuntimeError as exc:
-                message = f"{item.bvid}: {exc}"
-                self.errors.append(message)
-                item.filter_notes.append(f"audio-download-failed:{exc}")
-            finally:
-                if self.on_update:
-                    self.on_update(item)
-                self.jobs.task_done()
 
 
 class CredentialStore:
@@ -435,7 +385,6 @@ def crawl(args: argparse.Namespace) -> int:
     exclude_terms = [*DEFAULT_EXCLUDE_TERMS, *args.exclude_term]
     by_bvid: dict[str, CoverItem] = load_existing_items(args.output) if args.resume else {}
     processed_keys = load_processed_keys(args.checkpoint) if args.resume else set()
-    output_lock = threading.Lock()
     page_size = max(1, min(int(args.page_size), 50))
     max_results = resolve_max_results(args, page_size)
     pacer = CrawlPacer(
@@ -443,32 +392,22 @@ def crawl(args: argparse.Namespace) -> int:
         request_jitter=args.request_jitter,
         cooldown_seconds=args.cooldown_seconds,
     )
-    should_download = not args.no_audio and not args.search_only
+    if args.background_download:
+        print("background download moved to download_worker.py; crawler will only update the JSON output.")
+    should_download = not args.no_audio and not args.search_only and not args.background_download
     candidates_this_run = 0
     accepted_this_run = 0
 
     def persist() -> None:
-        with output_lock:
-            write_crawl_output(
-                output=args.output,
-                items=list(by_bvid.values()),
-                keywords=keywords,
-                pages=max(1, args.pages),
-                search_backend=args.search_backend,
-                max_results_per_keyword=max_results,
-            )
-            write_checkpoint(args.checkpoint, processed_keys)
-
-    downloader: BackgroundDownloader | None = None
-    if should_download and args.background_download:
-        downloader = BackgroundDownloader(
-            audio_dir=args.audio_dir,
-            overwrite=args.overwrite_audio,
-            delay=args.download_delay,
-            jitter=args.download_jitter,
-            on_update=lambda _item: persist(),
+        write_crawl_output(
+            output=args.output,
+            items=list(by_bvid.values()),
+            keywords=keywords,
+            pages=max(1, args.pages),
+            search_backend=args.search_backend,
+            max_results_per_keyword=max_results,
         )
-        downloader.start()
+        write_checkpoint(args.checkpoint, processed_keys)
 
     with BilibiliClient() as bilibili:
         if not args.allow_anonymous and not bilibili.is_logged_in():
@@ -497,7 +436,6 @@ def crawl(args: argparse.Namespace) -> int:
                     continue
                 if args.max_candidates_per_run and candidates_this_run >= args.max_candidates_per_run:
                     persist()
-                    finish_downloader(downloader)
                     return 0
 
                 candidates_this_run += 1
@@ -532,9 +470,7 @@ def crawl(args: argparse.Namespace) -> int:
                 elif item:
                     by_bvid[item.bvid] = item
                     accepted_this_run += 1
-                    if downloader:
-                        downloader.submit(item)
-                    elif should_download:
+                    if should_download:
                         wait_with_jitter(args.download_delay, args.download_jitter, f"download {item.bvid}")
                         try:
                             download_item_audio(item, audio_dir=args.audio_dir, overwrite=args.overwrite_audio)
@@ -542,11 +478,9 @@ def crawl(args: argparse.Namespace) -> int:
                             item.filter_notes.append(f"audio-download-failed:{exc}")
                 persist()
                 if args.max_accepted_per_run and accepted_this_run >= args.max_accepted_per_run:
-                    finish_downloader(downloader)
                     persist()
                     return 0
 
-    finish_downloader(downloader)
     persist()
     items = sorted(by_bvid.values(), key=lambda item: item.pubdate or 0, reverse=True)
     print(f"Wrote {len(items)} items to {args.output}.")
@@ -853,25 +787,14 @@ def download_only(args: argparse.Namespace) -> int:
 
     targets = [item for item in items if args.overwrite_audio or not audio_file_exists(item)]
     if args.background_download:
-        downloader = BackgroundDownloader(
-            audio_dir=args.audio_dir,
-            overwrite=args.overwrite_audio,
-            delay=args.download_delay,
-            jitter=args.download_jitter,
-            on_update=lambda _item: persist(),
-        )
-        downloader.start()
-        for item in targets:
-            downloader.submit(item)
-        finish_downloader(downloader)
-    else:
-        for item in targets:
-            wait_with_jitter(args.download_delay, args.download_jitter, f"download {item.bvid}")
-            try:
-                download_item_audio(item, audio_dir=args.audio_dir, overwrite=args.overwrite_audio)
-            except RuntimeError as exc:
-                item.filter_notes.append(f"audio-download-failed:{exc}")
-            persist()
+        print("background download moved to download_worker.py; running download-only synchronously here.")
+    for item in targets:
+        wait_with_jitter(args.download_delay, args.download_jitter, f"download {item.bvid}")
+        try:
+            download_item_audio(item, audio_dir=args.audio_dir, overwrite=args.overwrite_audio)
+        except RuntimeError as exc:
+            item.filter_notes.append(f"audio-download-failed:{exc}")
+        persist()
 
     persist()
     print(f"Download-only processed {len(targets)} items from {args.output}.")
@@ -1018,14 +941,6 @@ def audio_file_exists(item: CoverItem) -> bool:
     return path.exists()
 
 
-def finish_downloader(downloader: BackgroundDownloader | None) -> None:
-    if not downloader:
-        return
-    downloader.close()
-    if downloader.errors:
-        print(f"background download errors: {len(downloader.errors)}")
-
-
 def wait_with_jitter(delay: float, jitter: float, label: str) -> None:
     total = max(0.0, delay) + (random.uniform(0.0, max(0.0, jitter)) if jitter > 0 else 0.0)
     if total <= 0:
@@ -1062,7 +977,7 @@ def build_parser() -> argparse.ArgumentParser:
     crawl_parser.add_argument("--raw-candidates", type=Path, default=DEFAULT_RAW_CANDIDATES, help="JSONL audit log for every checked candidate.")
     crawl_parser.add_argument("--search-only", action="store_true", help="Only search and write metadata; do not download mp3 files.")
     crawl_parser.add_argument("--download-only", action="store_true", help="Load existing output JSON and only download missing mp3 files.")
-    crawl_parser.add_argument("--background-download", action="store_true", help="Use one background thread to download accepted items while search continues.")
+    crawl_parser.add_argument("--background-download", action="store_true", help="Deprecated in crawler. Use download_worker.py to poll the output JSON and download accepted items.")
     crawl_parser.add_argument("--request-delay", type=float, default=5.0, help="Base seconds to wait before Bilibili search/detail/tag requests.")
     crawl_parser.add_argument("--request-jitter", type=float, default=4.0, help="Random extra seconds added to request delay.")
     crawl_parser.add_argument("--cooldown-seconds", type=float, default=900.0, help="Pause this long after 403/412/418/429 style risk responses.")
@@ -1249,7 +1164,35 @@ def relative_path(path: Path) -> str:
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    lock_path = path.with_name(f"{path.name}.lock")
+    with lock_path.open("a+", encoding="utf-8") as lock_handle:
+        lock_file(lock_handle)
+        temp_path = path.with_name(f".{path.name}.{os.getpid()}.{time.time_ns()}.tmp")
+        try:
+            temp_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            temp_path.replace(path)
+        finally:
+            if temp_path.exists():
+                temp_path.unlink()
+            unlock_file(lock_handle)
+
+
+def lock_file(handle: Any) -> None:
+    try:
+        import fcntl
+
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+    except (ImportError, OSError):
+        return
+
+
+def unlock_file(handle: Any) -> None:
+    try:
+        import fcntl
+
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+    except (ImportError, OSError):
+        return
 
 
 def chmod_private(path: Path, mode: int) -> None:
