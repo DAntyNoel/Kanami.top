@@ -1,6 +1,6 @@
 {
   "https://patchwiki.biligame.com/images/klbq/a/a8/thls64rsmf57smdq1rcp95q5ru22apm.png": {
-    "title": "thls64rsmf57smdq1rcp95q5ru22apm.png",
+    "title": "倒地求救1.png",
     "type": "emote",
     "section": "角色表情",
     "subsection": "游戏表情",
@@ -10,10 +10,11 @@
     "sourcePage": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E",
     "width": 120,
     "height": 120,
-    "occurrences": 1
+    "occurrences": 1,
+    "text": ""
   },
   "https://patchwiki.biligame.com/images/klbq/f/f8/pm361g8iwawuyvl54amy88z25nrr19z.png": {
-    "title": "pm361g8iwawuyvl54amy88z25nrr19z.png",
+    "title": "倒地求救2.png",
     "type": "emote",
     "section": "角色表情",
     "subsection": "游戏表情",
@@ -23,7 +24,8 @@
     "sourcePage": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E",
     "width": 120,
     "height": 120,
-    "occurrences": 1
+    "occurrences": 1,
+    "text": ""
   },
   "https://patchwiki.biligame.com/images/klbq/3/34/h8y5stu46zn7wmm2zfyf22p5goiszih.png": {
     "title": "180px-表情_60000015.png",
