@@ -150,7 +150,7 @@ def record_download_success(database: Path, item: CoverItem) -> None:
         )
 
 
-def record_download_failure(database: Path, item: CoverItem, error: RuntimeError) -> None:
+def record_download_failure(database: Path, item: CoverItem, error: Exception) -> None:
     item.filter_notes = [*remove_download_failures(item.filter_notes), f"audio-download-failed:{error}"]
     now = now_label()
     with connect_database(database) as db:

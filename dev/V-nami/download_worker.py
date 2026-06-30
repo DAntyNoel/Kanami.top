@@ -27,7 +27,7 @@ from vnami_db import (
 @dataclass(slots=True)
 class DownloadResult:
     item: CoverItem
-    error: RuntimeError | None = None
+    error: Exception | None = None
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -148,7 +148,7 @@ def download_one_item(
 ) -> DownloadResult:
     try:
         download_item_audio(item, audio_dir=audio_dir, overwrite=overwrite)
-    except RuntimeError as exc:
+    except Exception as exc:
         return DownloadResult(item=item, error=exc)
     return DownloadResult(item=item)
 

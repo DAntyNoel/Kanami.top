@@ -173,6 +173,21 @@ def main() -> None:
         download_worker.download_item_audio = original_download_item_audio
     assert sorted(result.item.bvid for result in worker_results) == sorted(item.bvid for item in worker_items)
     assert max_active_downloads > 1
+
+    def failing_download_item_audio(item: CoverItem, *, audio_dir: Path, overwrite: bool) -> None:
+        raise ValueError("download failed outside RuntimeError")
+
+    download_worker.download_item_audio = failing_download_item_audio
+    try:
+        failed_results = list(download_worker.download_pending_items(
+            worker_items[:1],
+            audio_dir=Path("data/audio"),
+            overwrite=False,
+            concurrency=1,
+        ))
+    finally:
+        download_worker.download_item_audio = original_download_item_audio
+    assert isinstance(failed_results[0].error, ValueError)
     with TemporaryDirectory() as tmp:
         tmp_root = Path(tmp)
         db_path = tmp_root / "private" / "vnami.sqlite3"
