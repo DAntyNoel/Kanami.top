@@ -16,7 +16,7 @@ conda install -n main -c conda-forge ffmpeg
 依赖说明：
 
 - `httpx`：访问 B 站网页登录、搜索和视频元数据接口。
-- `yt-dlp`：下载视频音轨。
+- `yt-dlp`：下载视频音轨；搜索阶段默认不走 yt-dlp，除非显式指定搜索后端。
 - `ffmpeg`：把音轨转成 mp3。
 - `qrcode`：在终端显示登录二维码，缺失时也会打印扫码链接。
 
@@ -45,6 +45,7 @@ python crawler.py status
 ```
 
 未登录或 cookie 失效时，B 站搜索/详情接口可能返回 `HTTP 412 Precondition Failed`。深度搜索和 mp3 下载前应先确认 `status` 是已登录状态。
+`yt-dlp` 的 `bilisearch` 后端也可能在登录态下触发 412；元数据采集默认使用 B 站 API 后端，下载音频时才使用 `yt-dlp`。
 
 ## 采集策略
 
@@ -92,10 +93,13 @@ python download_worker.py \
 搜索后端可以切换：
 
 ```bash
+python crawler.py crawl --search-backend auto
+python crawler.py crawl --search-backend api
 python crawler.py crawl --search-backend both
 python crawler.py crawl --search-backend yt-dlp
-python crawler.py crawl --search-backend api
 ```
+
+`auto` 是默认值，当前等价于 API 搜索。只有需要复查 API 漏掉的结果时，才建议手动切到 `both` 或 `yt-dlp`。
 
 输出 JSON 顶层包含：
 

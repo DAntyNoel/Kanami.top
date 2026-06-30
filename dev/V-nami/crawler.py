@@ -387,11 +387,14 @@ def crawl(args: argparse.Namespace) -> int:
     processed_keys = load_processed_keys(args.checkpoint) if args.resume else set()
     page_size = max(1, min(int(args.page_size), 50))
     max_results = resolve_max_results(args, page_size)
+    search_backend = resolve_search_backend(args)
     pacer = CrawlPacer(
         request_delay=args.request_delay,
         request_jitter=args.request_jitter,
         cooldown_seconds=args.cooldown_seconds,
     )
+    if args.search_backend == "auto":
+        print(f"search backend auto resolved to {search_backend}")
     if args.background_download:
         print("background download moved to download_worker.py; crawler will only update the JSON output.")
     should_download = not args.no_audio and not args.search_only and not args.background_download
@@ -404,7 +407,7 @@ def crawl(args: argparse.Namespace) -> int:
             items=list(by_bvid.values()),
             keywords=keywords,
             pages=max(1, args.pages),
-            search_backend=args.search_backend,
+            search_backend=search_backend,
             max_results_per_keyword=max_results,
         )
         write_checkpoint(args.checkpoint, processed_keys)
@@ -418,8 +421,7 @@ def crawl(args: argparse.Namespace) -> int:
                 hits = collect_search_hits(
                     bilibili=bilibili,
                     keyword=keyword,
-                    backend=args.search_backend,
-                    pages=max(1, args.pages),
+                    backend=search_backend,
                     page_size=page_size,
                     max_results=max_results,
                     pacer=pacer,
@@ -493,7 +495,6 @@ def collect_search_hits(
     bilibili: BilibiliClient,
     keyword: str,
     backend: str,
-    pages: int,
     page_size: int,
     max_results: int,
     pacer: CrawlPacer,
@@ -519,7 +520,7 @@ def collect_search_hits(
             print(f"yt-dlp search failed for {keyword!r}, falling back to Bilibili API: {exc}")
 
     if backend in {"api", "both"} and len(hits) < max_results:
-        api_pages = min(pages, max(1, math.ceil(max_results / page_size)))
+        api_pages = max(1, math.ceil(max_results / page_size))
         for page in range(1, api_pages + 1):
             pacer.wait(f"api search {keyword} page {page}")
             candidates = bilibili.search_videos(keyword=keyword, page=page, page_size=page_size)
@@ -971,7 +972,7 @@ def build_parser() -> argparse.ArgumentParser:
     crawl_parser.add_argument("--page-size", type=int, default=30, help="Search results per page.")
     crawl_parser.add_argument("--max-results-per-keyword", type=int, default=0, help="Hard cap for each keyword. Overrides pages * page-size when set.")
     crawl_parser.add_argument("--deep-search", action="store_true", help="Search up to 1000 candidates per keyword unless --max-results-per-keyword is set.")
-    crawl_parser.add_argument("--search-backend", choices=["both", "yt-dlp", "api"], default="both", help="Search backend. both uses yt-dlp first and Bilibili API as fallback/supplement.")
+    crawl_parser.add_argument("--search-backend", choices=["auto", "both", "yt-dlp", "api"], default="auto", help="Search backend. auto uses Bilibili API for metadata search; both/yt-dlp opt into yt-dlp search.")
     crawl_parser.add_argument("--resume", action="store_true", help="Resume from existing output JSON and checkpoint.")
     crawl_parser.add_argument("--checkpoint", type=Path, default=DEFAULT_CHECKPOINT, help="Checkpoint JSON path for processed candidate keys.")
     crawl_parser.add_argument("--raw-candidates", type=Path, default=DEFAULT_RAW_CANDIDATES, help="JSONL audit log for every checked candidate.")
@@ -1081,6 +1082,12 @@ def resolve_max_results(args: argparse.Namespace, page_size: int) -> int:
     if args.deep_search:
         return 1000
     return max(1, args.pages) * page_size
+
+
+def resolve_search_backend(args: argparse.Namespace) -> str:
+    if args.search_backend == "auto":
+        return "api"
+    return args.search_backend
 
 
 def cookie_to_dict(cookie: Cookie) -> dict[str, Any]:
