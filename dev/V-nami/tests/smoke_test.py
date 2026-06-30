@@ -11,6 +11,7 @@ from crawler import (
     DEFAULT_KEYWORDS,
     SearchHit,
     build_dataset,
+    candidate_status_title,
     collect_search_hits,
     evaluate_candidate,
     extract_original_song_name,
@@ -47,6 +48,8 @@ class FakeBilibili:
 
 def main() -> None:
     assert DEFAULT_KEYWORDS == ["香奈美"]
+    assert candidate_status_title("<em>香奈美</em> 的夏日翻唱曲目") == "香奈美 的夏日翻唱曲"
+    assert candidate_status_title("") == "无标题"
     result = evaluate_candidate(
         title="【AI香奈美】《群青》翻唱",
         tags=["AI翻唱", "香奈美"],

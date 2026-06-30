@@ -50,6 +50,7 @@ python crawler.py status
 ## 采集策略
 
 默认只用 `香奈美` 作为搜索关键词，并要求已有登录 cookie。候选视频会再用标题、简介和视频 tag 粗筛；tag 中出现 `AI` + `翻唱` / `cover`，或 `AI音乐`、`AI歌曲` 等信号时，也会算作 AI 翻唱候选：
+采集过程中，每个候选会在终端输出 `已保存：标题前10字` 或 `跳过：标题前10字`，方便长时间运行时观察进度。
 
 ```bash
 python crawler.py crawl --pages 3 --output data/kanami_ai_covers.json

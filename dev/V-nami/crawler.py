@@ -432,7 +432,11 @@ def crawl(args: argparse.Namespace) -> int:
 
             for hit in hits:
                 candidate_key = search_hit_key(hit)
-                if not candidate_key or candidate_key in processed_keys:
+                if not candidate_key:
+                    print_candidate_status("跳过", hit.title)
+                    continue
+                if candidate_key in processed_keys:
+                    print_candidate_status("跳过", hit.title)
                     continue
                 if args.max_candidates_per_run and candidates_this_run >= args.max_candidates_per_run:
                     persist()
@@ -453,6 +457,7 @@ def crawl(args: argparse.Namespace) -> int:
                 except Exception as exc:
                     append_jsonl(args.raw_candidates, raw_error_record(keyword, hit, exc))
                     processed_keys.add(candidate_key)
+                    print_candidate_status("跳过", hit.title)
                     persist()
                     if is_cooldown_exception(exc):
                         pacer.cooldown(f"candidate failed for {candidate_key}: {exc}")
@@ -464,12 +469,17 @@ def crawl(args: argparse.Namespace) -> int:
                 if raw_record.get("bvid"):
                     processed_keys.add(str(raw_record["bvid"]))
 
+                status = "跳过"
+                status_title = str(raw_record.get("videoTitle") or hit.title or "")
                 if item and item.bvid in by_bvid:
                     if keyword not in by_bvid[item.bvid].matched_keywords:
                         by_bvid[item.bvid].matched_keywords.append(keyword)
+                    status_title = item.video_title
                 elif item:
                     by_bvid[item.bvid] = item
                     accepted_this_run += 1
+                    status = "已保存"
+                    status_title = item.video_title
                     if should_download:
                         wait_with_jitter(args.download_delay, args.download_jitter, f"download {item.bvid}")
                         try:
@@ -477,6 +487,7 @@ def crawl(args: argparse.Namespace) -> int:
                         except RuntimeError as exc:
                             item.filter_notes.append(f"audio-download-failed:{exc}")
                 persist()
+                print_candidate_status(status, status_title)
                 if args.max_accepted_per_run and accepted_this_run >= args.max_accepted_per_run:
                     persist()
                     return 0
@@ -1144,6 +1155,17 @@ def print_qr(value: str) -> None:
 
 def clean_html(value: str) -> str:
     return html.unescape(HTML_TAG_RE.sub("", str(value))).strip()
+
+
+def candidate_status_title(title: str) -> str:
+    normalized = re.sub(r"\s+", " ", clean_html(title)).strip()
+    if not normalized:
+        return "无标题"
+    return f"{normalized:.10}"
+
+
+def print_candidate_status(status: str, title: str) -> None:
+    print(f"{status}：{candidate_status_title(title)}", flush=True)
 
 
 def int_or_none(value: Any) -> int | None:
