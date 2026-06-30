@@ -46,17 +46,14 @@ DEFAULT_HEADERS = {
 }
 
 DEFAULT_KEYWORDS = [
-    "AI香奈美",
-    "香奈美AI",
-    "香奈美 翻唱",
-    "香奈美 AI 翻唱",
-    "香奈美 cover",
-    "香奈美 AI cover",
+    "香奈美",
 ]
 
 DEFAULT_INCLUDE_TERMS = [
     "ai香奈美",
     "香奈美ai",
+    "ai音乐",
+    "ai歌曲",
     "ai 翻唱",
     "翻唱",
     "cover",
@@ -67,7 +64,6 @@ DEFAULT_INCLUDE_TERMS = [
 
 DEFAULT_EXCLUDE_TERMS = [
     "教程",
-    "训练",
     "数据集",
     "模型配布",
     "直播",
@@ -96,6 +92,8 @@ RESOURCE_GROUP = {
 HTML_TAG_RE = re.compile(r"<[^>]+>")
 BVID_RE = re.compile(r"\bBV[0-9A-Za-z]{8,}\b")
 AV_RE = re.compile(r"(?:/video/)?av(?P<aid>\d+)", re.IGNORECASE)
+AI_TAG_RE = re.compile(r"(^|[^a-z0-9])ai($|[^a-z0-9])|aigc|rvc|sovits|so-vits", re.IGNORECASE)
+TAG_COVER_TERMS = ["翻唱", "cover", "歌ってみた"]
 SONG_PATTERNS = [
     re.compile(r"《([^》]{1,80})》"),
     re.compile(r"「([^」]{1,80})」"),
@@ -682,6 +680,9 @@ def evaluate_candidate(
     if "ai" in haystack and ("翻唱" in haystack or "cover" in haystack):
         matched.append("ai+cover")
 
+    if tags_match_ai_cover(tags):
+        matched.append("tag:ai+cover")
+
     excluded = [term for term in exclude_terms if term.lower() in haystack]
     if excluded:
         notes.append(f"excluded:{','.join(excluded)}")
@@ -690,6 +691,13 @@ def evaluate_candidate(
     if not accepted and not notes:
         notes.append("low-confidence")
     return FilterResult(accepted=accepted, matched_keywords=sorted(set(matched)), notes=notes)
+
+
+def tags_match_ai_cover(tags: list[str]) -> bool:
+    normalized_tags = [re.sub(r"\s+", "", tag).lower() for tag in tags if tag.strip()]
+    has_ai = any(AI_TAG_RE.search(tag) for tag in normalized_tags)
+    has_cover = any(any(term in tag for term in TAG_COVER_TERMS) for tag in normalized_tags)
+    return has_ai and has_cover
 
 
 def extract_original_song_name(title: str) -> str:

@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from crawler import (
     CoverItem,
+    DEFAULT_KEYWORDS,
     SearchHit,
     build_dataset,
     collect_search_hits,
@@ -45,12 +46,33 @@ class FakeBilibili:
 
 
 def main() -> None:
+    assert DEFAULT_KEYWORDS == ["香奈美"]
     result = evaluate_candidate(
         title="【AI香奈美】《群青》翻唱",
         tags=["AI翻唱", "香奈美"],
         description="单曲翻唱",
     )
     assert result.accepted
+    assert "tag:ai+cover" in result.matched_keywords
+    tag_only_result = evaluate_candidate(
+        title="夏日小曲 / 香奈美",
+        tags=["AI", "翻唱", "卡拉彼丘"],
+        description="",
+    )
+    assert tag_only_result.accepted
+    assert "tag:ai+cover" in tag_only_result.matched_keywords
+    music_tag_result = evaluate_candidate(
+        title="世间万千，你的歌声便是《解药》｜香奈美",
+        tags=["AI音乐", "kanami", "听歌"],
+        description="原曲：《解药》\n翻唱：AI香奈美\n模型训练：本地推理，仅供兴趣研究。",
+    )
+    assert music_tag_result.accepted
+    animation_result = evaluate_candidate(
+        title="香奈美与引航者的甜蜜时光",
+        tags=["AI动画创作挑战", "卡拉彼丘", "香奈美"],
+        description="日常片段",
+    )
+    assert not animation_result.accepted
     assert extract_original_song_name("【AI香奈美】《群青》翻唱") == "群青"
     item = CoverItem(
         bvid="BV1test",
@@ -62,7 +84,7 @@ def main() -> None:
         audio_file="data/audio/bilibili_BV1test.mp3",
         audio_resource_url="/files/WIKI/audio/v-nami/bilibili_BV1test.mp3",
     )
-    payload = build_dataset(items=[item], keywords=["AI香奈美"], pages=1)
+    payload = build_dataset(items=[item], keywords=["香奈美"], pages=1)
     resource = payload["resourceMap"]["/files/WIKI/audio/v-nami/bilibili_BV1test.mp3"]
     assert resource["sourcePage"] == item.video_url
     assert resource["mediaType"] == "audio"
@@ -81,7 +103,7 @@ def main() -> None:
     fake_pacer = FakePacer()
     collect_search_hits(
         bilibili=fake_bilibili,
-        keyword="AI香奈美",
+        keyword="香奈美",
         backend="api",
         page_size=10,
         max_results=35,

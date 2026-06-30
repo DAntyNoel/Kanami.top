@@ -49,7 +49,7 @@ python crawler.py status
 
 ## 采集策略
 
-默认会用多组关键词搜索，并要求已有登录 cookie：
+默认只用 `香奈美` 作为搜索关键词，并要求已有登录 cookie。候选视频会再用标题、简介和视频 tag 粗筛；tag 中出现 `AI` + `翻唱` / `cover`，或 `AI音乐`、`AI歌曲` 等信号时，也会算作 AI 翻唱候选：
 
 ```bash
 python crawler.py crawl --pages 3 --output data/kanami_ai_covers.json
@@ -149,6 +149,6 @@ python scripts/sync_to_wiki.py --input data/kanami_ai_covers.json --wiki-root ..
 
 ## 当前限制
 
-当前筛选逻辑是粗筛：标题、标签和简介中需要同时命中香奈美和 AI/翻唱相关词，并过滤少量明显不是纯歌曲翻唱的内容。是否真的是“单纯歌曲翻唱”仍需要后续人工复核或更强的内容识别规则。
+当前筛选逻辑是粗筛：搜索阶段只要求命中香奈美，筛选阶段再要求标题、标签或简介中命中 AI/翻唱相关词；视频 tag 里同时有 `AI` 和 `翻唱` / `cover` 也会被视为命中。是否真的是“单纯歌曲翻唱”仍需要后续人工复核或更强的内容识别规则。
 
 不要用高并发、代理池或短时间全量冲刺。当前策略是低频登录态访问，遇到 `403/412/418/429` 会按 `--cooldown-seconds` 冷却暂停。
