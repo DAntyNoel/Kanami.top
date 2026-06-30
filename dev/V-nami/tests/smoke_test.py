@@ -19,24 +19,32 @@ from crawler import (
     DEFAULT_KEYWORDS,
     DEFAULT_OUTPUT,
     SearchHit,
+    SearchWindowSummary,
     build_dataset,
     build_parser,
     candidate_status_title,
+    clear_search_date_complete,
+    clear_zero_result_search_date,
     collect_search_hits,
     collect_search_hit_batches,
     date_key_from_pubdate,
     daily_search_windows,
+    drop_zero_result_dates_from_completed,
     evaluate_candidate,
     extract_original_song_name,
     is_search_date_complete,
     item_from_hit,
     load_completed_search_dates,
     load_processed_statuses,
+    load_zero_result_search_dates,
+    mark_zero_result_search_date,
     mark_search_date_complete_if_closed,
     mark_search_date_complete,
     print_candidate_status,
     print_search_date,
+    print_search_window_summary,
     print_search_year_complete,
+    print_zero_result_review,
     processed_skip_reason,
     pubtime_open_date,
     resolve_max_results,
@@ -56,7 +64,7 @@ class FakePacer:
     def __init__(self) -> None:
         self.labels: list[str] = []
 
-    def wait(self, label: str) -> None:
+    def wait(self, label: str, base_delay: float | None = None, jitter: float | None = None) -> None:
         self.labels.append(label)
 
 
@@ -118,6 +126,76 @@ class FakeRepeatingBilibili:
         ]
 
 
+class FakeEmptySecondPageBilibili:
+    def __init__(self) -> None:
+        self.pages: list[int] = []
+
+    def search_videos(
+        self,
+        keyword: str,
+        page: int = 1,
+        page_size: int = 30,
+        pubtime_begin_s: int | None = None,
+        pubtime_end_s: int | None = None,
+    ) -> list[SearchHit]:
+        self.pages.append(page)
+        if page > 1:
+            return []
+        return [
+            SearchHit(
+                bvid="BVONEPAGE",
+                aid=None,
+                title=f"{keyword} one page result",
+                author="tester",
+                arcurl="https://www.bilibili.com/video/BVONEPAGE",
+                pubdate=2000,
+            )
+        ]
+
+
+class FakeRecoveringFirstPageBilibili:
+    def __init__(self) -> None:
+        self.pages: list[int] = []
+
+    def search_videos(
+        self,
+        keyword: str,
+        page: int = 1,
+        page_size: int = 30,
+        pubtime_begin_s: int | None = None,
+        pubtime_end_s: int | None = None,
+    ) -> list[SearchHit]:
+        self.pages.append(page)
+        if len(self.pages) < 3:
+            return []
+        return [
+            SearchHit(
+                bvid="BVRECOVER",
+                aid=None,
+                title=f"{keyword} recovered result",
+                author="tester",
+                arcurl="https://www.bilibili.com/video/BVRECOVER",
+                pubdate=2000,
+            )
+        ]
+
+
+class FakeAlwaysEmptyFirstPageBilibili:
+    def __init__(self) -> None:
+        self.pages: list[int] = []
+
+    def search_videos(
+        self,
+        keyword: str,
+        page: int = 1,
+        page_size: int = 30,
+        pubtime_begin_s: int | None = None,
+        pubtime_end_s: int | None = None,
+    ) -> list[SearchHit]:
+        self.pages.append(page)
+        return []
+
+
 class FakeDetailBilibili:
     def __init__(self) -> None:
         self.tag_calls = 0
@@ -139,7 +217,7 @@ class FakeDetailBilibili:
 
 
 def main() -> None:
-    assert DEFAULT_KEYWORDS == ["香奈美"]
+    assert DEFAULT_KEYWORDS == ["香奈美", "kanami", "かなみ", "カナミ"]
     assert DEFAULT_COMPLETE_THROUGH_YEAR == 2021
     defaults = build_parser().parse_args(["crawl"])
     assert defaults.request_delay == 1.0
@@ -282,11 +360,24 @@ def main() -> None:
     assert mark_search_date_complete(completed_dates, "香奈美", "2026-06-30")
     assert is_search_date_complete(completed_dates, "香奈美", "2026-06-30")
     assert not mark_search_date_complete(completed_dates, "香奈美", "2026-06-30")
+    assert clear_search_date_complete(completed_dates, "香奈美", "2026-06-30")
+    assert not is_search_date_complete(completed_dates, "香奈美", "2026-06-30")
+    assert mark_search_date_complete(completed_dates, "香奈美", "2026-06-30")
+    zero_result_dates: dict[str, set[str]] = {}
+    assert mark_zero_result_search_date(zero_result_dates, "香奈美", "2026-05-15")
+    assert not mark_zero_result_search_date(zero_result_dates, "香奈美", "2026-05-15")
+    assert clear_zero_result_search_date(zero_result_dates, "香奈美", "2026-05-15")
+    assert zero_result_dates == {}
+    assert mark_zero_result_search_date(zero_result_dates, "香奈美", "2026-05-15")
+    assert mark_search_date_complete(completed_dates, "香奈美", "2026-05-15")
+    assert drop_zero_result_dates_from_completed(completed_dates, zero_result_dates)
+    assert not is_search_date_complete(completed_dates, "香奈美", "2026-05-15")
     checkpoint_path = Path(__file__).resolve().parents[1] / "data" / "smoke_checkpoint.tmp.json"
-    write_checkpoint(checkpoint_path, {"BVTEST0001"}, completed_dates, {"BVTEST0001": "mismatch"})
+    write_checkpoint(checkpoint_path, {"BVTEST0001"}, completed_dates, {"BVTEST0001": "mismatch"}, zero_result_dates)
     try:
         assert load_completed_search_dates(checkpoint_path) == {"香奈美": {"2026-06-30"}}
         assert load_processed_statuses(checkpoint_path) == {"BVTEST0001": "mismatch"}
+        assert load_zero_result_search_dates(checkpoint_path) == {"香奈美": {"2026-05-15"}}
     finally:
         checkpoint_path.unlink(missing_ok=True)
     assert date_key_from_pubdate(1782748800) == "2026-06-30"
@@ -296,6 +387,24 @@ def main() -> None:
     with redirect_stdout(output):
         print_search_date("2026-06-30")
     assert output.getvalue() == "当前搜索日期：2026-06-30\n"
+    output = io.StringIO()
+    with redirect_stdout(output):
+        print_search_window_summary(SearchWindowSummary(
+            date_key="2026-05-15",
+            api_pages=1,
+            api_requests=7,
+            api_results=0,
+            detail_checked=0,
+            saved=0,
+            skipped=0,
+            errors=1,
+            empty_result_retries=6,
+        ))
+    assert output.getvalue() == "日期总结：2026-05-15 API页数=1 API请求=7 搜索结果=0 已爬=0 已保存=0 跳过=0 异常=1 空结果重试=6\n"
+    output = io.StringIO()
+    with redirect_stdout(output):
+        print_zero_result_review("2026-05-15")
+    assert output.getvalue() == "需要人工审核：2026-05-15 搜索结果为 0，未标记为已爬完。\n"
     output = io.StringIO()
     with redirect_stdout(output):
         print_search_year_complete(2021)
@@ -322,6 +431,20 @@ def main() -> None:
     )
     assert tag_only_result.accepted
     assert "tag:ai+cover" in tag_only_result.matched_keywords
+    kana_result = evaluate_candidate(
+        title="【AIかなみ】《群青》cover",
+        tags=[],
+        description="",
+    )
+    assert kana_result.accepted
+    assert "aiかなみ" in kana_result.matched_keywords
+    katakana_result = evaluate_candidate(
+        title="【AIカナミ】《群青》cover",
+        tags=[],
+        description="",
+    )
+    assert katakana_result.accepted
+    assert "aiカナミ" in katakana_result.matched_keywords
     music_tag_result = evaluate_candidate(
         title="世间万千，你的歌声便是《解药》｜香奈美",
         tags=["AI音乐", "kanami", "听歌"],
@@ -426,6 +549,73 @@ def main() -> None:
     assert repeating_bilibili.pages == [1, 2]
     assert [[hit.bvid for hit in batch] for batch in repeating_batches] == [["BVREPEAT"]]
     assert "returned no new candidates; stopping." in output.getvalue()
+    empty_second_bilibili = FakeEmptySecondPageBilibili()
+    empty_second_summary = SearchWindowSummary(date_key="2026-05-15")
+    fake_pacer = FakePacer()
+    output = io.StringIO()
+    with redirect_stdout(output):
+        empty_second_batches = list(collect_search_hit_batches(
+            bilibili=empty_second_bilibili,
+            keyword="香奈美",
+            backend="api",
+            page_size=10,
+            max_results=None,
+            pacer=fake_pacer,
+            summary=empty_second_summary,
+        ))
+    assert empty_second_bilibili.pages == [1, 2]
+    assert [[hit.bvid for hit in batch] for batch in empty_second_batches] == [["BVONEPAGE"]]
+    assert empty_second_summary.api_pages == 2
+    assert empty_second_summary.api_requests == 2
+    assert empty_second_summary.api_results == 1
+    assert empty_second_summary.empty_result_retries == 0
+    assert empty_second_summary.errors == 0
+    assert "returned 0 candidates; stopping." in output.getvalue()
+    recovering_bilibili = FakeRecoveringFirstPageBilibili()
+    recovering_summary = SearchWindowSummary(date_key="2026-05-15")
+    fake_pacer = FakePacer()
+    output = io.StringIO()
+    with redirect_stdout(output):
+        recovering_batches = list(collect_search_hit_batches(
+            bilibili=recovering_bilibili,
+            keyword="香奈美",
+            backend="api",
+            page_size=10,
+            max_results=1,
+            pacer=fake_pacer,
+            summary=recovering_summary,
+        ))
+    assert recovering_bilibili.pages == [1, 1, 1]
+    assert [[hit.bvid for hit in batch] for batch in recovering_batches] == [["BVRECOVER"]]
+    assert recovering_summary.api_pages == 1
+    assert recovering_summary.api_requests == 3
+    assert recovering_summary.api_results == 1
+    assert recovering_summary.empty_result_retries == 2
+    assert recovering_summary.errors == 0
+    assert "retry 1/6 after 30s" in output.getvalue()
+    assert "api search retry 香奈美 page 1 2/6" in fake_pacer.labels
+    always_empty_bilibili = FakeAlwaysEmptyFirstPageBilibili()
+    always_empty_summary = SearchWindowSummary(date_key="2026-05-15")
+    fake_pacer = FakePacer()
+    output = io.StringIO()
+    with redirect_stdout(output):
+        always_empty_batches = list(collect_search_hit_batches(
+            bilibili=always_empty_bilibili,
+            keyword="香奈美",
+            backend="api",
+            page_size=10,
+            max_results=None,
+            pacer=fake_pacer,
+            summary=always_empty_summary,
+        ))
+    assert always_empty_batches == []
+    assert always_empty_bilibili.pages == [1, 1, 1, 1, 1, 1, 1]
+    assert always_empty_summary.api_pages == 1
+    assert always_empty_summary.api_requests == 7
+    assert always_empty_summary.api_results == 0
+    assert always_empty_summary.empty_result_retries == 6
+    assert always_empty_summary.errors == 1
+    assert "returned empty result after 6 retries; stopping." in output.getvalue()
 
 
 if __name__ == "__main__":

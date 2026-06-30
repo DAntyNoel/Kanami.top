@@ -41,6 +41,8 @@ VIEW_DETAIL_URL = "https://api.bilibili.com/x/web-interface/view/detail"
 TAGS_URL = "https://api.bilibili.com/x/tag/archive/tags"
 WBI_SEARCH_SIGN_KEY = "ea1db124af3c7062474693fa704f4ff8"
 QVID_ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+EMPTY_SEARCH_MAX_RETRIES = 6
+EMPTY_SEARCH_RETRY_DELAY_SECONDS = 30.0
 
 DEFAULT_HEADERS = {
     "User-Agent": (
@@ -53,11 +55,20 @@ DEFAULT_HEADERS = {
 
 DEFAULT_KEYWORDS = [
     "香奈美",
+    "kanami",
+    "かなみ",
+    "カナミ",
 ]
 
 DEFAULT_INCLUDE_TERMS = [
     "ai香奈美",
     "香奈美ai",
+    "ai kanami",
+    "kanami ai",
+    "aiかなみ",
+    "かなみai",
+    "aiカナミ",
+    "カナミai",
     "ai音乐",
     "ai歌曲",
     "ai 翻唱",
@@ -129,6 +140,20 @@ class SearchWindow:
     date_key: str
     pubtime_begin_s: int
     pubtime_end_s: int
+
+
+@dataclass(slots=True)
+class SearchWindowSummary:
+    date_key: str
+    api_pages: int = 0
+    api_requests: int = 0
+    api_results: int = 0
+    detail_checked: int = 0
+    saved: int = 0
+    skipped: int = 0
+    errors: int = 0
+    empty_result_retries: int = 0
+    empty_result_errors: int = 0
 
 
 @dataclass(slots=True)
@@ -423,6 +448,8 @@ def crawl(args: argparse.Namespace) -> int:
     processed_keys = load_processed_keys(args.checkpoint) if args.resume else set()
     processed_statuses = load_processed_statuses(args.checkpoint) if args.resume else {}
     completed_search_dates = load_completed_search_dates(args.checkpoint) if args.resume else {}
+    zero_result_search_dates = load_zero_result_search_dates(args.checkpoint) if args.resume else {}
+    drop_zero_result_dates_from_completed(completed_search_dates, zero_result_search_dates)
     page_size = max(1, min(int(args.page_size), 50))
     pubtime_begin_s = parse_pubtime_bound(args.pubtime_begin, end_of_day=False)
     pubtime_end_s = parse_pubtime_bound(args.pubtime_end, end_of_day=True)
@@ -454,7 +481,37 @@ def crawl(args: argparse.Namespace) -> int:
             search_backend=search_backend,
             max_results_per_keyword=max_results,
         )
-        write_checkpoint(args.checkpoint, processed_keys, completed_search_dates, processed_statuses)
+        write_checkpoint(
+            args.checkpoint,
+            processed_keys,
+            completed_search_dates,
+            processed_statuses,
+            zero_result_search_dates,
+        )
+
+    def finish_search_window(
+        keyword: str,
+        date_key: str,
+        summary: SearchWindowSummary,
+        *,
+        allow_completion: bool,
+    ) -> None:
+        print_search_window_summary(summary)
+        if not allow_completion or not date_key:
+            return
+        if summary.api_results == 0:
+            checkpoint_changed = clear_search_date_complete(completed_search_dates, keyword, date_key)
+            if mark_zero_result_search_date(zero_result_search_dates, keyword, date_key):
+                checkpoint_changed = True
+            if checkpoint_changed:
+                persist()
+            print_zero_result_review(date_key)
+            return
+        checkpoint_changed = clear_zero_result_search_date(zero_result_search_dates, keyword, date_key)
+        if mark_search_date_complete_if_closed(completed_search_dates, keyword, date_key, open_search_date):
+            checkpoint_changed = True
+        if checkpoint_changed:
+            persist()
 
     with BilibiliClient() as bilibili:
         if not args.allow_anonymous and not bilibili.is_logged_in():
@@ -469,6 +526,7 @@ def crawl(args: argparse.Namespace) -> int:
 
                 current_search_date = search_window.date_key
                 search_hits_seen = 0
+                window_summary = SearchWindowSummary(date_key=current_search_date)
                 print_search_date(current_search_date)
                 try:
                     hit_batches = collect_search_hit_batches(
@@ -480,38 +538,56 @@ def crawl(args: argparse.Namespace) -> int:
                         pubtime_begin_s=search_window.pubtime_begin_s,
                         pubtime_end_s=search_window.pubtime_end_s,
                         pacer=pacer,
+                        summary=window_summary,
                     )
                     for hits in hit_batches:
                         for hit in hits:
                             search_hits_seen += 1
                             date_key = search_date_key(hit)
                             if should_stop_before_complete_year(date_key, complete_through_year):
-                                if current_search_date:
-                                    if mark_search_date_complete_if_closed(completed_search_dates, keyword, current_search_date, open_search_date):
-                                        persist()
+                                finish_search_window(
+                                    keyword,
+                                    current_search_date,
+                                    window_summary,
+                                    allow_completion=True,
+                                )
                                 print_search_year_complete(complete_through_year)
                                 return 0
                             if date_key and date_key != current_search_date:
-                                if current_search_date:
-                                    if mark_search_date_complete_if_closed(completed_search_dates, keyword, current_search_date, open_search_date):
-                                        persist()
+                                finish_search_window(
+                                    keyword,
+                                    current_search_date,
+                                    window_summary,
+                                    allow_completion=True,
+                                )
                                 current_search_date = date_key
+                                window_summary = SearchWindowSummary(date_key=current_search_date)
                                 print_search_date(current_search_date)
                             candidate_key = search_hit_key(hit)
                             if not candidate_key:
+                                window_summary.skipped += 1
                                 print_candidate_status("跳过", hit.title, "缺少BVID")
                                 continue
                             if is_search_date_complete(completed_search_dates, keyword, date_key):
+                                window_summary.skipped += 1
                                 print_candidate_status("跳过", hit.title, processed_skip_reason(candidate_key, by_bvid, processed_statuses, fallback="日期已完成"))
                                 continue
                             if candidate_key in processed_keys:
+                                window_summary.skipped += 1
                                 print_candidate_status("跳过", hit.title, processed_skip_reason(candidate_key, by_bvid, processed_statuses))
                                 continue
                             if args.max_candidates_per_run and candidates_this_run >= args.max_candidates_per_run:
+                                finish_search_window(
+                                    keyword,
+                                    current_search_date,
+                                    window_summary,
+                                    allow_completion=False,
+                                )
                                 persist()
                                 return 0
 
                             candidates_this_run += 1
+                            window_summary.detail_checked += 1
                             try:
                                 item, raw_record = item_from_hit(
                                     bilibili=bilibili,
@@ -524,6 +600,7 @@ def crawl(args: argparse.Namespace) -> int:
                                     pacer=pacer,
                                 )
                             except Exception as exc:
+                                window_summary.errors += 1
                                 append_jsonl(args.raw_candidates, raw_error_record(keyword, hit, exc))
                                 processed_keys.add(candidate_key)
                                 processed_statuses[candidate_key] = "error"
@@ -542,6 +619,10 @@ def crawl(args: argparse.Namespace) -> int:
                                 raw_bvid = str(raw_record["bvid"])
                                 processed_keys.add(raw_bvid)
                                 processed_statuses[raw_bvid] = processed_status
+                            if processed_status == "saved":
+                                window_summary.saved += 1
+                            else:
+                                window_summary.skipped += 1
 
                             status = "跳过"
                             status_reason = processed_status_reason(processed_status)
@@ -566,12 +647,27 @@ def crawl(args: argparse.Namespace) -> int:
                             persist()
                             print_candidate_status(status, status_title, status_reason)
                             if args.max_accepted_per_run and accepted_this_run >= args.max_accepted_per_run:
+                                finish_search_window(
+                                    keyword,
+                                    current_search_date,
+                                    window_summary,
+                                    allow_completion=False,
+                                )
                                 persist()
                                 return 0
-                    if current_search_date and (max_results is None or search_hits_seen < max_results):
-                        if mark_search_date_complete_if_closed(completed_search_dates, keyword, current_search_date, open_search_date):
-                            persist()
+                    finish_search_window(
+                        keyword,
+                        current_search_date,
+                        window_summary,
+                        allow_completion=(max_results is None or search_hits_seen < max_results),
+                    )
                 except Exception as exc:
+                    finish_search_window(
+                        keyword,
+                        current_search_date,
+                        window_summary,
+                        allow_completion=False,
+                    )
                     if is_cooldown_exception(exc):
                         pacer.cooldown(f"search failed for {keyword} on {search_window.date_key}: {exc}")
                         continue
@@ -622,6 +718,7 @@ def collect_search_hit_batches(
     pacer: CrawlPacer,
     pubtime_begin_s: int | None = None,
     pubtime_end_s: int | None = None,
+    summary: SearchWindowSummary | None = None,
 ) -> Iterator[list[SearchHit]]:
     hits: list[SearchHit] = []
     seen: set[str] = set()
@@ -655,15 +752,25 @@ def collect_search_hit_batches(
         api_pages = max(1, math.ceil(max_results / page_size)) if max_results is not None else None
         page = 1
         while api_pages is None or page <= api_pages:
-            pacer.wait(f"api search {keyword} page {page}")
-            candidates = bilibili.search_videos(
+            if summary:
+                summary.api_pages += 1
+            candidates = search_api_page_with_empty_retries(
+                bilibili=bilibili,
                 keyword=keyword,
                 page=page,
                 page_size=page_size,
                 pubtime_begin_s=pubtime_begin_s,
                 pubtime_end_s=pubtime_end_s,
+                pacer=pacer,
+                summary=summary,
             )
+            if summary:
+                summary.api_results += len(candidates)
             if not candidates:
+                if page == 1:
+                    print(f"api search {keyword} page {page} returned empty result after {EMPTY_SEARCH_MAX_RETRIES} retries; stopping.")
+                else:
+                    print(f"api search {keyword} page {page} returned 0 candidates; stopping.")
                 break
             batch = append(candidates)
             if batch:
@@ -674,6 +781,63 @@ def collect_search_hit_batches(
             if max_results is not None and len(hits) >= max_results:
                 break
             page += 1
+
+
+def search_api_page_with_empty_retries(
+    *,
+    bilibili: BilibiliClient,
+    keyword: str,
+    page: int,
+    page_size: int,
+    pubtime_begin_s: int | None,
+    pubtime_end_s: int | None,
+    pacer: CrawlPacer,
+    summary: SearchWindowSummary | None = None,
+) -> list[SearchHit]:
+    if page != 1:
+        pacer.wait(f"api search {keyword} page {page}")
+        if summary:
+            summary.api_requests += 1
+        return bilibili.search_videos(
+            keyword=keyword,
+            page=page,
+            page_size=page_size,
+            pubtime_begin_s=pubtime_begin_s,
+            pubtime_end_s=pubtime_end_s,
+        )
+
+    for retry_index in range(EMPTY_SEARCH_MAX_RETRIES + 1):
+        if retry_index == 0:
+            pacer.wait(f"api search {keyword} page {page}")
+        else:
+            if summary:
+                summary.empty_result_retries += 1
+            pacer.wait(
+                f"api search retry {keyword} page {page} {retry_index}/{EMPTY_SEARCH_MAX_RETRIES}",
+                base_delay=EMPTY_SEARCH_RETRY_DELAY_SECONDS,
+                jitter=0.0,
+            )
+        if summary:
+            summary.api_requests += 1
+        candidates = bilibili.search_videos(
+            keyword=keyword,
+            page=page,
+            page_size=page_size,
+            pubtime_begin_s=pubtime_begin_s,
+            pubtime_end_s=pubtime_end_s,
+        )
+        if candidates:
+            return candidates
+        if retry_index < EMPTY_SEARCH_MAX_RETRIES:
+            print(
+                f"api search {keyword} page {page} returned empty result; "
+                f"retry {retry_index + 1}/{EMPTY_SEARCH_MAX_RETRIES} after {EMPTY_SEARCH_RETRY_DELAY_SECONDS:.0f}s.",
+                flush=True,
+            )
+    if summary:
+        summary.errors += 1
+        summary.empty_result_errors += 1
+    return []
 
 
 def wbi_search_params(
@@ -908,7 +1072,7 @@ def evaluate_candidate(
     notes: list[str] = []
     matched: list[str] = []
 
-    has_kanami = "香奈美" in haystack or "kanami" in haystack
+    has_kanami = "香奈美" in haystack or "kanami" in haystack or "かなみ" in haystack or "カナミ" in haystack
     if not has_kanami:
         notes.append("missing-kanami")
 
@@ -1131,11 +1295,24 @@ def load_completed_search_dates(path: Path) -> dict[str, set[str]]:
     return completed
 
 
+def load_zero_result_search_dates(path: Path) -> dict[str, set[str]]:
+    payload = read_json_file(path, {})
+    raw_dates = payload.get("zeroResultSearchDates") if isinstance(payload, dict) else None
+    if not isinstance(raw_dates, dict):
+        return {}
+    zero_result_dates: dict[str, set[str]] = {}
+    for keyword, dates in raw_dates.items():
+        if isinstance(dates, list):
+            zero_result_dates[str(keyword)] = {str(date) for date in dates if date}
+    return zero_result_dates
+
+
 def write_checkpoint(
     path: Path,
     processed_keys: set[str],
     completed_search_dates: dict[str, set[str]] | None = None,
     processed_statuses: dict[str, str] | None = None,
+    zero_result_search_dates: dict[str, set[str]] | None = None,
 ) -> None:
     payload: dict[str, Any] = {
         "version": 1,
@@ -1152,6 +1329,12 @@ def write_checkpoint(
         payload["processedStatuses"] = {
             key: processed_statuses[key]
             for key in sorted(processed_statuses)
+        }
+    if zero_result_search_dates:
+        payload["zeroResultSearchDates"] = {
+            keyword: sorted(dates)
+            for keyword, dates in sorted(zero_result_search_dates.items())
+            if dates
         }
     write_json(path, payload)
 
@@ -1427,6 +1610,16 @@ def is_search_date_complete(completed_search_dates: dict[str, set[str]], keyword
     return bool(date_key and date_key in completed_search_dates.get(keyword, set()))
 
 
+def clear_search_date_complete(completed_search_dates: dict[str, set[str]], keyword: str, date_key: str) -> bool:
+    dates = completed_search_dates.get(keyword)
+    if not date_key or not dates or date_key not in dates:
+        return False
+    dates.remove(date_key)
+    if not dates:
+        completed_search_dates.pop(keyword, None)
+    return True
+
+
 def mark_search_date_complete(completed_search_dates: dict[str, set[str]], keyword: str, date_key: str) -> bool:
     if not date_key:
         return False
@@ -1441,6 +1634,45 @@ def mark_search_date_complete_if_closed(completed_search_dates: dict[str, set[st
     if date_key == open_search_date:
         return False
     return mark_search_date_complete(completed_search_dates, keyword, date_key)
+
+
+def mark_zero_result_search_date(zero_result_search_dates: dict[str, set[str]], keyword: str, date_key: str) -> bool:
+    if not date_key:
+        return False
+    dates = zero_result_search_dates.setdefault(keyword, set())
+    if date_key in dates:
+        return False
+    dates.add(date_key)
+    return True
+
+
+def clear_zero_result_search_date(zero_result_search_dates: dict[str, set[str]], keyword: str, date_key: str) -> bool:
+    dates = zero_result_search_dates.get(keyword)
+    if not date_key or not dates or date_key not in dates:
+        return False
+    dates.remove(date_key)
+    if not dates:
+        zero_result_search_dates.pop(keyword, None)
+    return True
+
+
+def drop_zero_result_dates_from_completed(
+    completed_search_dates: dict[str, set[str]],
+    zero_result_search_dates: dict[str, set[str]],
+) -> bool:
+    changed = False
+    for keyword, zero_dates in zero_result_search_dates.items():
+        completed_dates = completed_search_dates.get(keyword)
+        if not completed_dates:
+            continue
+        overlap = completed_dates & zero_dates
+        if not overlap:
+            continue
+        completed_dates.difference_update(overlap)
+        if not completed_dates:
+            completed_search_dates.pop(keyword, None)
+        changed = True
+    return changed
 
 
 def resolve_max_results(args: argparse.Namespace, page_size: int) -> int:
@@ -1519,6 +1751,26 @@ def print_candidate_status(status: str, title: str, reason: str = "") -> None:
 
 def print_search_date(date_key: str) -> None:
     print(f"当前搜索日期：{date_key}", flush=True)
+
+
+def print_search_window_summary(summary: SearchWindowSummary) -> None:
+    print(
+        "日期总结："
+        f"{summary.date_key} "
+        f"API页数={summary.api_pages} "
+        f"API请求={summary.api_requests} "
+        f"搜索结果={summary.api_results} "
+        f"已爬={summary.detail_checked} "
+        f"已保存={summary.saved} "
+        f"跳过={summary.skipped} "
+        f"异常={summary.errors} "
+        f"空结果重试={summary.empty_result_retries}",
+        flush=True,
+    )
+
+
+def print_zero_result_review(date_key: str) -> None:
+    print(f"需要人工审核：{date_key} 搜索结果为 0，未标记为已爬完。", flush=True)
 
 
 def print_search_year_complete(year: int | None) -> None:
