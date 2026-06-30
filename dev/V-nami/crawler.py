@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import html
 import json
 import math
@@ -11,7 +12,7 @@ import shutil
 import time
 import uuid
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from http.cookiejar import Cookie
 from pathlib import Path
 from typing import Any, Iterator
@@ -34,10 +35,12 @@ COOKIE_TXT = PRIVATE_DIR / "bilibili_cookies.txt"
 QR_GENERATE_URL = "https://passport.bilibili.com/x/passport-login/web/qrcode/generate"
 QR_POLL_URL = "https://passport.bilibili.com/x/passport-login/web/qrcode/poll"
 NAV_URL = "https://api.bilibili.com/x/web-interface/nav"
-SEARCH_URL = "https://api.bilibili.com/x/web-interface/search/type"
+WBI_SEARCH_URL = "https://api.bilibili.com/x/web-interface/wbi/search/type"
 VIEW_URL = "https://api.bilibili.com/x/web-interface/view"
 VIEW_DETAIL_URL = "https://api.bilibili.com/x/web-interface/view/detail"
 TAGS_URL = "https://api.bilibili.com/x/tag/archive/tags"
+WBI_SEARCH_SIGN_KEY = "ea1db124af3c7062474693fa704f4ff8"
+QVID_ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 DEFAULT_HEADERS = {
     "User-Agent": (
@@ -119,6 +122,13 @@ class SearchHit:
     pic: str | None = None
     tag_text: str = ""
     source: str = "api"
+
+
+@dataclass(slots=True)
+class SearchWindow:
+    date_key: str
+    pubtime_begin_s: int
+    pubtime_end_s: int
 
 
 @dataclass(slots=True)
@@ -301,29 +311,30 @@ class BilibiliClient:
         if not self.client.cookies.get("buvid3", domain=".bilibili.com"):
             self.client.cookies.set("buvid3", f"{uuid.uuid4()}infoc", domain=".bilibili.com", path="/")
 
-    def search_videos(self, keyword: str, page: int = 1, page_size: int = 30) -> list[SearchHit]:
+    def search_videos(
+        self,
+        keyword: str,
+        page: int = 1,
+        page_size: int = 30,
+        pubtime_begin_s: int | None = None,
+        pubtime_end_s: int | None = None,
+    ) -> list[SearchHit]:
         self.ensure_search_cookie()
         response = self.client.get(
-            SEARCH_URL,
-            params={
-                "Search_key": keyword,
-                "search_type": "video",
-                "keyword": keyword,
-                "page": page,
-                "page_size": page_size,
-                "context": "",
-                "duration": 0,
-                "tids_2": "",
-                "__refresh__": "true",
-                "tids": 0,
-                "highlight": 1,
-                "order": "pubdate",
-            },
+            WBI_SEARCH_URL,
+            params=wbi_search_params(
+                keyword=keyword,
+                page=page,
+                page_size=page_size,
+                order="pubdate",
+                pubtime_begin_s=pubtime_begin_s,
+                pubtime_end_s=pubtime_end_s,
+            ),
         )
         response.raise_for_status()
         payload = response.json()
         if payload.get("code") != 0:
-            raise RuntimeError(f"Bilibili search failed for {keyword!r}: {payload}")
+            raise RuntimeError(f"Bilibili WBI search failed for {keyword!r}: {payload}")
         results = (payload.get("data") or {}).get("result") or []
         return [search_hit_from_payload(item) for item in results if item.get("bvid")]
 
@@ -413,6 +424,11 @@ def crawl(args: argparse.Namespace) -> int:
     processed_statuses = load_processed_statuses(args.checkpoint) if args.resume else {}
     completed_search_dates = load_completed_search_dates(args.checkpoint) if args.resume else {}
     page_size = max(1, min(int(args.page_size), 50))
+    pubtime_begin_s = parse_pubtime_bound(args.pubtime_begin, end_of_day=False)
+    pubtime_end_s = parse_pubtime_bound(args.pubtime_end, end_of_day=True)
+    if pubtime_begin_s and pubtime_end_s and pubtime_begin_s > pubtime_end_s:
+        raise ValueError("--pubtime-begin must be earlier than or equal to --pubtime-end.")
+    open_search_date = pubtime_open_date(pubtime_end_s)
     complete_through_year = DEFAULT_COMPLETE_THROUGH_YEAR if not args.max_candidates_per_run else None
     max_results = None if complete_through_year else resolve_max_results(args, page_size)
     search_backend = resolve_search_backend(args)
@@ -445,112 +461,121 @@ def crawl(args: argparse.Namespace) -> int:
             raise RuntimeError("Bilibili login is required. Run: python crawler.py login")
 
         for keyword in keywords:
-            current_search_date = ""
-            search_hits_seen = 0
-            try:
-                hit_batches = collect_search_hit_batches(
-                    bilibili=bilibili,
-                    keyword=keyword,
-                    backend=search_backend,
-                    page_size=page_size,
-                    max_results=max_results,
-                    pacer=pacer,
-                )
-                for hits in hit_batches:
-                    for hit in hits:
-                        search_hits_seen += 1
-                        date_key = search_date_key(hit)
-                        if should_stop_before_complete_year(date_key, complete_through_year):
-                            if current_search_date:
-                                if mark_search_date_complete(completed_search_dates, keyword, current_search_date):
-                                    persist()
-                            print_search_year_complete(complete_through_year)
-                            return 0
-                        if date_key and date_key != current_search_date:
-                            if current_search_date:
-                                if mark_search_date_complete(completed_search_dates, keyword, current_search_date):
-                                    persist()
-                            current_search_date = date_key
-                            print_search_date(current_search_date)
-                        candidate_key = search_hit_key(hit)
-                        if not candidate_key:
-                            print_candidate_status("跳过", hit.title, "缺少BVID")
-                            continue
-                        if is_search_date_complete(completed_search_dates, keyword, date_key):
-                            print_candidate_status("跳过", hit.title, processed_skip_reason(candidate_key, by_bvid, processed_statuses, fallback="日期已完成"))
-                            continue
-                        if candidate_key in processed_keys:
-                            print_candidate_status("跳过", hit.title, processed_skip_reason(candidate_key, by_bvid, processed_statuses))
-                            continue
-                        if args.max_candidates_per_run and candidates_this_run >= args.max_candidates_per_run:
-                            persist()
-                            return 0
-
-                        candidates_this_run += 1
-                        try:
-                            item, raw_record = item_from_hit(
-                                bilibili=bilibili,
-                                hit=hit,
-                                keyword=keyword,
-                                include_terms=include_terms,
-                                exclude_terms=exclude_terms,
-                                audio_dir=args.audio_dir,
-                                resource_url_prefix=args.resource_url_prefix,
-                                pacer=pacer,
-                            )
-                        except Exception as exc:
-                            append_jsonl(args.raw_candidates, raw_error_record(keyword, hit, exc))
-                            processed_keys.add(candidate_key)
-                            processed_statuses[candidate_key] = "error"
-                            print_candidate_status("跳过", hit.title, "异常")
-                            persist()
-                            if is_cooldown_exception(exc):
-                                pacer.cooldown(f"candidate failed for {candidate_key}: {exc}")
-                                continue
-                            raise
-
-                        append_jsonl(args.raw_candidates, raw_record)
-                        processed_keys.add(candidate_key)
-                        processed_status = processed_status_from_raw_record(raw_record)
-                        processed_statuses[candidate_key] = processed_status
-                        if raw_record.get("bvid"):
-                            raw_bvid = str(raw_record["bvid"])
-                            processed_keys.add(raw_bvid)
-                            processed_statuses[raw_bvid] = processed_status
-
-                        status = "跳过"
-                        status_reason = processed_status_reason(processed_status)
-                        status_title = str(raw_record.get("videoTitle") or hit.title or "")
-                        if item and item.bvid in by_bvid:
-                            if keyword not in by_bvid[item.bvid].matched_keywords:
-                                by_bvid[item.bvid].matched_keywords.append(keyword)
-                            status_title = item.video_title
-                            status_reason = "已保存"
-                        elif item:
-                            by_bvid[item.bvid] = item
-                            accepted_this_run += 1
-                            status = "已保存"
-                            status_reason = ""
-                            status_title = item.video_title
-                            if should_download:
-                                wait_with_jitter(args.download_delay, args.download_jitter, f"download {item.bvid}")
-                                try:
-                                    download_item_audio(item, audio_dir=args.audio_dir, overwrite=args.overwrite_audio)
-                                except RuntimeError as exc:
-                                    item.filter_notes.append(f"audio-download-failed:{exc}")
-                        persist()
-                        print_candidate_status(status, status_title, status_reason)
-                        if args.max_accepted_per_run and accepted_this_run >= args.max_accepted_per_run:
-                            persist()
-                            return 0
-                if current_search_date and (max_results is None or search_hits_seen < max_results):
-                    if mark_search_date_complete(completed_search_dates, keyword, current_search_date):
-                        persist()
-            except Exception as exc:
-                if is_cooldown_exception(exc):
-                    pacer.cooldown(f"search failed for {keyword}: {exc}")
+            completed_search_dates.get(keyword, set()).discard(open_search_date)
+            for search_window in daily_search_windows(pubtime_begin_s, pubtime_end_s):
+                if search_window.date_key != open_search_date and is_search_date_complete(completed_search_dates, keyword, search_window.date_key):
+                    print(f"跳过已完成日期：{search_window.date_key}")
                     continue
-                raise
+
+                current_search_date = search_window.date_key
+                search_hits_seen = 0
+                print_search_date(current_search_date)
+                try:
+                    hit_batches = collect_search_hit_batches(
+                        bilibili=bilibili,
+                        keyword=keyword,
+                        backend=search_backend,
+                        page_size=page_size,
+                        max_results=max_results,
+                        pubtime_begin_s=search_window.pubtime_begin_s,
+                        pubtime_end_s=search_window.pubtime_end_s,
+                        pacer=pacer,
+                    )
+                    for hits in hit_batches:
+                        for hit in hits:
+                            search_hits_seen += 1
+                            date_key = search_date_key(hit)
+                            if should_stop_before_complete_year(date_key, complete_through_year):
+                                if current_search_date:
+                                    if mark_search_date_complete_if_closed(completed_search_dates, keyword, current_search_date, open_search_date):
+                                        persist()
+                                print_search_year_complete(complete_through_year)
+                                return 0
+                            if date_key and date_key != current_search_date:
+                                if current_search_date:
+                                    if mark_search_date_complete_if_closed(completed_search_dates, keyword, current_search_date, open_search_date):
+                                        persist()
+                                current_search_date = date_key
+                                print_search_date(current_search_date)
+                            candidate_key = search_hit_key(hit)
+                            if not candidate_key:
+                                print_candidate_status("跳过", hit.title, "缺少BVID")
+                                continue
+                            if is_search_date_complete(completed_search_dates, keyword, date_key):
+                                print_candidate_status("跳过", hit.title, processed_skip_reason(candidate_key, by_bvid, processed_statuses, fallback="日期已完成"))
+                                continue
+                            if candidate_key in processed_keys:
+                                print_candidate_status("跳过", hit.title, processed_skip_reason(candidate_key, by_bvid, processed_statuses))
+                                continue
+                            if args.max_candidates_per_run and candidates_this_run >= args.max_candidates_per_run:
+                                persist()
+                                return 0
+
+                            candidates_this_run += 1
+                            try:
+                                item, raw_record = item_from_hit(
+                                    bilibili=bilibili,
+                                    hit=hit,
+                                    keyword=keyword,
+                                    include_terms=include_terms,
+                                    exclude_terms=exclude_terms,
+                                    audio_dir=args.audio_dir,
+                                    resource_url_prefix=args.resource_url_prefix,
+                                    pacer=pacer,
+                                )
+                            except Exception as exc:
+                                append_jsonl(args.raw_candidates, raw_error_record(keyword, hit, exc))
+                                processed_keys.add(candidate_key)
+                                processed_statuses[candidate_key] = "error"
+                                print_candidate_status("跳过", hit.title, "异常")
+                                persist()
+                                if is_cooldown_exception(exc):
+                                    pacer.cooldown(f"candidate failed for {candidate_key}: {exc}")
+                                    continue
+                                raise
+
+                            append_jsonl(args.raw_candidates, raw_record)
+                            processed_keys.add(candidate_key)
+                            processed_status = processed_status_from_raw_record(raw_record)
+                            processed_statuses[candidate_key] = processed_status
+                            if raw_record.get("bvid"):
+                                raw_bvid = str(raw_record["bvid"])
+                                processed_keys.add(raw_bvid)
+                                processed_statuses[raw_bvid] = processed_status
+
+                            status = "跳过"
+                            status_reason = processed_status_reason(processed_status)
+                            status_title = str(raw_record.get("videoTitle") or hit.title or "")
+                            if item and item.bvid in by_bvid:
+                                if keyword not in by_bvid[item.bvid].matched_keywords:
+                                    by_bvid[item.bvid].matched_keywords.append(keyword)
+                                status_title = item.video_title
+                                status_reason = "已保存"
+                            elif item:
+                                by_bvid[item.bvid] = item
+                                accepted_this_run += 1
+                                status = "已保存"
+                                status_reason = ""
+                                status_title = item.video_title
+                                if should_download:
+                                    wait_with_jitter(args.download_delay, args.download_jitter, f"download {item.bvid}")
+                                    try:
+                                        download_item_audio(item, audio_dir=args.audio_dir, overwrite=args.overwrite_audio)
+                                    except RuntimeError as exc:
+                                        item.filter_notes.append(f"audio-download-failed:{exc}")
+                            persist()
+                            print_candidate_status(status, status_title, status_reason)
+                            if args.max_accepted_per_run and accepted_this_run >= args.max_accepted_per_run:
+                                persist()
+                                return 0
+                    if current_search_date and (max_results is None or search_hits_seen < max_results):
+                        if mark_search_date_complete_if_closed(completed_search_dates, keyword, current_search_date, open_search_date):
+                            persist()
+                except Exception as exc:
+                    if is_cooldown_exception(exc):
+                        pacer.cooldown(f"search failed for {keyword} on {search_window.date_key}: {exc}")
+                        continue
+                    raise
 
     persist()
     items = sorted(by_bvid.values(), key=lambda item: item.pubdate or 0, reverse=True)
@@ -567,6 +592,8 @@ def collect_search_hits(
     page_size: int,
     max_results: int | None,
     pacer: CrawlPacer,
+    pubtime_begin_s: int | None = None,
+    pubtime_end_s: int | None = None,
 ) -> list[SearchHit]:
     hits: list[SearchHit] = []
     for batch in collect_search_hit_batches(
@@ -575,6 +602,8 @@ def collect_search_hits(
         backend=backend,
         page_size=page_size,
         max_results=max_results,
+        pubtime_begin_s=pubtime_begin_s,
+        pubtime_end_s=pubtime_end_s,
         pacer=pacer,
     ):
         hits.extend(batch)
@@ -591,6 +620,8 @@ def collect_search_hit_batches(
     page_size: int,
     max_results: int | None,
     pacer: CrawlPacer,
+    pubtime_begin_s: int | None = None,
+    pubtime_end_s: int | None = None,
 ) -> Iterator[list[SearchHit]]:
     hits: list[SearchHit] = []
     seen: set[str] = set()
@@ -625,7 +656,13 @@ def collect_search_hit_batches(
         page = 1
         while api_pages is None or page <= api_pages:
             pacer.wait(f"api search {keyword} page {page}")
-            candidates = bilibili.search_videos(keyword=keyword, page=page, page_size=page_size)
+            candidates = bilibili.search_videos(
+                keyword=keyword,
+                page=page,
+                page_size=page_size,
+                pubtime_begin_s=pubtime_begin_s,
+                pubtime_end_s=pubtime_end_s,
+            )
             if not candidates:
                 break
             batch = append(candidates)
@@ -637,6 +674,99 @@ def collect_search_hit_batches(
             if max_results is not None and len(hits) >= max_results:
                 break
             page += 1
+
+
+def wbi_search_params(
+    *,
+    keyword: str,
+    page: int,
+    page_size: int,
+    order: str,
+    pubtime_begin_s: int | None = None,
+    pubtime_end_s: int | None = None,
+) -> dict[str, str]:
+    page_size = max(1, min(int(page_size), 50))
+    params = {
+        "__refresh__": "true",
+        "_extra": "",
+        "ad_resource": "5654",
+        "category_id": "",
+        "context": "",
+        "dynamic_offset": str(max(0, int(page) - 1) * page_size),
+        "from_source": "",
+        "from_spmid": "333.337",
+        "gaia_vtoken": "",
+        "highlight": "1",
+        "keyword": keyword,
+        "order": order,
+        "page": str(max(1, int(page))),
+        "page_size": str(page_size),
+        "platform": "pc",
+        "qv_id": random_qv_id(),
+        "search_type": "video",
+        "single_column": "0",
+        "source_tag": "3",
+        "web_location": "1430654",
+        "wts": str(int(time.time())),
+    }
+    if pubtime_begin_s:
+        params["pubtime_begin_s"] = str(pubtime_begin_s)
+    if pubtime_end_s:
+        params["pubtime_end_s"] = str(pubtime_end_s)
+    params["w_rid"] = wbi_search_signature(params)
+    return params
+
+
+def random_qv_id() -> str:
+    return "".join(random.choice(QVID_ALPHABET) for _ in range(32))
+
+
+def wbi_search_signature(params: dict[str, str]) -> str:
+    query = "&".join(f"{key}={value}" for key, value in params.items())
+    return hashlib.md5((query + WBI_SEARCH_SIGN_KEY).encode("utf-8")).hexdigest()
+
+
+def daily_search_windows(pubtime_begin_s: int | None, pubtime_end_s: int | None) -> Iterator[SearchWindow]:
+    local_tz = datetime.now(timezone.utc).astimezone().tzinfo
+    begin_dt = (
+        datetime.fromtimestamp(pubtime_begin_s, tz=local_tz)
+        if pubtime_begin_s
+        else datetime(DEFAULT_COMPLETE_THROUGH_YEAR, 1, 1, tzinfo=local_tz)
+    )
+    end_dt = datetime.fromtimestamp(pubtime_end_s, tz=local_tz) if pubtime_end_s else datetime.now(local_tz)
+    current_date = end_dt.date()
+    begin_date = begin_dt.date()
+    while current_date >= begin_date:
+        day_start = datetime(current_date.year, current_date.month, current_date.day, tzinfo=local_tz)
+        day_end = day_start + timedelta(days=1) - timedelta(seconds=1)
+        begin_s = max(int(day_start.timestamp()), int(begin_dt.timestamp()))
+        end_s = min(int(day_end.timestamp()), int(end_dt.timestamp()))
+        if begin_s <= end_s:
+            yield SearchWindow(date_key=current_date.isoformat(), pubtime_begin_s=begin_s, pubtime_end_s=end_s)
+        current_date -= timedelta(days=1)
+
+
+def pubtime_open_date(pubtime_end_s: int | None) -> str:
+    local_tz = datetime.now(timezone.utc).astimezone().tzinfo
+    end_dt = datetime.fromtimestamp(pubtime_end_s, tz=local_tz) if pubtime_end_s else datetime.now(local_tz)
+    return end_dt.date().isoformat()
+
+
+def parse_pubtime_bound(value: str | None, *, end_of_day: bool) -> int | None:
+    if not value:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    if text.isdigit():
+        return int(text)
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", text):
+        suffix = "T23:59:59" if end_of_day else "T00:00:00"
+        text = f"{text}{suffix}"
+    parsed = datetime.fromisoformat(text)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=datetime.now(timezone.utc).astimezone().tzinfo)
+    return int(parsed.timestamp())
 
 
 def item_from_hit(
@@ -1125,9 +1255,11 @@ def build_parser() -> argparse.ArgumentParser:
     crawl_parser.add_argument("--keyword", action="append", dest="keywords", help="Search keyword. Can be passed more than once.")
     crawl_parser.add_argument("--pages", type=int, default=3, help="Pages to search for each keyword.")
     crawl_parser.add_argument("--page-size", type=int, default=30, help="Search results per page.")
-    crawl_parser.add_argument("--max-results-per-keyword", type=int, default=0, help="Hard cap for each keyword when --max-candidates-per-run is set. Default full mode searches through 2021 instead.")
+    crawl_parser.add_argument("--max-results-per-keyword", type=int, default=0, help="Hard cap for each keyword when --max-candidates-per-run is set. Default full mode searches until the API is exhausted or repeats results.")
     crawl_parser.add_argument("--deep-search", action="store_true", help="Search up to 1000 candidates per keyword when --max-candidates-per-run is set unless --max-results-per-keyword is set.")
     crawl_parser.add_argument("--search-backend", choices=["auto", "both", "yt-dlp", "api"], default="auto", help="Search backend. auto uses Bilibili API for metadata search; both/yt-dlp opt into yt-dlp search.")
+    crawl_parser.add_argument("--pubtime-begin", help="Limit Bilibili WBI API search to videos published on/after this date or Unix timestamp.")
+    crawl_parser.add_argument("--pubtime-end", help="Limit Bilibili WBI API search to videos published on/before this date or Unix timestamp.")
     crawl_parser.add_argument("--resume", action="store_true", help="Resume from existing output JSON and checkpoint.")
     crawl_parser.add_argument("--checkpoint", type=Path, default=DEFAULT_CHECKPOINT, help="Checkpoint JSON path for processed candidate keys.")
     crawl_parser.add_argument("--raw-candidates", type=Path, default=DEFAULT_RAW_CANDIDATES, help="JSONL audit log for every checked candidate.")
@@ -1303,6 +1435,12 @@ def mark_search_date_complete(completed_search_dates: dict[str, set[str]], keywo
         return False
     dates.add(date_key)
     return True
+
+
+def mark_search_date_complete_if_closed(completed_search_dates: dict[str, set[str]], keyword: str, date_key: str, open_search_date: str) -> bool:
+    if date_key == open_search_date:
+        return False
+    return mark_search_date_complete(completed_search_dates, keyword, date_key)
 
 
 def resolve_max_results(args: argparse.Namespace, page_size: int) -> int:

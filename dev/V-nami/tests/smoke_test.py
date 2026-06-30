@@ -25,22 +25,27 @@ from crawler import (
     collect_search_hits,
     collect_search_hit_batches,
     date_key_from_pubdate,
+    daily_search_windows,
     evaluate_candidate,
     extract_original_song_name,
     is_search_date_complete,
     item_from_hit,
     load_completed_search_dates,
     load_processed_statuses,
+    mark_search_date_complete_if_closed,
     mark_search_date_complete,
     print_candidate_status,
     print_search_date,
     print_search_year_complete,
     processed_skip_reason,
+    pubtime_open_date,
     resolve_max_results,
     resolve_search_backend,
     search_hit_from_ytdlp,
     should_stop_before_complete_year,
     tag_names_from_payload,
+    parse_pubtime_bound,
+    wbi_search_params,
     write_checkpoint,
 )
 from download_worker import build_parser as build_download_worker_parser
@@ -59,7 +64,14 @@ class FakeBilibili:
     def __init__(self) -> None:
         self.pages: list[int] = []
 
-    def search_videos(self, keyword: str, page: int = 1, page_size: int = 30) -> list[SearchHit]:
+    def search_videos(
+        self,
+        keyword: str,
+        page: int = 1,
+        page_size: int = 30,
+        pubtime_begin_s: int | None = None,
+        pubtime_end_s: int | None = None,
+    ) -> list[SearchHit]:
         self.pages.append(page)
         return [
             SearchHit(
@@ -85,7 +97,14 @@ class FakeRepeatingBilibili:
     def __init__(self) -> None:
         self.pages: list[int] = []
 
-    def search_videos(self, keyword: str, page: int = 1, page_size: int = 30) -> list[SearchHit]:
+    def search_videos(
+        self,
+        keyword: str,
+        page: int = 1,
+        page_size: int = 30,
+        pubtime_begin_s: int | None = None,
+        pubtime_end_s: int | None = None,
+    ) -> list[SearchHit]:
         self.pages.append(page)
         return [
             SearchHit(
@@ -127,6 +146,39 @@ def main() -> None:
     assert defaults.request_jitter == 4.0
     assert defaults.cooldown_seconds == 1800.0
     assert defaults.output == DEFAULT_OUTPUT
+    assert defaults.pubtime_begin is None
+    assert defaults.pubtime_end is None
+    pubtime_begin = parse_pubtime_bound("2024-01-01", end_of_day=False)
+    pubtime_end = parse_pubtime_bound("2024-12-31", end_of_day=True)
+    assert pubtime_begin is not None
+    assert pubtime_end is not None
+    assert pubtime_begin < pubtime_end
+    assert pubtime_open_date(pubtime_end) == "2024-12-31"
+    windows = list(daily_search_windows(
+        parse_pubtime_bound("2024-12-29", end_of_day=False),
+        parse_pubtime_bound("2024-12-31", end_of_day=True),
+    ))
+    assert [window.date_key for window in windows] == ["2024-12-31", "2024-12-30", "2024-12-29"]
+    assert all(window.pubtime_begin_s <= window.pubtime_end_s for window in windows)
+    open_completed_dates: dict[str, set[str]] = {}
+    assert not mark_search_date_complete_if_closed(open_completed_dates, "香奈美", "2024-12-31", "2024-12-31")
+    assert open_completed_dates == {}
+    assert mark_search_date_complete_if_closed(open_completed_dates, "香奈美", "2024-12-30", "2024-12-31")
+    assert open_completed_dates == {"香奈美": {"2024-12-30"}}
+    assert parse_pubtime_bound("1704067200", end_of_day=False) == 1704067200
+    signed_params = wbi_search_params(
+        keyword="香奈美",
+        page=2,
+        page_size=30,
+        order="pubdate",
+        pubtime_begin_s=pubtime_begin,
+        pubtime_end_s=pubtime_end,
+    )
+    assert signed_params["pubtime_begin_s"] == str(pubtime_begin)
+    assert signed_params["pubtime_end_s"] == str(pubtime_end)
+    assert signed_params["dynamic_offset"] == "30"
+    assert len(signed_params["qv_id"]) == 32
+    assert len(signed_params["w_rid"]) == 32
     download_defaults = build_download_worker_parser().parse_args([])
     assert download_defaults.input == DEFAULT_OUTPUT
     assert download_defaults.database == DEFAULT_DATABASE

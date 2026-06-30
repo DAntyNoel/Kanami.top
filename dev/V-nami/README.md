@@ -50,8 +50,8 @@ python crawler.py status
 ## 采集策略
 
 默认只用 `香奈美` 作为搜索关键词，并要求已有登录 cookie。候选视频会再用标题、简介和视频 tag 粗筛；tag 中出现 `AI` + `翻唱` / `cover`，或 `AI音乐`、`AI歌曲` 等信号时，也会算作 AI 翻唱候选。
-采集过程中，API 搜索按发布时间从新到旧返回；每完成一页就会立刻检查该页候选，并先输出 `当前搜索日期：YYYY-MM-DD`，再输出该日期下的 `已保存：标题前10字` 或 `跳过（原因）：标题前10字`。跳过原因会区分 `已保存`、`不匹配`、`缺少BVID`、`异常`、`日期已完成` 等状态。当某一天的搜索结果已经完整检查完，checkpoint 会记录该日期，后续 `--resume` 遇到同一关键词的同一天结果会快速跳过。
-默认未设置 `--max-candidates-per-run` 时，API 搜索会一直按新到旧翻页，直到确认 2021 年视频已经全部搜索完；设置 `--max-candidates-per-run` 时才按本轮候选数量分批停止。
+采集过程中，WBI API 搜索按发布时间从新到旧返回；每完成一页就会立刻检查该页候选，并先输出 `当前搜索日期：YYYY-MM-DD`，再输出该日期下的 `已保存：标题前10字` 或 `跳过（原因）：标题前10字`。跳过原因会区分 `已保存`、`不匹配`、`缺少BVID`、`异常`、`日期已完成` 等状态。当某一天的搜索结果已经完整检查完，checkpoint 会记录该日期，后续 `--resume` 遇到同一关键词的同一天结果会快速跳过。
+B 站搜索对宽关键词有结果窗口上限，单靠 page 递增会在旧日期前开始重复返回同一批候选；V-nami 会把 `--pubtime-begin` / `--pubtime-end` 拆成 1 天一个搜索窗口，从结束日向前滚动。早于结束日的日期完成后会写入 checkpoint；结束日当天不会标记完成，方便下次增量更新继续检查当天新增内容。
 视频详情会优先使用 detail 返回里的 tags；只有 detail 没带 tags 时才 fallback 到 tag 接口，且不会在 detail 和 tags 之间额外 sleep。
 默认输出是 `data/kanami_ai_covers.json`，默认请求等待是 `--request-delay 1 --request-jitter 4`，默认风控冷却是 `--cooldown-seconds 1800`。
 
@@ -68,6 +68,20 @@ python crawler.py crawl \
   --deep-search \
   --max-candidates-per-run 80
 ```
+
+补旧年份时指定边界即可，爬虫会自动按天向前滚动，例如先验证 2024 年 12 月：
+
+```bash
+python crawler.py crawl \
+  --search-only \
+  --resume \
+  --keyword AI香奈美 \
+  --pubtime-begin 2024-12-01 \
+  --pubtime-end 2024-12-31 \
+  --max-candidates-per-run 80
+```
+
+如果某个单日窗口内又出现“returned no new candidates; stopping.”，说明该日已经遇到搜索重复页，爬虫会结束当天并继续向前一个日期滚动。
 
 确认候选后，再单独补下载：
 
