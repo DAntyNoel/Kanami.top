@@ -50,7 +50,9 @@ python crawler.py status
 ## 采集策略
 
 默认只用 `香奈美` 作为搜索关键词，并要求已有登录 cookie。候选视频会再用标题、简介和视频 tag 粗筛；tag 中出现 `AI` + `翻唱` / `cover`，或 `AI音乐`、`AI歌曲` 等信号时，也会算作 AI 翻唱候选。
-采集过程中，API 搜索按发布时间从新到旧返回；每完成一页就会立刻检查该页候选，并在终端输出 `已保存：标题前10字` 或 `跳过：标题前10字`。当某一天的搜索结果已经完整检查完，checkpoint 会记录该日期，后续 `--resume` 遇到同一关键词的同一天结果会快速跳过。
+采集过程中，API 搜索按发布时间从新到旧返回；每完成一页就会立刻检查该页候选，并先输出 `当前搜索日期：YYYY-MM-DD`，再输出该日期下的 `已保存：标题前10字` 或 `跳过（原因）：标题前10字`。跳过原因会区分 `已保存`、`不匹配`、`缺少BVID`、`异常`、`日期已完成` 等状态。当某一天的搜索结果已经完整检查完，checkpoint 会记录该日期，后续 `--resume` 遇到同一关键词的同一天结果会快速跳过。
+默认未设置 `--max-candidates-per-run` 时，API 搜索会一直按新到旧翻页，直到确认 2021 年视频已经全部搜索完；设置 `--max-candidates-per-run` 时才按本轮候选数量分批停止。
+视频详情会优先使用 detail 返回里的 tags；只有 detail 没带 tags 时才 fallback 到 tag 接口，且不会在 detail 和 tags 之间额外 sleep。
 默认输出是 `data/kanami_ai_covers.json`，默认请求等待是 `--request-delay 1 --request-jitter 4`，默认风控冷却是 `--cooldown-seconds 1800`。
 
 ```bash
@@ -64,7 +66,6 @@ python crawler.py crawl \
   --search-only \
   --resume \
   --deep-search \
-  --max-results-per-keyword 1000 \
   --max-candidates-per-run 80
 ```
 

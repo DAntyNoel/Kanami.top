@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+import io
 import sys
 from argparse import Namespace
+from contextlib import redirect_stdout
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from crawler import (
     CoverItem,
+    DEFAULT_COMPLETE_THROUGH_YEAR,
     DEFAULT_KEYWORDS,
     DEFAULT_OUTPUT,
     SearchHit,
@@ -20,11 +23,19 @@ from crawler import (
     evaluate_candidate,
     extract_original_song_name,
     is_search_date_complete,
+    item_from_hit,
     load_completed_search_dates,
+    load_processed_statuses,
     mark_search_date_complete,
+    print_candidate_status,
+    print_search_date,
+    print_search_year_complete,
+    processed_skip_reason,
     resolve_max_results,
     resolve_search_backend,
     search_hit_from_ytdlp,
+    should_stop_before_complete_year,
+    tag_names_from_payload,
     write_checkpoint,
 )
 
@@ -63,8 +74,29 @@ class FakeBilibili:
         ]
 
 
+class FakeDetailBilibili:
+    def __init__(self) -> None:
+        self.tag_calls = 0
+
+    def video_view(self, bvid: str | None = None, aid: int | None = None) -> dict[str, object]:
+        return {
+            "bvid": bvid,
+            "aid": aid,
+            "title": "【AI香奈美】《群青》翻唱",
+            "owner": {"name": "tester"},
+            "pubdate": 1782748800,
+            "desc": "单曲翻唱",
+            "Tags": [{"tag_name": "AI翻唱"}, {"tag_name": "香奈美"}],
+        }
+
+    def video_tags(self, bvid: str, aid: int | None = None) -> list[str]:
+        self.tag_calls += 1
+        return []
+
+
 def main() -> None:
     assert DEFAULT_KEYWORDS == ["香奈美"]
+    assert DEFAULT_COMPLETE_THROUGH_YEAR == 2021
     defaults = build_parser().parse_args(["crawl"])
     assert defaults.request_delay == 1.0
     assert defaults.request_jitter == 4.0
@@ -77,12 +109,31 @@ def main() -> None:
     assert is_search_date_complete(completed_dates, "香奈美", "2026-06-30")
     assert not mark_search_date_complete(completed_dates, "香奈美", "2026-06-30")
     checkpoint_path = Path(__file__).resolve().parents[1] / "data" / "smoke_checkpoint.tmp.json"
-    write_checkpoint(checkpoint_path, {"BVTEST0001"}, completed_dates)
+    write_checkpoint(checkpoint_path, {"BVTEST0001"}, completed_dates, {"BVTEST0001": "mismatch"})
     try:
         assert load_completed_search_dates(checkpoint_path) == {"香奈美": {"2026-06-30"}}
+        assert load_processed_statuses(checkpoint_path) == {"BVTEST0001": "mismatch"}
     finally:
         checkpoint_path.unlink(missing_ok=True)
     assert date_key_from_pubdate(1782748800) == "2026-06-30"
+    assert should_stop_before_complete_year("2020-12-31", 2021)
+    assert not should_stop_before_complete_year("2021-01-01", 2021)
+    output = io.StringIO()
+    with redirect_stdout(output):
+        print_search_date("2026-06-30")
+    assert output.getvalue() == "当前搜索日期：2026-06-30\n"
+    output = io.StringIO()
+    with redirect_stdout(output):
+        print_search_year_complete(2021)
+    assert output.getvalue() == "已完成 2021 年及更新视频搜索。\n"
+    output = io.StringIO()
+    with redirect_stdout(output):
+        print_candidate_status("跳过", "【AI香奈美】《群青》翻唱", "不匹配")
+    assert output.getvalue() == "跳过（不匹配）：【AI香奈美】《群青\n"
+    assert processed_skip_reason("BVTEST0001", {}, {"BVTEST0001": "saved"}) == "已保存"
+    assert processed_skip_reason("BVTEST0001", {}, {"BVTEST0001": "mismatch"}) == "不匹配"
+    assert processed_skip_reason("BVTEST0001", {}, {}) == "不匹配"
+    assert tag_names_from_payload({"Tags": [{"tag_name": "AI翻唱"}, {"tag_name": "香奈美"}]}) == ["AI翻唱", "香奈美"]
     result = evaluate_candidate(
         title="【AI香奈美】《群青》翻唱",
         tags=["AI翻唱", "香奈美"],
@@ -125,6 +176,28 @@ def main() -> None:
     assert resource["sourcePage"] == item.video_url
     assert resource["mediaType"] == "audio"
     assert resource["originalSongName"] == "群青"
+    fake_detail_bilibili = FakeDetailBilibili()
+    fake_detail_pacer = FakePacer()
+    detail_item, detail_raw = item_from_hit(
+        bilibili=fake_detail_bilibili,
+        hit=SearchHit(
+            bvid="BVDETAIL",
+            aid=None,
+            title="search title",
+            author="tester",
+            arcurl="https://www.bilibili.com/video/BVDETAIL",
+        ),
+        keyword="香奈美",
+        include_terms=[],
+        exclude_terms=[],
+        audio_dir=Path("data/audio"),
+        resource_url_prefix="/files/WIKI/audio/v-nami/",
+        pacer=fake_detail_pacer,
+    )
+    assert detail_item is not None
+    assert detail_raw["tags"] == ["AI翻唱", "香奈美"]
+    assert fake_detail_bilibili.tag_calls == 0
+    assert fake_detail_pacer.labels == ["video detail BVDETAIL"]
     hit = search_hit_from_ytdlp({
         "id": "116826180688720",
         "url": "http://www.bilibili.com/video/av116826180688720",
