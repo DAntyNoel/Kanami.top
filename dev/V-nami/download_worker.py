@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import argparse
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 from crawler import (
     DEFAULT_AUDIO_DIR,
@@ -21,6 +23,12 @@ from crawler import (
 )
 
 
+@dataclass(slots=True)
+class DownloadResult:
+    item: CoverItem
+    error: RuntimeError | None = None
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     return poll_download_json(args)
@@ -32,8 +40,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--audio-dir", type=Path, default=DEFAULT_AUDIO_DIR, help="Directory for downloaded mp3 files.")
     parser.add_argument("--poll-interval", type=float, default=60.0, help="Seconds between JSON polling checks.")
     parser.add_argument("--idle-timeout", type=float, default=1800.0, help="Exit after this many seconds with no JSON update or new pending downloads.")
-    parser.add_argument("--download-delay", type=float, default=30.0, help="Base seconds to wait before each mp3 download.")
-    parser.add_argument("--download-jitter", type=float, default=30.0, help="Random extra seconds added before each mp3 download.")
+    parser.add_argument("--download-delay", type=float, default=5.0, help="Base seconds to wait before each mp3 download.")
+    parser.add_argument("--download-jitter", type=float, default=3.0, help="Random extra seconds added before each mp3 download.")
+    parser.add_argument("--concurrency", type=int, default=8, help="Maximum number of concurrent mp3 downloads.")
     parser.add_argument("--overwrite-audio", action="store_true", help="Redownload mp3 files even if they exist.")
     parser.add_argument("--retry-failed", action="store_true", help="Retry items that failed earlier in this worker process.")
     parser.add_argument("--once", action="store_true", help="Process current pending downloads once, then exit without polling.")
@@ -62,14 +71,22 @@ def poll_download_json(args: argparse.Namespace) -> int:
 
         if pending:
             last_activity = time.monotonic()
-            print(f"[{now_label()}] pending downloads: {len(pending)}")
-            for item in pending:
-                wait_with_jitter(args.download_delay, args.download_jitter, f"download {item.bvid}")
-                try:
-                    download_item_audio(item, audio_dir=args.audio_dir, overwrite=args.overwrite_audio)
+            concurrency = max(1, int(args.concurrency))
+            print(f"[{now_label()}] pending downloads: {len(pending)}; concurrency: {concurrency}")
+            for result in download_pending_items(
+                pending,
+                audio_dir=args.audio_dir,
+                overwrite=args.overwrite_audio,
+                download_delay=args.download_delay,
+                download_jitter=args.download_jitter,
+                concurrency=concurrency,
+            ):
+                item = result.item
+                if result.error is None:
                     item.filter_notes = remove_download_failures(item.filter_notes)
                     print(f"[{now_label()}] downloaded {item.bvid}")
-                except RuntimeError as exc:
+                else:
+                    exc = result.error
                     failed_bvids.add(item.bvid)
                     item.filter_notes.append(f"audio-download-failed:{exc}")
                     print(f"[{now_label()}] download failed {item.bvid}: {exc}")
@@ -86,6 +103,59 @@ def poll_download_json(args: argparse.Namespace) -> int:
 
         sleep_for = max(1.0, args.poll_interval)
         time.sleep(min(sleep_for, max(1.0, args.idle_timeout - idle_for)))
+
+
+def download_pending_items(
+    items: list[CoverItem],
+    *,
+    audio_dir: Path,
+    overwrite: bool,
+    download_delay: float,
+    download_jitter: float,
+    concurrency: int,
+) -> Iterator[DownloadResult]:
+    workers = max(1, concurrency)
+    if workers == 1:
+        for item in items:
+            yield download_one_item(
+                item,
+                audio_dir=audio_dir,
+                overwrite=overwrite,
+                download_delay=download_delay,
+                download_jitter=download_jitter,
+            )
+        return
+
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = [
+            executor.submit(
+                download_one_item,
+                item,
+                audio_dir=audio_dir,
+                overwrite=overwrite,
+                download_delay=download_delay,
+                download_jitter=download_jitter,
+            )
+            for item in items
+        ]
+        for future in as_completed(futures):
+            yield future.result()
+
+
+def download_one_item(
+    item: CoverItem,
+    *,
+    audio_dir: Path,
+    overwrite: bool,
+    download_delay: float,
+    download_jitter: float,
+) -> DownloadResult:
+    wait_with_jitter(download_delay, download_jitter, f"download {item.bvid}")
+    try:
+        download_item_audio(item, audio_dir=audio_dir, overwrite=overwrite)
+    except RuntimeError as exc:
+        return DownloadResult(item=item, error=exc)
+    return DownloadResult(item=item)
 
 
 def load_items(payload: Any) -> list[CoverItem]:

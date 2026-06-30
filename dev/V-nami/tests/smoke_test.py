@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import io
 import sys
+import time
 from argparse import Namespace
 from contextlib import redirect_stdout
 from pathlib import Path
+from threading import Lock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import download_worker
 from crawler import (
     CoverItem,
     DEFAULT_COMPLETE_THROUGH_YEAR,
@@ -38,6 +41,7 @@ from crawler import (
     tag_names_from_payload,
     write_checkpoint,
 )
+from download_worker import build_parser as build_download_worker_parser
 
 
 class FakePacer:
@@ -102,6 +106,53 @@ def main() -> None:
     assert defaults.request_jitter == 4.0
     assert defaults.cooldown_seconds == 1800.0
     assert defaults.output == DEFAULT_OUTPUT
+    download_defaults = build_download_worker_parser().parse_args([])
+    assert download_defaults.input == DEFAULT_OUTPUT
+    assert download_defaults.poll_interval == 60.0
+    assert download_defaults.idle_timeout == 1800.0
+    assert download_defaults.download_delay == 5.0
+    assert download_defaults.download_jitter == 3.0
+    assert download_defaults.concurrency == 8
+    worker_items = [
+        CoverItem(
+            bvid=f"BVWORKER{index}",
+            video_url=f"https://www.bilibili.com/video/BVWORKER{index}",
+            author="tester",
+            original_song_name="群青",
+            video_title="worker test",
+            published_at="2026-06-30T00:00:00+08:00",
+        )
+        for index in range(5)
+    ]
+    active_downloads = 0
+    max_active_downloads = 0
+    lock = Lock()
+    original_download_item_audio = download_worker.download_item_audio
+
+    def fake_download_item_audio(item: CoverItem, *, audio_dir: Path, overwrite: bool) -> None:
+        nonlocal active_downloads, max_active_downloads
+        with lock:
+            active_downloads += 1
+            max_active_downloads = max(max_active_downloads, active_downloads)
+        time.sleep(0.02)
+        item.audio_file = str(audio_dir / f"{item.bvid}.mp3")
+        with lock:
+            active_downloads -= 1
+
+    download_worker.download_item_audio = fake_download_item_audio
+    try:
+        worker_results = list(download_worker.download_pending_items(
+            worker_items,
+            audio_dir=Path("data/audio"),
+            overwrite=False,
+            download_delay=0,
+            download_jitter=0,
+            concurrency=3,
+        ))
+    finally:
+        download_worker.download_item_audio = original_download_item_audio
+    assert sorted(result.item.bvid for result in worker_results) == sorted(item.bvid for item in worker_items)
+    assert max_active_downloads > 1
     assert candidate_status_title("<em>香奈美</em> 的夏日翻唱曲目") == "香奈美 的夏日翻唱曲"
     assert candidate_status_title("") == "无标题"
     completed_dates: dict[str, set[str]] = {}

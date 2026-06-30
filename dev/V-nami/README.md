@@ -86,8 +86,9 @@ python download_worker.py \
   --input data/kanami_ai_covers.json \
   --poll-interval 60 \
   --idle-timeout 1800 \
-  --download-delay 30 \
-  --download-jitter 30
+  --download-delay 5 \
+  --download-jitter 3 \
+  --concurrency 8
 ```
 
 搜索后端可以切换：
