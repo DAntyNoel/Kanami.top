@@ -206,6 +206,11 @@ document.addEventListener("DOMContentLoaded", () => {
     return useLocalWikiAssets() ? uniqueUrls([...localUrls, ...remoteUrls]) : uniqueUrls(remoteUrls);
   }
 
+  function bilibiliSourceUrl(item) {
+    const candidates = [item.meta.videoUrl, item.meta.sourcePage, item.url];
+    return candidates.find((url) => /^https:\/\/(?:www\.)?bilibili\.com\/video\//u.test(String(url || ""))) || "";
+  }
+
   function applyFallbackSource(el, urls) {
     const candidates = uniqueUrls(urls);
     let index = 0;
@@ -260,6 +265,11 @@ document.addEventListener("DOMContentLoaded", () => {
         meta.text,
         meta.voiceType,
         meta.voiceTag,
+        meta.author,
+        meta.originalSongName,
+        meta.videoTitle,
+        meta.bvid,
+        ...(Array.isArray(meta.tags) ? meta.tags : []),
         url
       ].filter(Boolean).join(" ")
     }));
@@ -340,6 +350,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function activeGroupConfig() {
+    return groups.find((group) => group.id === state.active) || null;
+  }
+
   function renderStats() {
     const mediaTotal = mediaGroups.reduce((sum, group) => sum + (state.flat[group.id]?.length || 0), 0);
     const oathTotal = state.flat.oath?.length || 0;
@@ -403,12 +417,15 @@ document.addEventListener("DOMContentLoaded", () => {
       img.loading = "lazy";
       applyFallbackSource(img, mediaSourceCandidates(url, meta.thumbnailUrl));
       thumb.appendChild(img);
-    } else if (meta.mediaType === "audio") {
+    } else if (meta.mediaType === "audio" && meta.resourceAvailable !== false) {
       const audio = document.createElement("audio");
       audio.controls = true;
       audio.preload = "none";
       applyFallbackSource(audio, mediaSourceCandidates(url));
       thumb.appendChild(audio);
+    } else if (meta.resourceAvailable === false || meta.mediaType === "external") {
+      thumb.classList.add("wiki-resource-thumb-empty");
+      card.classList.add("wiki-resource-item-no-resource");
     } else {
       thumb.appendChild(createEl("span", "wiki-resource-file", meta.extension || "FILE"));
     }
@@ -428,8 +445,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (meta.text) {
       body.appendChild(createEl("p", "wiki-resource-text", meta.text));
     }
-    const open = createEl("a", "wiki-resource-open", "打开收藏");
-    open.href = mediaSourceCandidates(url)[0] || url;
+    const sourceUrl = bilibiliSourceUrl(item);
+    const open = createEl("a", "wiki-resource-open", sourceUrl ? "B站" : "打开收藏");
+    open.href = sourceUrl || mediaSourceCandidates(url)[0] || url;
     open.target = "_blank";
     open.rel = "noopener noreferrer";
     body.appendChild(open);
@@ -504,7 +522,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     const grid = createEl("div", "wiki-resource-grid");
-    const limit = 72;
+    const group = activeGroupConfig();
+    const limit = group?.file === "custom_kanami_ai_covers.json" ? items.length : 72;
     items.slice(0, limit).forEach((item) => grid.appendChild(renderMediaCard(item)));
     panel.appendChild(grid);
     if (items.length > limit) {

@@ -18,6 +18,7 @@ from crawler import (
     chmod_private,
     cover_item_from_json,
     read_json_file,
+    resource_title,
     relative_path,
 )
 
@@ -125,6 +126,14 @@ def downloaded_items(database: Path) -> list[CoverItem]:
     return [item for item in (item_from_row(row) for row in rows) if audio_file_exists(item)]
 
 
+def active_items(database: Path) -> list[CoverItem]:
+    with connect_database(database) as db:
+        rows = db.execute(
+            "SELECT * FROM cover_items WHERE active = 1 ORDER BY COALESCE(CAST(json_extract(item_json, '$.pubdate') AS INTEGER), 0) DESC, bvid"
+        ).fetchall()
+    return [item_from_row(row) for row in rows]
+
+
 def record_download_success(database: Path, item: CoverItem) -> None:
     item.filter_notes = remove_download_failures(item.filter_notes)
     if not item.audio_resource_url:
@@ -172,13 +181,50 @@ def record_download_failure(database: Path, item: CoverItem, error: Exception) -
 def build_wiki_dataset_from_database(database: Path) -> dict[str, Any]:
     with connect_database(database) as db:
         metadata = read_metadata(db)
-    return build_dataset(
-        items=downloaded_items(database),
+    items = active_items(database)
+    dataset = build_dataset(
+        items=items,
         keywords=metadata.get("keywords") or list(DEFAULT_KEYWORDS),
         pages=int(metadata.get("pagesPerKeyword") or 1),
         search_backend=str(metadata.get("searchBackend") or "both"),
         max_results_per_keyword=metadata.get("maxResultsPerKeyword"),
     )
+    dataset["resourceMap"] = build_wiki_resource_map(items)
+    return dataset
+
+
+def build_wiki_resource_map(items: list[CoverItem]) -> dict[str, dict[str, Any]]:
+    resource_map: dict[str, dict[str, Any]] = {}
+    for item in items:
+        has_local_audio = audio_file_exists(item)
+        audio_url = item.audio_resource_url or resource_url_for_item(item)
+        entry_url = audio_url if has_local_audio else item.video_url or f"bilibili:{item.bvid}"
+        resource_map[entry_url] = {
+            "title": resource_title(item),
+            "type": "audio" if has_local_audio else "video_link",
+            "section": "B站 AI 翻唱",
+            "subsection": "香奈美 AI 唱歌",
+            "mediaType": "audio" if has_local_audio else "external",
+            "extension": "mp3" if has_local_audio else "",
+            "thumbnailUrl": item.cover_url,
+            "sourcePage": item.video_url,
+            "width": None,
+            "height": None,
+            "occurrences": 1,
+            "videoUrl": item.video_url,
+            "author": item.author,
+            "originalSongName": item.original_song_name,
+            "videoTitle": item.video_title,
+            "publishedAt": item.published_at,
+            "pubdate": item.pubdate,
+            "bvid": item.bvid,
+            "tags": item.tags,
+            "searchSource": item.search_source,
+            "audioFile": item.audio_file if has_local_audio else None,
+            "audioResourceUrl": audio_url if has_local_audio else None,
+            "resourceAvailable": has_local_audio,
+        }
+    return resource_map
 
 
 def connect_database(database: Path) -> sqlite3.Connection:

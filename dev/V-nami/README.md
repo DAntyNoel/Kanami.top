@@ -123,7 +123,7 @@ python crawler.py crawl --search-backend yt-dlp
 输出 JSON 顶层包含：
 
 - `items`：爬虫自己的结构化记录。
-- `resourceMap`：星光收藏室可用的对象映射，key 是音频资源 URL，value 是资源 metadata。
+- `resourceMap`：星光收藏室可用的对象映射；已下载条目的 key 是音频资源 URL，未下载条目的 key 是 B 站视频 URL 且不写本地音频资源。
 - `resourceGroup`：建议加入 `resource_groups.json` 的自定义分类配置。
 
 运行时还会维护：
@@ -160,7 +160,7 @@ python scripts/sync_to_wiki.py
 - `local-server/files/WIKI/resource_groups.json`
 - `local-server/files/WIKI/custom_kanami_ai_covers.json`
 
-同步逻辑默认读取 `.private/vnami_downloads.sqlite3`，只导出数据库里已经下载完成且本地文件存在的条目。local-server 会动态从 `data/audio` 加载 `/files/WIKI/audio/v-nami/bilibili_*.mp3`，因此默认不再把 mp3 复制进 `local-server/files/WIKI`。如果确实需要生成旧式离线包，可以额外传 `--copy-audio`。
+同步逻辑默认读取 `.private/vnami_downloads.sqlite3`，导出数据库里的全部 active 条目。已下载且本地文件存在的条目会保留 `/files/WIKI/audio/v-nami/bilibili_*.mp3` 音频资源；尚未下载的条目只保留 B 站视频入口，资源部分留空。local-server 会动态从 `data/audio` 加载 V-nami 音频，因此默认不再把 mp3 复制进 `local-server/files/WIKI`。如果确实需要生成旧式离线包，可以额外传 `--copy-audio`。
 
 ## 当前限制
 
