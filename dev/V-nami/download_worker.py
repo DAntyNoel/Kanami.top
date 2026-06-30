@@ -47,7 +47,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--concurrency", type=int, default=8, help="Maximum number of concurrent mp3 downloads.")
     parser.add_argument("--overwrite-audio", action="store_true", help="Redownload mp3 files even if they exist.")
     parser.add_argument("--retry-failed", action="store_true", help="Retry items that failed earlier in this worker process.")
-    parser.add_argument("--once", action="store_true", help="Process current pending downloads once, then exit without polling.")
+    parser.add_argument("--once", action="store_true", help="Run one test batch: each worker downloads at most one pending item, then exit.")
     return parser
 
 
@@ -67,9 +67,11 @@ def poll_download_json(args: argparse.Namespace) -> int:
         if pending:
             last_activity = time.monotonic()
             concurrency = max(1, int(args.concurrency))
-            print(f"[{now_label()}] pending downloads: {len(pending)}; concurrency: {concurrency}")
+            download_batch = select_download_batch(pending, concurrency=concurrency, once=args.once)
+            batch_note = f"; test batch: {len(download_batch)} of {len(pending)}" if args.once else ""
+            print(f"[{now_label()}] pending downloads: {len(pending)}; concurrency: {concurrency}{batch_note}")
             for result in download_pending_items(
-                pending,
+                download_batch,
                 audio_dir=args.audio_dir,
                 overwrite=args.overwrite_audio,
                 concurrency=concurrency,
@@ -107,6 +109,12 @@ def poll_download_json(args: argparse.Namespace) -> int:
 
         sleep_for = max(1.0, args.poll_interval)
         time.sleep(min(sleep_for, max(1.0, args.idle_timeout - idle_for)))
+
+
+def select_download_batch(items: list[CoverItem], *, concurrency: int, once: bool) -> list[CoverItem]:
+    if once:
+        return items[:max(1, concurrency)]
+    return items
 
 
 def download_pending_items(

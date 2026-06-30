@@ -146,6 +146,12 @@ def main() -> None:
         )
         for index in range(5)
     ]
+    assert [item.bvid for item in download_worker.select_download_batch(worker_items, concurrency=3, once=True)] == [
+        "BVWORKER0",
+        "BVWORKER1",
+        "BVWORKER2",
+    ]
+    assert len(download_worker.select_download_batch(worker_items, concurrency=3, once=False)) == 5
     active_downloads = 0
     max_active_downloads = 0
     lock = Lock()

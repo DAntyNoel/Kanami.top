@@ -85,7 +85,15 @@ python crawler.py crawl \
 python download_worker.py
 ```
 
-worker 默认会先把 `data/kanami_ai_covers.json` 全量同步进私有 SQLite 数据库 `.private/vnami_downloads.sqlite3`，再按数据库里的待下载目录并发下载。mp3 固定下载到 `data/audio`，下载成功后的本地路径也只写回数据库；爬虫 JSON 不再被下载 worker 回写。每一批并发下载完成后，worker 会再读取一次 JSON 检查新增元数据，然后等待默认 `--download-delay 5 --download-jitter 3` 后进入下一批。
+worker 默认会先把 `data/kanami_ai_covers.json` 全量同步进私有 SQLite 数据库 `.private/vnami_downloads.sqlite3`，再按数据库里的待下载目录并发下载。正式运行时最多 8 个下载线程并行；某个线程下载完成后会立刻接手下一个待下载视频，直到数据库里当前可下载的视频全部处理完。mp3 固定下载到 `data/audio`，下载成功后的本地路径也只写回数据库；爬虫 JSON 不再被下载 worker 回写。每一批并发下载完成后，worker 会再读取一次 JSON 检查新增元数据，然后等待默认 `--download-delay 5 --download-jitter 3` 后进入下一批。
+
+只想测试一轮时使用：
+
+```bash
+python download_worker.py --once
+```
+
+`--once` 是测试批次语义：每个线程最多只拿 1 个视频，默认最多下载 8 个条目，然后退出。
 
 搜索后端可以切换：
 
