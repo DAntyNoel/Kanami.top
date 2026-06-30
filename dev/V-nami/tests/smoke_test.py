@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import io
+import json
 import sys
 import time
 from argparse import Namespace
 from contextlib import redirect_stdout
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from threading import Lock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -42,6 +44,7 @@ from crawler import (
     write_checkpoint,
 )
 from download_worker import build_parser as build_download_worker_parser
+from vnami_db import DEFAULT_DATABASE, build_wiki_dataset_from_database, pending_items, record_download_success, sync_json_to_database
 
 
 class FakePacer:
@@ -108,6 +111,7 @@ def main() -> None:
     assert defaults.output == DEFAULT_OUTPUT
     download_defaults = build_download_worker_parser().parse_args([])
     assert download_defaults.input == DEFAULT_OUTPUT
+    assert download_defaults.database == DEFAULT_DATABASE
     assert download_defaults.poll_interval == 60.0
     assert download_defaults.idle_timeout == 1800.0
     assert download_defaults.download_delay == 5.0
@@ -145,14 +149,42 @@ def main() -> None:
             worker_items,
             audio_dir=Path("data/audio"),
             overwrite=False,
-            download_delay=0,
-            download_jitter=0,
             concurrency=3,
         ))
     finally:
         download_worker.download_item_audio = original_download_item_audio
     assert sorted(result.item.bvid for result in worker_results) == sorted(item.bvid for item in worker_items)
     assert max_active_downloads > 1
+    with TemporaryDirectory() as tmp:
+        tmp_root = Path(tmp)
+        db_path = tmp_root / "private" / "vnami.sqlite3"
+        audio_dir = tmp_root / "data" / "audio"
+        db_item = CoverItem(
+            bvid="BVDBTEST",
+            video_url="https://www.bilibili.com/video/BVDBTEST",
+            author="tester",
+            original_song_name="群青",
+            video_title="【AI香奈美】《群青》翻唱",
+            published_at="2026-06-30T00:00:00+08:00",
+            pubdate=1782748800,
+        )
+        input_path = tmp_root / "covers.json"
+        input_path.write_text(
+            json.dumps(build_dataset(items=[db_item], keywords=["香奈美"], pages=1), ensure_ascii=False),
+            encoding="utf-8",
+        )
+        summary = sync_json_to_database(input_path, db_path, audio_dir=audio_dir)
+        assert summary.active_items == 1
+        imported_pending = pending_items(db_path)
+        assert [item.bvid for item in imported_pending] == ["BVDBTEST"]
+        downloaded_path = audio_dir / "bilibili_BVDBTEST.mp3"
+        downloaded_path.parent.mkdir(parents=True, exist_ok=True)
+        downloaded_path.write_bytes(b"ID3")
+        imported_pending[0].audio_file = str(downloaded_path)
+        record_download_success(db_path, imported_pending[0])
+        db_dataset = build_wiki_dataset_from_database(db_path)
+        assert list(db_dataset["resourceMap"]) == ["/files/WIKI/audio/v-nami/bilibili_BVDBTEST.mp3"]
+        assert db_dataset["items"][0]["audioFile"] == str(downloaded_path)
     assert candidate_status_title("<em>香奈美</em> 的夏日翻唱曲目") == "香奈美 的夏日翻唱曲"
     assert candidate_status_title("") == "无标题"
     completed_dates: dict[str, set[str]] = {}

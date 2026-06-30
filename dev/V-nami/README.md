@@ -82,14 +82,10 @@ python crawler.py crawl \
 如果希望搜索时旁路下载，单独启动下载 worker。它会轮询 `data/kanami_ai_covers.json`，检测到新增或仍缺 mp3 的条目就下载；如果 30 分钟没有 JSON 更新或新增待下载项，会自动退出：
 
 ```bash
-python download_worker.py \
-  --input data/kanami_ai_covers.json \
-  --poll-interval 60 \
-  --idle-timeout 1800 \
-  --download-delay 5 \
-  --download-jitter 3 \
-  --concurrency 8
+python download_worker.py
 ```
+
+worker 默认会先把 `data/kanami_ai_covers.json` 全量同步进私有 SQLite 数据库 `.private/vnami_downloads.sqlite3`，再按数据库里的待下载目录并发下载。mp3 固定下载到 `data/audio`，下载成功后的本地路径也只写回数据库；爬虫 JSON 不再被下载 worker 回写。每一批并发下载完成后，worker 会再读取一次 JSON 检查新增元数据，然后等待默认 `--download-delay 5 --download-jitter 3` 后进入下一批。
 
 搜索后端可以切换：
 
@@ -112,6 +108,7 @@ python crawler.py crawl --search-backend yt-dlp
 
 - `data/crawl_checkpoint.json`：已处理候选 key 和完整检查过的搜索日期，用于 `--resume`。
 - `data/raw_candidates.jsonl`：每个候选的视频信息、筛选结果和拒绝原因。
+- `.private/vnami_downloads.sqlite3`：下载 worker 的私有状态库，保存待下载目录、全量元数据、下载状态和本地 mp3 路径。
 
 必要字段会保留：
 
@@ -127,26 +124,21 @@ python crawler.py crawl --search-backend yt-dlp
 采集完成后可以先 dry-run：
 
 ```bash
-python scripts/sync_to_wiki.py --input data/kanami_ai_covers.json --dry-run
+python scripts/sync_to_wiki.py --dry-run
 ```
 
 确认后写入 `local-server/files/WIKI`：
 
 ```bash
-python scripts/sync_to_wiki.py --input data/kanami_ai_covers.json
+python scripts/sync_to_wiki.py
 ```
 
 这会生成或更新：
 
 - `local-server/files/WIKI/resource_groups.json`
 - `local-server/files/WIKI/custom_kanami_ai_covers.json`
-- `local-server/files/WIKI/audio/v-nami/*.mp3`
 
-需要同步静态站点 `res/WIKI` 时，可以额外传：
-
-```bash
-python scripts/sync_to_wiki.py --input data/kanami_ai_covers.json --wiki-root ../../res/WIKI
-```
+同步逻辑默认读取 `.private/vnami_downloads.sqlite3`，只导出数据库里已经下载完成且本地文件存在的条目。local-server 会动态从 `data/audio` 加载 `/files/WIKI/audio/v-nami/bilibili_*.mp3`，因此默认不再把 mp3 复制进 `local-server/files/WIKI`。如果确实需要生成旧式离线包，可以额外传 `--copy-audio`。
 
 ## 当前限制
 

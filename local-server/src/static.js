@@ -47,6 +47,8 @@ const LOCAL_WIKI_DATA_FILES = new Set([
   "WIKI/weapons.json"
 ]);
 
+const VNAMI_AUDIO_ROUTE_RE = /^WIKI\/audio\/v-nami\/(?<filename>bilibili_[0-9A-Za-z_-]+\.mp3)$/u;
+
 let reloadState = {
   token: String(Date.now()),
   next: ""
@@ -260,6 +262,25 @@ function denyAdminRoute(req, res) {
   });
 }
 
+function tryServeVnamiAudio(req, res, requested) {
+  const match = requested.replace(/^\/+/, "").match(VNAMI_AUDIO_ROUTE_RE);
+  if (!match) {
+    return false;
+  }
+
+  const audioPath = resolveInside(paths.vnamiAudio, match.groups.filename);
+  if (audioPath && isReadableFile(audioPath)) {
+    sendFile(req, res, audioPath, "public, max-age=60");
+    return true;
+  }
+
+  sendJson(req, res, 404, {
+    error: "VNAMI_AUDIO_NOT_FOUND",
+    message: "香奈美还没有下载好这首 AI 翻唱。"
+  });
+  return true;
+}
+
 export function tryServeStatic(req, res, url) {
   if (url.pathname === "/__reload/state") {
     if (!hasAdminAccess(req, url)) {
@@ -385,6 +406,10 @@ export function tryServeMappedFile(req, res, url) {
   }
 
   const requested = url.pathname.slice(config.fileRoutePrefix.length);
+  if (tryServeVnamiAudio(req, res, requested)) {
+    return true;
+  }
+
   if (!config.publicFilesEnabled || (!isAllowedMappedPath(requested) && !hasAdminAccess(req, url))) {
     sendJson(req, res, 403, {
       error: "FILE_ROUTE_RESTRICTED",

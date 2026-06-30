@@ -69,7 +69,8 @@ export const paths = {
   sharedScript: path.resolve(rootDir, "..", "script.js"),
   authData: resolveFromRoot(env("LOCAL_SERVER_AUTH_DIR", "./data/auth")),
   gallery: resolveFromRoot(env("LOCAL_SERVER_GALLERY_DIR", "../KanamiBot/data/advanced_media")),
-  files: resolveFromRoot(env("LOCAL_SERVER_FILES_DIR", "./files"))
+  files: resolveFromRoot(env("LOCAL_SERVER_FILES_DIR", "./files")),
+  vnamiAudio: resolveFromRoot(env("LOCAL_SERVER_VNAMI_AUDIO_DIR", "../dev/V-nami/data/audio"))
 };
 
 export const config = {

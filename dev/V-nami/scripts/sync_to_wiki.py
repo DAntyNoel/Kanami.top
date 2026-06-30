@@ -4,32 +4,44 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
+import sys
 from pathlib import Path
 from typing import Any
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = PROJECT_ROOT.parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from vnami_db import DEFAULT_DATABASE, build_wiki_dataset_from_database, sync_json_to_database
+
 DEFAULT_WIKI_ROOT = REPO_ROOT / "local-server" / "files" / "WIKI"
 GROUPS_FILE = "resource_groups.json"
 CUSTOM_FILE = "custom_kanami_ai_covers.json"
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Sync V-nami output into a Kanami.top WIKI resource folder.")
-    parser.add_argument("--input", required=True, type=Path, help="V-nami crawler JSON output.")
+    parser = argparse.ArgumentParser(description="Sync V-nami database entries into a Kanami.top WIKI resource folder.")
+    parser.add_argument("--database", type=Path, default=DEFAULT_DATABASE, help="Private V-nami SQLite database.")
+    parser.add_argument("--input", type=Path, help="Optional crawler JSON to import into the database before syncing.")
     parser.add_argument("--wiki-root", type=Path, default=DEFAULT_WIKI_ROOT, help="Target WIKI root.")
+    parser.add_argument("--copy-audio", action="store_true", help="Copy downloaded mp3 files into the WIKI folder. Local-server normally serves V-nami audio dynamically instead.")
     parser.add_argument("--dry-run", action="store_true", help="Show planned writes without changing files.")
     args = parser.parse_args()
 
-    payload = read_json(args.input)
+    if args.input:
+        summary = sync_json_to_database(args.input, args.database)
+        print(f"Imported {summary.active_items} active JSON items into {summary.database}.")
+
+    payload = build_wiki_dataset_from_database(args.database)
     resource_map = payload.get("resourceMap")
     resource_group = payload.get("resourceGroup")
     if not isinstance(resource_map, dict) or not isinstance(resource_group, dict):
-        raise SystemExit("Input JSON is missing resourceMap or resourceGroup.")
+        raise SystemExit("V-nami database did not produce resourceMap or resourceGroup.")
 
-    audio_copies = plan_audio_copies(payload.get("items") or [], args.wiki_root)
+    audio_copies = plan_audio_copies(payload.get("items") or [], args.wiki_root) if args.copy_audio else []
     print(f"Target WIKI root: {args.wiki_root}")
+    print(f"V-nami database: {args.database}")
     print(f"Resource entries: {len(resource_map)}")
     print(f"Audio copies: {len(audio_copies)}")
     if args.dry_run:

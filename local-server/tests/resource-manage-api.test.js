@@ -9,6 +9,7 @@ const rootDir = path.resolve(import.meta.dirname, "..");
 const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "kanami-resource-manage-"));
 const filesRoot = path.join(tempRoot, "files");
 const authRoot = path.join(tempRoot, "auth");
+const vnamiAudioRoot = path.join(tempRoot, "vnami-audio");
 const wikiRoot = path.join(filesRoot, "WIKI");
 const port = 19270 + Math.floor(Math.random() * 1000);
 const baseUrl = `http://127.0.0.1:${port}`;
@@ -145,6 +146,8 @@ function rawStatus(pathname, headers = {}) {
 
 async function main() {
   seedWiki();
+  fs.mkdirSync(vnamiAudioRoot, { recursive: true });
+  fs.writeFileSync(path.join(vnamiAudioRoot, "bilibili_BVTEST.mp3"), "ID3");
   const child = spawn(process.execPath, ["src/server.js"], {
     cwd: rootDir,
     env: {
@@ -153,6 +156,7 @@ async function main() {
       LOCAL_SERVER_PORT: String(port),
       LOCAL_SERVER_FILES_DIR: filesRoot,
       LOCAL_SERVER_AUTH_DIR: authRoot,
+      LOCAL_SERVER_VNAMI_AUDIO_DIR: vnamiAudioRoot,
       LOCAL_SERVER_PUBLIC_FILES: "true"
     },
     stdio: ["ignore", "pipe", "pipe"]
@@ -173,6 +177,12 @@ async function main() {
       Host: "local-server.kanami.top"
     });
     assert.equal(deniedStatus, 401, "remote management API requires superadmin login");
+
+    const vnamiAudio = await request("/files/WIKI/audio/v-nami/bilibili_BVTEST.mp3");
+    assert.equal(vnamiAudio.response.status, 200);
+    assert.equal(vnamiAudio.text, "ID3");
+    const deniedAudioDirectory = await request("/files/WIKI/audio/v-nami/");
+    assert.notEqual(deniedAudioDirectory.response.status, 200);
 
     const register = await request("/api/auth/register", {
       method: "POST",
