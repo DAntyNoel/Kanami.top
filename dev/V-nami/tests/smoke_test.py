@@ -81,6 +81,24 @@ class FakeBilibili:
         ]
 
 
+class FakeRepeatingBilibili:
+    def __init__(self) -> None:
+        self.pages: list[int] = []
+
+    def search_videos(self, keyword: str, page: int = 1, page_size: int = 30) -> list[SearchHit]:
+        self.pages.append(page)
+        return [
+            SearchHit(
+                bvid="BVREPEAT",
+                aid=None,
+                title=f"{keyword} repeated result",
+                author="tester",
+                arcurl="https://www.bilibili.com/video/BVREPEAT",
+                pubdate=2000,
+            )
+        ]
+
+
 class FakeDetailBilibili:
     def __init__(self) -> None:
         self.tag_calls = 0
@@ -320,6 +338,21 @@ def main() -> None:
         pacer=fake_pacer,
     )
     assert fake_bilibili.pages == [1, 2, 3, 4]
+    repeating_bilibili = FakeRepeatingBilibili()
+    fake_pacer = FakePacer()
+    output = io.StringIO()
+    with redirect_stdout(output):
+        repeating_batches = list(collect_search_hit_batches(
+            bilibili=repeating_bilibili,
+            keyword="香奈美",
+            backend="api",
+            page_size=10,
+            max_results=None,
+            pacer=fake_pacer,
+        ))
+    assert repeating_bilibili.pages == [1, 2]
+    assert [[hit.bvid for hit in batch] for batch in repeating_batches] == [["BVREPEAT"]]
+    assert "returned no new candidates; stopping." in output.getvalue()
 
 
 if __name__ == "__main__":

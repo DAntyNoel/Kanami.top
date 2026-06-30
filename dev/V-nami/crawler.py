@@ -631,6 +631,9 @@ def collect_search_hit_batches(
             batch = append(candidates)
             if batch:
                 yield batch
+            else:
+                print(f"api search {keyword} page {page} returned no new candidates; stopping.")
+                break
             if max_results is not None and len(hits) >= max_results:
                 break
             page += 1

@@ -1,5 +1,6 @@
 .private/
 data/*.json
+data/*.jsonl
 data/*.json.lock
 data/audio/
 data/downloads/
