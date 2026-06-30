@@ -9,15 +9,23 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from crawler import (
     CoverItem,
     DEFAULT_KEYWORDS,
+    DEFAULT_OUTPUT,
     SearchHit,
     build_dataset,
+    build_parser,
     candidate_status_title,
     collect_search_hits,
+    collect_search_hit_batches,
+    date_key_from_pubdate,
     evaluate_candidate,
     extract_original_song_name,
+    is_search_date_complete,
+    load_completed_search_dates,
+    mark_search_date_complete,
     resolve_max_results,
     resolve_search_backend,
     search_hit_from_ytdlp,
+    write_checkpoint,
 )
 
 
@@ -37,19 +45,44 @@ class FakeBilibili:
         self.pages.append(page)
         return [
             SearchHit(
+                bvid=f"BVOLD{page:04d}",
+                aid=None,
+                title=f"{keyword} old page {page}",
+                author="tester",
+                arcurl=f"https://www.bilibili.com/video/BVOLD{page:04d}",
+                pubdate=1000 - page,
+            ),
+            SearchHit(
                 bvid=f"BVTEST{page:04d}",
                 aid=None,
                 title=f"{keyword} page {page}",
                 author="tester",
                 arcurl=f"https://www.bilibili.com/video/BVTEST{page:04d}",
+                pubdate=2000 - page,
             )
         ]
 
 
 def main() -> None:
     assert DEFAULT_KEYWORDS == ["香奈美"]
+    defaults = build_parser().parse_args(["crawl"])
+    assert defaults.request_delay == 1.0
+    assert defaults.request_jitter == 4.0
+    assert defaults.cooldown_seconds == 1800.0
+    assert defaults.output == DEFAULT_OUTPUT
     assert candidate_status_title("<em>香奈美</em> 的夏日翻唱曲目") == "香奈美 的夏日翻唱曲"
     assert candidate_status_title("") == "无标题"
+    completed_dates: dict[str, set[str]] = {}
+    assert mark_search_date_complete(completed_dates, "香奈美", "2026-06-30")
+    assert is_search_date_complete(completed_dates, "香奈美", "2026-06-30")
+    assert not mark_search_date_complete(completed_dates, "香奈美", "2026-06-30")
+    checkpoint_path = Path(__file__).resolve().parents[1] / "data" / "smoke_checkpoint.tmp.json"
+    write_checkpoint(checkpoint_path, {"BVTEST0001"}, completed_dates)
+    try:
+        assert load_completed_search_dates(checkpoint_path) == {"香奈美": {"2026-06-30"}}
+    finally:
+        checkpoint_path.unlink(missing_ok=True)
+    assert date_key_from_pubdate(1782748800) == "2026-06-30"
     result = evaluate_candidate(
         title="【AI香奈美】《群青》翻唱",
         tags=["AI翻唱", "香奈美"],
@@ -102,6 +135,24 @@ def main() -> None:
     args = Namespace(search_backend="auto", max_results_per_keyword=0, deep_search=True, pages=3)
     assert resolve_search_backend(args) == "api"
     assert resolve_max_results(args, page_size=30) == 1000
+    fake_bilibili = FakeBilibili()
+    fake_pacer = FakePacer()
+    batches = collect_search_hit_batches(
+        bilibili=fake_bilibili,
+        keyword="香奈美",
+        backend="api",
+        page_size=10,
+        max_results=35,
+        pacer=fake_pacer,
+    )
+    first_batch = next(batches)
+    assert fake_bilibili.pages == [1]
+    assert [hit.bvid for hit in first_batch] == ["BVTEST0001", "BVOLD0001"]
+    second_batch = next(batches)
+    assert fake_bilibili.pages == [1, 2]
+    assert [hit.bvid for hit in second_batch] == ["BVTEST0002", "BVOLD0002"]
+    list(batches)
+    assert fake_bilibili.pages == [1, 2, 3, 4]
     fake_bilibili = FakeBilibili()
     fake_pacer = FakePacer()
     collect_search_hits(

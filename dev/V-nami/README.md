@@ -49,11 +49,12 @@ python crawler.py status
 
 ## 采集策略
 
-默认只用 `香奈美` 作为搜索关键词，并要求已有登录 cookie。候选视频会再用标题、简介和视频 tag 粗筛；tag 中出现 `AI` + `翻唱` / `cover`，或 `AI音乐`、`AI歌曲` 等信号时，也会算作 AI 翻唱候选：
-采集过程中，每个候选会在终端输出 `已保存：标题前10字` 或 `跳过：标题前10字`，方便长时间运行时观察进度。
+默认只用 `香奈美` 作为搜索关键词，并要求已有登录 cookie。候选视频会再用标题、简介和视频 tag 粗筛；tag 中出现 `AI` + `翻唱` / `cover`，或 `AI音乐`、`AI歌曲` 等信号时，也会算作 AI 翻唱候选。
+采集过程中，API 搜索按发布时间从新到旧返回；每完成一页就会立刻检查该页候选，并在终端输出 `已保存：标题前10字` 或 `跳过：标题前10字`。当某一天的搜索结果已经完整检查完，checkpoint 会记录该日期，后续 `--resume` 遇到同一关键词的同一天结果会快速跳过。
+默认输出是 `data/kanami_ai_covers.json`，默认请求等待是 `--request-delay 1 --request-jitter 4`，默认风控冷却是 `--cooldown-seconds 1800`。
 
 ```bash
-python crawler.py crawl --pages 3 --output data/kanami_ai_covers.json
+python crawler.py crawl --pages 3
 ```
 
 正式采集建议先只搜元数据，不下载 mp3。这样可以慢速、可恢复地建立候选池，并把所有候选写入 `data/raw_candidates.jsonl` 供后续复核：
@@ -64,10 +65,7 @@ python crawler.py crawl \
   --resume \
   --deep-search \
   --max-results-per-keyword 1000 \
-  --request-delay 8 \
-  --request-jitter 6 \
-  --max-candidates-per-run 80 \
-  --output data/kanami_ai_covers.json
+  --max-candidates-per-run 80
 ```
 
 确认候选后，再单独补下载：
@@ -110,7 +108,7 @@ python crawler.py crawl --search-backend yt-dlp
 
 运行时还会维护：
 
-- `data/crawl_checkpoint.json`：已处理候选 key，用于 `--resume`。
+- `data/crawl_checkpoint.json`：已处理候选 key 和完整检查过的搜索日期，用于 `--resume`。
 - `data/raw_candidates.jsonl`：每个候选的视频信息、筛选结果和拒绝原因。
 
 必要字段会保留：
