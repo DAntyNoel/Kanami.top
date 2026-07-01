@@ -41,8 +41,7 @@ VIEW_DETAIL_URL = "https://api.bilibili.com/x/web-interface/view/detail"
 TAGS_URL = "https://api.bilibili.com/x/tag/archive/tags"
 WBI_SEARCH_SIGN_KEY = "ea1db124af3c7062474693fa704f4ff8"
 QVID_ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-EMPTY_SEARCH_MAX_RETRIES = 6
-EMPTY_SEARCH_RETRY_DELAY_SECONDS = 30.0
+EMPTY_SEARCH_RETRY_DELAYS_SECONDS = (30.0, 60.0, 120.0, 240.0, 480.0, 960.0)
 
 DEFAULT_HEADERS = {
     "User-Agent": (
@@ -154,6 +153,10 @@ class SearchWindowSummary:
     errors: int = 0
     empty_result_retries: int = 0
     empty_result_errors: int = 0
+
+
+class EmptyFirstPageTimeout(RuntimeError):
+    pass
 
 
 @dataclass(slots=True)
@@ -661,6 +664,16 @@ def crawl(args: argparse.Namespace) -> int:
                         window_summary,
                         allow_completion=(max_results is None or search_hits_seen < max_results),
                     )
+                except EmptyFirstPageTimeout as exc:
+                    finish_search_window(
+                        keyword,
+                        current_search_date,
+                        window_summary,
+                        allow_completion=True,
+                    )
+                    print(str(exc), flush=True)
+                    persist()
+                    return 1
                 except Exception as exc:
                     finish_search_window(
                         keyword,
@@ -768,7 +781,7 @@ def collect_search_hit_batches(
                 summary.api_results += len(candidates)
             if not candidates:
                 if page == 1:
-                    print(f"api search {keyword} page {page} returned empty result after {EMPTY_SEARCH_MAX_RETRIES} retries; stopping.")
+                    print(f"api search {keyword} page {page} returned empty result after backoff retries; stopping.")
                 else:
                     print(f"api search {keyword} page {page} returned 0 candidates; stopping.")
                 break
@@ -806,17 +819,33 @@ def search_api_page_with_empty_retries(
             pubtime_end_s=pubtime_end_s,
         )
 
-    for retry_index in range(EMPTY_SEARCH_MAX_RETRIES + 1):
-        if retry_index == 0:
-            pacer.wait(f"api search {keyword} page {page}")
-        else:
-            if summary:
-                summary.empty_result_retries += 1
-            pacer.wait(
-                f"api search retry {keyword} page {page} {retry_index}/{EMPTY_SEARCH_MAX_RETRIES}",
-                base_delay=EMPTY_SEARCH_RETRY_DELAY_SECONDS,
-                jitter=0.0,
-            )
+    pacer.wait(f"api search {keyword} page {page}")
+    if summary:
+        summary.api_requests += 1
+    candidates = bilibili.search_videos(
+        keyword=keyword,
+        page=page,
+        page_size=page_size,
+        pubtime_begin_s=pubtime_begin_s,
+        pubtime_end_s=pubtime_end_s,
+    )
+    if candidates:
+        return candidates
+
+    retry_count = len(EMPTY_SEARCH_RETRY_DELAYS_SECONDS)
+    for retry_index, retry_delay in enumerate(EMPTY_SEARCH_RETRY_DELAYS_SECONDS, start=1):
+        if summary:
+            summary.empty_result_retries += 1
+        print(
+            f"api search {keyword} page {page} returned empty result; "
+            f"retry {retry_index}/{retry_count} after {retry_delay:.0f}s.",
+            flush=True,
+        )
+        pacer.wait(
+            f"api search retry {keyword} page {page} {retry_index}/{retry_count}",
+            base_delay=retry_delay,
+            jitter=0.0,
+        )
         if summary:
             summary.api_requests += 1
         candidates = bilibili.search_videos(
@@ -828,16 +857,12 @@ def search_api_page_with_empty_retries(
         )
         if candidates:
             return candidates
-        if retry_index < EMPTY_SEARCH_MAX_RETRIES:
-            print(
-                f"api search {keyword} page {page} returned empty result; "
-                f"retry {retry_index + 1}/{EMPTY_SEARCH_MAX_RETRIES} after {EMPTY_SEARCH_RETRY_DELAY_SECONDS:.0f}s.",
-                flush=True,
-            )
     if summary:
         summary.errors += 1
         summary.empty_result_errors += 1
-    return []
+    raise EmptyFirstPageTimeout(
+        f"api search {keyword} page {page} stayed empty after waiting {EMPTY_SEARCH_RETRY_DELAYS_SECONDS[-1] / 60:.0f}m; exiting crawler."
+    )
 
 
 def wbi_search_params(

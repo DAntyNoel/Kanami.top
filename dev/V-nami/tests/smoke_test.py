@@ -18,6 +18,7 @@ from crawler import (
     DEFAULT_COMPLETE_THROUGH_YEAR,
     DEFAULT_KEYWORDS,
     DEFAULT_OUTPUT,
+    EmptyFirstPageTimeout,
     SearchHit,
     SearchWindowSummary,
     build_dataset,
@@ -63,9 +64,13 @@ from vnami_db import DEFAULT_DATABASE, build_wiki_dataset_from_database, pending
 class FakePacer:
     def __init__(self) -> None:
         self.labels: list[str] = []
+        self.base_delays: list[float | None] = []
+        self.jitters: list[float | None] = []
 
     def wait(self, label: str, base_delay: float | None = None, jitter: float | None = None) -> None:
         self.labels.append(label)
+        self.base_delays.append(base_delay)
+        self.jitters.append(jitter)
 
 
 class FakeBilibili:
@@ -593,29 +598,38 @@ def main() -> None:
     assert recovering_summary.empty_result_retries == 2
     assert recovering_summary.errors == 0
     assert "retry 1/6 after 30s" in output.getvalue()
+    assert "retry 2/6 after 60s" in output.getvalue()
     assert "api search retry 香奈美 page 1 2/6" in fake_pacer.labels
+    assert fake_pacer.base_delays == [None, 30.0, 60.0]
+    assert fake_pacer.jitters == [None, 0.0, 0.0]
     always_empty_bilibili = FakeAlwaysEmptyFirstPageBilibili()
     always_empty_summary = SearchWindowSummary(date_key="2026-05-15")
     fake_pacer = FakePacer()
     output = io.StringIO()
     with redirect_stdout(output):
-        always_empty_batches = list(collect_search_hit_batches(
-            bilibili=always_empty_bilibili,
-            keyword="香奈美",
-            backend="api",
-            page_size=10,
-            max_results=None,
-            pacer=fake_pacer,
-            summary=always_empty_summary,
-        ))
-    assert always_empty_batches == []
+        try:
+            list(collect_search_hit_batches(
+                bilibili=always_empty_bilibili,
+                keyword="香奈美",
+                backend="api",
+                page_size=10,
+                max_results=None,
+                pacer=fake_pacer,
+                summary=always_empty_summary,
+            ))
+        except EmptyFirstPageTimeout as exc:
+            assert "stayed empty after waiting 16m" in str(exc)
+        else:
+            raise AssertionError("Expected EmptyFirstPageTimeout")
     assert always_empty_bilibili.pages == [1, 1, 1, 1, 1, 1, 1]
     assert always_empty_summary.api_pages == 1
     assert always_empty_summary.api_requests == 7
     assert always_empty_summary.api_results == 0
     assert always_empty_summary.empty_result_retries == 6
     assert always_empty_summary.errors == 1
-    assert "returned empty result after 6 retries; stopping." in output.getvalue()
+    assert fake_pacer.base_delays == [None, 30.0, 60.0, 120.0, 240.0, 480.0, 960.0]
+    assert fake_pacer.jitters == [None, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    assert "retry 6/6 after 960s" in output.getvalue()
 
 
 if __name__ == "__main__":
