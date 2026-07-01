@@ -294,11 +294,26 @@
 }
 
 .wiki-resource-open {
+    display: inline-flex;
+    max-width: 100%;
     width: fit-content;
+    align-items: center;
+    gap: 4px;
     color: #764ba2;
     font-size: 0.9rem;
     font-weight: 800;
     text-decoration: none;
+}
+
+.wiki-resource-open-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.wiki-resource-open-icon {
+    flex: 0 0 auto;
+    font-size: 0.95em;
+    line-height: 1;
 }
 
 .wiki-text-list {

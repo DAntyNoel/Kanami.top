@@ -211,6 +211,11 @@ document.addEventListener("DOMContentLoaded", () => {
     return candidates.find((url) => /^https:\/\/(?:www\.)?bilibili\.com\/video\//u.test(String(url || ""))) || "";
   }
 
+  function bilibiliLinkLabel(item) {
+    const author = String(item.meta.author || "").trim();
+    return author ? `B站-${author}` : "B站";
+  }
+
   function applyFallbackSource(el, urls) {
     const candidates = uniqueUrls(urls);
     let index = 0;
@@ -446,7 +451,18 @@ document.addEventListener("DOMContentLoaded", () => {
       body.appendChild(createEl("p", "wiki-resource-text", meta.text));
     }
     const sourceUrl = bilibiliSourceUrl(item);
-    const open = createEl("a", "wiki-resource-open", sourceUrl ? "B站" : "打开收藏");
+    const open = createEl("a", `wiki-resource-open${sourceUrl ? " wiki-resource-open-external" : ""}`);
+    if (sourceUrl) {
+      const label = bilibiliLinkLabel(item);
+      open.setAttribute("aria-label", `${label}，外部打开`);
+      open.title = `${label}，外部打开`;
+      open.append(
+        createEl("span", "wiki-resource-open-text", label),
+        createEl("span", "wiki-resource-open-icon", "↗")
+      );
+    } else {
+      open.textContent = "打开收藏";
+    }
     open.href = sourceUrl || mediaSourceCandidates(url)[0] || url;
     open.target = "_blank";
     open.rel = "noopener noreferrer";
