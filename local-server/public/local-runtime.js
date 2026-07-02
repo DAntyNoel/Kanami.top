@@ -111,6 +111,13 @@
         action: "查看收藏"
       }),
       card({
+        href: "/v-nami",
+        status: "歌单",
+        title: "AI 香奈美歌单",
+        copy: "香奈美把本地可听的 AI 翻唱和 B站来源一起排好啦。",
+        action: "打开歌单"
+      }),
+      card({
         href: "/health",
         status: "状态",
         title: "服务健康状态",

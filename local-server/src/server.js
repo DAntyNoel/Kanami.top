@@ -5,6 +5,7 @@ import { config, paths } from "./config.js";
 import { galleryStatus } from "./gallery.js";
 import { tryHandleResourceManageApi } from "./resourceManage.js";
 import { sendJson, tryServeMappedFile, tryServeStatic } from "./static.js";
+import { tryHandleVnamiApi } from "./vnami.js";
 
 function filesRootReady() {
   try {
@@ -89,6 +90,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (await tryHandleResourceManageApi(req, res, url)) {
+      return;
+    }
+
+    if (await tryHandleVnamiApi(req, res, url)) {
       return;
     }
 

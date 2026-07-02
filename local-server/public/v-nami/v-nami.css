@@ -1,0 +1,522 @@
+.vnami-page {
+  min-height: 100vh;
+  color: #2f2738;
+}
+
+.vnami-page .background {
+  background-image: linear-gradient(140deg, rgba(255, 245, 249, 0.82), rgba(232, 248, 244, 0.76)), url("/res/images/backgrounds/Be-Shinning.png");
+  opacity: 0.9;
+}
+
+.vnami-header .site-logo-text {
+  display: inline-flex;
+}
+
+.vnami-app {
+  width: min(1180px, calc(100% - 32px));
+  margin: 96px auto 48px;
+  display: grid;
+  gap: 18px;
+}
+
+.vnami-player-band,
+.vnami-controls,
+.vnami-queue {
+  border: 1px solid rgba(92, 77, 111, 0.16);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 18px 42px rgba(71, 56, 88, 0.12);
+  backdrop-filter: blur(16px);
+}
+
+.vnami-player-band {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.85fr) minmax(190px, 0.45fr);
+  gap: 18px;
+  align-items: stretch;
+  padding: 18px;
+  border-radius: 8px;
+}
+
+.vnami-now {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 16px;
+  min-width: 0;
+}
+
+.vnami-cover {
+  width: 132px;
+  aspect-ratio: 16 / 10;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(74, 178, 156, 0.28), rgba(255, 208, 120, 0.34));
+  color: #59436b;
+  font-weight: 800;
+}
+
+.vnami-cover span,
+.vnami-card-media-placeholder {
+  text-align: center;
+}
+
+.vnami-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vnami-now-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+}
+
+.vnami-kicker {
+  margin: 0;
+  color: #6b837d;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.vnami-now-copy h2,
+.vnami-section-head h2,
+.vnami-dialog-head h2 {
+  margin: 0;
+  min-width: 0;
+  font-size: clamp(1.12rem, 2vw, 1.7rem);
+  line-height: 1.22;
+}
+
+.vnami-now-copy p[data-current-meta] {
+  margin: 0;
+  color: #6b5f73;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.vnami-now-actions {
+  min-height: 36px;
+}
+
+.vnami-link-button,
+.vnami-player-controls button,
+.vnami-controls button,
+.vnami-more button,
+.vnami-card-actions button,
+.vnami-card-actions a,
+.vnami-feedback button,
+.vnami-dialog-actions button,
+.vnami-icon-button {
+  min-height: 36px;
+  border: 1px solid rgba(82, 67, 103, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
+  color: #372b47;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.vnami-link-button,
+.vnami-card-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+}
+
+.vnami-player {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+}
+
+.vnami-player audio {
+  width: 100%;
+}
+
+.vnami-player-controls,
+.vnami-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.vnami-player-controls button,
+.vnami-dialog-actions button {
+  flex: 1 1 82px;
+  padding: 0 10px;
+}
+
+.vnami-player-controls button[data-random-queue],
+.vnami-dialog-actions button[type="submit"],
+.vnami-card-actions button[data-play-track] {
+  background: linear-gradient(135deg, rgba(255, 227, 128, 0.95), rgba(131, 214, 189, 0.86));
+}
+
+.vnami-stats {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.vnami-stats div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(249, 250, 255, 0.78);
+}
+
+.vnami-stats strong {
+  font-size: 1.45rem;
+  color: #395f75;
+}
+
+.vnami-stats span,
+.vnami-section-head span {
+  color: #6b5f73;
+  font-weight: 700;
+}
+
+.vnami-controls {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(160px, 220px) minmax(160px, 220px);
+  gap: 12px;
+  padding: 14px;
+  border-radius: 8px;
+}
+
+.vnami-controls label,
+.vnami-dialog-form label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: #5f536b;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.vnami-controls input,
+.vnami-controls select,
+.vnami-dialog-form select,
+.vnami-dialog-form textarea,
+.vnami-dialog-form input {
+  width: 100%;
+  min-height: 40px;
+  box-sizing: border-box;
+  border: 1px solid rgba(82, 67, 103, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #2f2738;
+  font: inherit;
+  padding: 0 12px;
+}
+
+.vnami-dialog-form textarea {
+  min-height: 128px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+.vnami-queue {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 8px;
+}
+
+.vnami-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.vnami-queue-list {
+  display: flex;
+  gap: 8px;
+  min-height: 38px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.vnami-queue-list span,
+.vnami-queue-pill {
+  flex: 0 0 auto;
+  max-width: 260px;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(82, 67, 103, 0.14);
+  background: rgba(239, 249, 245, 0.9);
+  color: #4d4658;
+  font-weight: 800;
+  padding: 0 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vnami-status {
+  min-height: 24px;
+  color: #63566e;
+  font-weight: 800;
+}
+
+.vnami-status:empty {
+  display: none;
+}
+
+.vnami-track-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(284px, 1fr));
+  gap: 14px;
+}
+
+.vnami-track-card {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(82, 67, 103, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 28px rgba(71, 56, 88, 0.1);
+}
+
+.vnami-track-card[data-current="true"] {
+  border-color: rgba(74, 178, 156, 0.58);
+  box-shadow: 0 14px 30px rgba(74, 178, 156, 0.18);
+}
+
+.vnami-card-media {
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(218, 232, 255, 0.78), rgba(255, 239, 185, 0.76));
+}
+
+.vnami-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vnami-card-media-placeholder {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #5e526d;
+  font-weight: 900;
+}
+
+.vnami-card-body {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  min-width: 0;
+}
+
+.vnami-card-title {
+  margin: 0;
+  color: #2f2738;
+  font-size: 1rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.vnami-card-subtitle,
+.vnami-card-note {
+  margin: 0;
+  color: #6b5f73;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.vnami-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vnami-chip {
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  border-radius: 999px;
+  background: rgba(229, 242, 237, 0.9);
+  color: #4b5961;
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 0 9px;
+}
+
+.vnami-card-audio {
+  width: 100%;
+}
+
+.vnami-card-empty {
+  display: grid;
+  place-items: center;
+  min-height: 40px;
+  border-radius: 8px;
+  background: rgba(245, 239, 231, 0.86);
+  color: #736452;
+  font-weight: 800;
+}
+
+.vnami-card-actions,
+.vnami-feedback {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.vnami-card-actions button,
+.vnami-card-actions a,
+.vnami-feedback button {
+  flex: 1 1 88px;
+  padding: 0 10px;
+}
+
+.vnami-feedback button[aria-pressed="true"] {
+  background: rgba(131, 214, 189, 0.88);
+}
+
+.vnami-more {
+  display: flex;
+  justify-content: center;
+}
+
+.vnami-more button {
+  padding: 0 18px;
+}
+
+.vnami-dialog {
+  width: min(560px, calc(100% - 28px));
+  border: 0;
+  border-radius: 8px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.98);
+  color: #2f2738;
+  box-shadow: 0 26px 90px rgba(45, 35, 60, 0.28);
+}
+
+.vnami-dialog::backdrop {
+  background: rgba(34, 28, 42, 0.42);
+}
+
+.vnami-dialog-form {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.vnami-dialog-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.vnami-icon-button {
+  width: 38px;
+  min-height: 38px;
+  padding: 0;
+  font-size: 1.2rem;
+}
+
+.vnami-dialog-status {
+  min-height: 22px;
+  margin: 0;
+  color: #567064;
+  font-weight: 800;
+}
+
+.vnami-link-button:hover,
+.vnami-player-controls button:hover,
+.vnami-more button:hover,
+.vnami-card-actions button:hover,
+.vnami-card-actions a:hover,
+.vnami-feedback button:hover,
+.vnami-dialog-actions button:hover,
+.vnami-icon-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(71, 56, 88, 0.12);
+}
+
+.vnami-link-button:focus-visible,
+.vnami-player-controls button:focus-visible,
+.vnami-controls input:focus-visible,
+.vnami-controls select:focus-visible,
+.vnami-more button:focus-visible,
+.vnami-card-actions button:focus-visible,
+.vnami-card-actions a:focus-visible,
+.vnami-feedback button:focus-visible,
+.vnami-dialog-form select:focus-visible,
+.vnami-dialog-form textarea:focus-visible,
+.vnami-dialog-form input:focus-visible,
+.vnami-dialog-actions button:focus-visible,
+.vnami-icon-button:focus-visible {
+  outline: 3px solid rgba(74, 178, 156, 0.42);
+  outline-offset: 2px;
+}
+
+@media (max-width: 920px) {
+  .vnami-app {
+    margin-top: 86px;
+  }
+
+  .vnami-player-band {
+    grid-template-columns: 1fr;
+  }
+
+  .vnami-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .vnami-controls {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .vnami-app {
+    width: min(100% - 20px, 1180px);
+    margin-top: 78px;
+  }
+
+  .vnami-player-band,
+  .vnami-controls,
+  .vnami-queue {
+    padding: 12px;
+  }
+
+  .vnami-now {
+    grid-template-columns: 92px minmax(0, 1fr);
+  }
+
+  .vnami-cover {
+    width: 92px;
+  }
+
+  .vnami-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .vnami-track-list {
+    grid-template-columns: 1fr;
+  }
+}

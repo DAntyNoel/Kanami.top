@@ -333,6 +333,11 @@ export function tryServeStatic(req, res, url) {
     return true;
   }
 
+  if (url.pathname === "/v-nami" || url.pathname === "/v-nami/") {
+    sendFile(req, res, paths.vnamiHtml, "no-store");
+    return true;
+  }
+
   const authRoute = AUTH_ROUTES.get(url.pathname);
   if (authRoute) {
     const authPath = path.join(paths.public, authRoute);
@@ -390,7 +395,8 @@ export function tryServeStatic(req, res, url) {
     const isAuthAsset = url.pathname.startsWith("/auth/");
     const isGalleryAsset = url.pathname.startsWith("/gallery/");
     const isResourceManageAsset = url.pathname.startsWith("/resource-manage/");
-    const cacheControl = path.extname(publicPath).toLowerCase() === ".html" || isAuthAsset || isGalleryAsset || isResourceManageAsset
+    const isVnamiAsset = url.pathname.startsWith("/v-nami/");
+    const cacheControl = path.extname(publicPath).toLowerCase() === ".html" || isAuthAsset || isGalleryAsset || isResourceManageAsset || isVnamiAsset
       ? "no-store"
       : "public, max-age=3600";
     sendFile(req, res, publicPath, cacheControl);

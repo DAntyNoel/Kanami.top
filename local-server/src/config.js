@@ -66,11 +66,13 @@ export const paths = {
   offlineHtml: path.resolve(rootDir, "..", "local-server-offline.html"),
   resourceHtml: path.resolve(rootDir, "..", "resource", "index.html"),
   resourceManageHtml: path.join(rootDir, "public", "resource-manage", "index.html"),
+  vnamiHtml: path.join(rootDir, "public", "v-nami", "index.html"),
   sharedScript: path.resolve(rootDir, "..", "script.js"),
   authData: resolveFromRoot(env("LOCAL_SERVER_AUTH_DIR", "./data/auth")),
   gallery: resolveFromRoot(env("LOCAL_SERVER_GALLERY_DIR", "../KanamiBot/data/advanced_media")),
   files: resolveFromRoot(env("LOCAL_SERVER_FILES_DIR", "./files")),
-  vnamiAudio: resolveFromRoot(env("LOCAL_SERVER_VNAMI_AUDIO_DIR", "../dev/V-nami/data/audio"))
+  vnamiAudio: resolveFromRoot(env("LOCAL_SERVER_VNAMI_AUDIO_DIR", "../dev/V-nami/data/audio")),
+  vnamiFeedback: resolveFromRoot(env("LOCAL_SERVER_VNAMI_DATA_DIR", "./data/v-nami"))
 };
 
 export const config = {

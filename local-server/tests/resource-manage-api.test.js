@@ -10,6 +10,7 @@ const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "kanami-resource-manage-"
 const filesRoot = path.join(tempRoot, "files");
 const authRoot = path.join(tempRoot, "auth");
 const vnamiAudioRoot = path.join(tempRoot, "vnami-audio");
+const vnamiFeedbackRoot = path.join(tempRoot, "v-nami-feedback");
 const wikiRoot = path.join(filesRoot, "WIKI");
 const port = 19270 + Math.floor(Math.random() * 1000);
 const baseUrl = `http://127.0.0.1:${port}`;
@@ -81,6 +82,56 @@ function seedWiki() {
       width: 1,
       height: 1,
       occurrences: 1
+    }
+  });
+  writeJson("custom_kanami_ai_covers.json", {
+    "/files/WIKI/audio/v-nami/bilibili_BVTEST.mp3": {
+      title: "测试原曲 - 香奈美 AI 翻唱",
+      type: "audio",
+      section: "B站 AI 翻唱",
+      subsection: "香奈美 AI 唱歌",
+      mediaType: "audio",
+      extension: "mp3",
+      thumbnailUrl: "",
+      sourcePage: "https://www.bilibili.com/video/BVTEST",
+      width: null,
+      height: null,
+      occurrences: 1,
+      videoUrl: "https://www.bilibili.com/video/BVTEST",
+      author: "测试UP",
+      originalSongName: "测试原曲",
+      videoTitle: "测试原曲 by 香奈美",
+      publishedAt: "2026-07-01T10:00:00+08:00",
+      pubdate: 1782861600,
+      bvid: "BVTEST",
+      tags: ["AI", "翻唱", "香奈美"],
+      audioFile: "data/audio/bilibili_BVTEST.mp3",
+      audioResourceUrl: "/files/WIKI/audio/v-nami/bilibili_BVTEST.mp3",
+      resourceAvailable: true
+    },
+    "https://www.bilibili.com/video/BVLINK": {
+      title: "未下载曲目 - 香奈美 AI 翻唱",
+      type: "video_link",
+      section: "B站 AI 翻唱",
+      subsection: "香奈美 AI 唱歌",
+      mediaType: "external",
+      extension: "",
+      thumbnailUrl: "",
+      sourcePage: "https://www.bilibili.com/video/BVLINK",
+      width: null,
+      height: null,
+      occurrences: 1,
+      videoUrl: "https://www.bilibili.com/video/BVLINK",
+      author: "链接UP",
+      originalSongName: "未下载曲目",
+      videoTitle: "未下载曲目 by 香奈美",
+      publishedAt: "2026-07-02T10:00:00+08:00",
+      pubdate: 1782948000,
+      bvid: "BVLINK",
+      tags: ["AI", "翻唱"],
+      audioFile: null,
+      audioResourceUrl: null,
+      resourceAvailable: false
     }
   });
   writeJson("oath_texts.json", {});
@@ -157,6 +208,7 @@ async function main() {
       LOCAL_SERVER_FILES_DIR: filesRoot,
       LOCAL_SERVER_AUTH_DIR: authRoot,
       LOCAL_SERVER_VNAMI_AUDIO_DIR: vnamiAudioRoot,
+      LOCAL_SERVER_VNAMI_DATA_DIR: vnamiFeedbackRoot,
       LOCAL_SERVER_PUBLIC_FILES: "true"
     },
     stdio: ["ignore", "pipe", "pipe"]
@@ -183,6 +235,56 @@ async function main() {
     assert.equal(vnamiAudio.text, "ID3");
     const deniedAudioDirectory = await request("/files/WIKI/audio/v-nami/");
     assert.notEqual(deniedAudioDirectory.response.status, 200);
+
+    const vnamiPage = await request("/v-nami");
+    assert.equal(vnamiPage.response.status, 200);
+    assert.match(vnamiPage.text, /AI 香奈美歌单/);
+    const vnamiScript = await request("/v-nami/v-nami.js");
+    assert.equal(vnamiScript.response.status, 200);
+    assert.match(vnamiScript.response.headers.get("cache-control") || "", /no-store/);
+
+    const feedback = await request("/api/v-nami/feedback", {
+      method: "POST",
+      body: JSON.stringify({ bvid: "BVTEST", value: "great", page: "/v-nami" })
+    });
+    assert.equal(feedback.response.status, 201);
+    assert.equal(feedback.json.ok, true);
+    const feedbackRecord = JSON.parse(fs.readFileSync(path.join(vnamiFeedbackRoot, "feedback.jsonl"), "utf8").trim());
+    assert.equal(feedbackRecord.bvid, "BVTEST");
+    assert.equal(feedbackRecord.value, "great");
+    assert.equal(Object.hasOwn(feedbackRecord, "ip"), false);
+
+    const correction = await request("/api/v-nami/correction", {
+      method: "POST",
+      body: JSON.stringify({
+        bvid: "BVTEST",
+        issueType: "song",
+        message: "原曲名需要复核",
+        suggestion: "测试原曲"
+      })
+    });
+    assert.equal(correction.response.status, 201);
+    assert.equal(correction.json.ok, true);
+    const correctionRecord = JSON.parse(fs.readFileSync(path.join(vnamiFeedbackRoot, "corrections.jsonl"), "utf8").trim());
+    assert.equal(correctionRecord.bvid, "BVTEST");
+    assert.equal(correctionRecord.issueType, "song");
+    assert.equal(Object.hasOwn(correctionRecord, "ip"), false);
+
+    const invalidFeedback = await request("/api/v-nami/feedback", {
+      method: "POST",
+      body: JSON.stringify({ bvid: "BVTEST", value: "bad" })
+    });
+    assert.equal(invalidFeedback.response.status, 400);
+    const missingFeedback = await request("/api/v-nami/feedback", {
+      method: "POST",
+      body: JSON.stringify({ bvid: "BVMISSING", value: "great" })
+    });
+    assert.equal(missingFeedback.response.status, 404);
+    const longCorrection = await request("/api/v-nami/correction", {
+      method: "POST",
+      body: JSON.stringify({ bvid: "BVTEST", issueType: "other", message: "x".repeat(1001) })
+    });
+    assert.equal(longCorrection.response.status, 400);
 
     const register = await request("/api/auth/register", {
       method: "POST",

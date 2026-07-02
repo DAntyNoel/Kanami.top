@@ -11,7 +11,7 @@
     "debug:python": "python backend.py",
     "cloudflare": "node cloudflare.js",
     "reload": "node scripts/reload.js",
-    "check": "node --check src/auth.js && node --check src/config.js && node --check src/gallery.js && node --check src/resourceManage.js && node --check src/static.js && node --check src/server.js && node --check public/auth/auth.js && node --check public/auth/session.js && node --check public/gallery/gallery.js && node --check public/local-runtime.js && node --check public/reload-client.js && node --check public/resource-manage/manage.js && node --check scripts/reload.js && node --check cloudflare.js && python -m py_compile backend.py",
+    "check": "node --check src/auth.js && node --check src/config.js && node --check src/gallery.js && node --check src/resourceManage.js && node --check src/vnami.js && node --check src/static.js && node --check src/server.js && node --check public/auth/auth.js && node --check public/auth/session.js && node --check public/gallery/gallery.js && node --check public/local-runtime.js && node --check public/reload-client.js && node --check public/resource-manage/manage.js && node --check public/v-nami/v-nami.js && node --check scripts/reload.js && node --check cloudflare.js && python -m py_compile backend.py",
     "test:resource-manage": "node tests/resource-manage-api.test.js"
   },
   "engines": {
