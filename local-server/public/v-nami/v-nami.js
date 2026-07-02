@@ -24,6 +24,8 @@
 
   const elements = {
     audio: document.querySelector("[data-player-audio]"),
+    playlistCover: document.querySelector("[data-playlist-cover]"),
+    playlistCoverArt: document.querySelector("[data-playlist-cover-art]"),
     cover: document.querySelector("[data-player-cover]"),
     currentTitle: document.querySelector("[data-current-title]"),
     currentMeta: document.querySelector("[data-current-meta]"),
@@ -41,7 +43,8 @@
     loadMore: document.querySelector("[data-load-more]"),
     prev: document.querySelector("[data-prev-track]"),
     next: document.querySelector("[data-next-track]"),
-    randomQueue: document.querySelector("[data-random-queue]"),
+    randomQueueButtons: Array.from(document.querySelectorAll("[data-random-queue]")),
+    playAll: document.querySelector("[data-play-all]"),
     clearQueue: document.querySelector("[data-clear-queue]"),
     dialog: document.querySelector("[data-correction-dialog]"),
     correctionForm: document.querySelector("[data-correction-form]"),
@@ -192,31 +195,48 @@
 
   function updateStats() {
     elements.total.textContent = String(state.items.length);
-    elements.playable.textContent = String(state.items.filter((item) => item.playable).length);
+    if (elements.playable) {
+      elements.playable.textContent = String(state.items.filter((item) => item.playable).length);
+    }
     elements.shown.textContent = String(state.filtered.length);
+  }
+
+  function renderCover(container, item, fallback = "香奈美") {
+    if (!container) return;
+    container.innerHTML = "";
+    if (item?.thumbnailUrl) {
+      const image = document.createElement("img");
+      image.alt = itemTitle(item);
+      image.src = item.thumbnailUrl;
+      image.addEventListener("error", () => {
+        container.replaceChildren(createElement("span", "", fallback));
+      }, { once: true });
+      container.append(image);
+      return;
+    }
+    container.append(createElement("span", "", fallback));
+  }
+
+  function updatePlaylistCover() {
+    const item = state.items.find((entry) => entry.playable && entry.thumbnailUrl)
+      || state.items.find((entry) => entry.thumbnailUrl)
+      || null;
+    renderCover(elements.playlistCoverArt || elements.playlistCover, item);
+    if (elements.playable) {
+      elements.playable.textContent = String(state.items.filter((entry) => entry.playable).length);
+    }
   }
 
   function updateCurrent(item) {
     if (!item) {
-      elements.cover.replaceChildren(createElement("span", "", "香奈美"));
+      renderCover(elements.cover, null);
       elements.currentTitle.textContent = "香奈美正在等你点歌";
       elements.currentMeta.textContent = "随机歌单会从本地已下载音频里挑选。";
       elements.currentOpen.hidden = true;
       return;
     }
 
-    elements.cover.innerHTML = "";
-    if (item.thumbnailUrl) {
-      const image = document.createElement("img");
-      image.alt = itemTitle(item);
-      image.src = item.thumbnailUrl;
-      image.addEventListener("error", () => {
-        elements.cover.replaceChildren(createElement("span", "", "香奈美"));
-      }, { once: true });
-      elements.cover.append(image);
-    } else {
-      elements.cover.append(createElement("span", "", "香奈美"));
-    }
+    renderCover(elements.cover, item);
     elements.currentTitle.textContent = itemTitle(item);
     elements.currentMeta.textContent = `${item.author || "未知 UP"} · ${formatDate(item)} · ${item.bvid}`;
     if (item.videoUrl) {
@@ -250,7 +270,7 @@
   function renderMore() {
     const nextItems = state.filtered.slice(state.rendered, state.rendered + PAGE_SIZE);
     const fragment = document.createDocumentFragment();
-    nextItems.forEach((item) => fragment.append(renderCard(item)));
+    nextItems.forEach((item, offset) => fragment.append(renderRow(item, state.rendered + offset)));
     elements.trackList.append(fragment);
     state.rendered += nextItems.length;
     elements.loadMore.hidden = state.rendered >= state.filtered.length;
@@ -262,15 +282,11 @@
     setStatus("");
   }
 
-  function chip(text) {
-    return createElement("span", "vnami-chip", text);
-  }
-
-  function renderMedia(item) {
-    const media = createElement("div", "vnami-card-media");
+  function renderRowCover(item) {
+    const cover = createElement("div", "vnami-row-cover");
     if (!item.thumbnailUrl) {
-      media.append(createElement("div", "vnami-card-media-placeholder", "香奈美"));
-      return media;
+      cover.append(createElement("span", "", "香奈美"));
+      return cover;
     }
     const image = document.createElement("img");
     image.loading = "lazy";
@@ -278,83 +294,94 @@
     image.alt = itemTitle(item);
     image.src = item.thumbnailUrl;
     image.addEventListener("error", () => {
-      media.replaceChildren(createElement("div", "vnami-card-media-placeholder", "香奈美"));
+      cover.replaceChildren(createElement("span", "", "香奈美"));
     }, { once: true });
-    media.append(image);
-    return media;
+    cover.append(image);
+    return cover;
   }
 
-  function renderCard(item) {
-    const card = createElement("article", "vnami-track-card");
-    card.dataset.bvid = item.bvid;
-    card.dataset.current = String(item.bvid && item.bvid === state.currentBvid);
-    const body = createElement("div", "vnami-card-body");
-    body.append(createElement("h3", "vnami-card-title", itemTitle(item)));
-    body.append(createElement("p", "vnami-card-subtitle", item.videoTitle || item.title || item.bvid));
-
-    const chips = createElement("div", "vnami-chip-row");
-    [
-      item.playable ? "可收听" : "未下载",
+  function renderTitleCell(item) {
+    const cell = createElement("div", "vnami-title-cell");
+    const copy = createElement("div", "vnami-title-copy");
+    copy.append(createElement("div", "vnami-title-main", itemTitle(item)));
+    const tags = compactTags(item.tags).slice(0, 2);
+    const subtitle = [
+      item.playable ? "本地音频" : "未下载",
       item.author || "未知 UP",
-      formatDate(item),
-      item.bvid
-    ].filter(Boolean).forEach((value) => chips.append(chip(value)));
-    compactTags(item.tags).forEach((tag) => chips.append(chip(tag)));
-    body.append(chips);
+      ...tags
+    ].join(" · ");
+    copy.append(createElement("div", "vnami-title-sub", subtitle));
+    cell.append(renderRowCover(item), copy);
+    return cell;
+  }
 
-    if (item.playable) {
-      const audio = document.createElement("audio");
-      audio.className = "vnami-card-audio";
-      audio.controls = true;
-      audio.preload = "none";
-      audio.src = item.audioUrl;
-      body.append(audio);
-    } else {
-      body.append(createElement("div", "vnami-card-empty", "香奈美还没下载好这首。"));
+  function renderFeedback(item) {
+    const feedback = createElement("div", "vnami-feedback");
+    if (!item.playable) {
+      feedback.append(createElement("span", "vnami-row-badge", "待下载"));
+      return feedback;
     }
+    Object.entries(feedbackLabels).forEach(([value, label]) => {
+      const button = createElement("button", "", label);
+      button.type = "button";
+      button.setAttribute("aria-pressed", String(state.feedback[item.bvid] === value));
+      button.addEventListener("click", () => sendFeedback(item, value));
+      feedback.append(button);
+    });
+    return feedback;
+  }
 
-    const actions = createElement("div", "vnami-card-actions");
-    const playButton = createElement("button", "", "播放");
+  function renderRow(item, index) {
+    const row = createElement("article", "vnami-track-row");
+    row.dataset.bvid = item.bvid;
+    row.dataset.current = String(item.bvid && item.bvid === state.currentBvid);
+    row.append(createElement("span", "vnami-row-index", String(index + 1).padStart(2, "0")));
+    row.append(renderTitleCell(item));
+
+    const source = createElement("div", "vnami-source-cell");
+    source.append(createElement("div", "vnami-source-main", item.videoTitle || item.title || "B站 AI 翻唱"));
+    source.append(createElement("div", "vnami-source-sub", `${formatDate(item)} · ${item.bvid}`));
+    row.append(source);
+    row.append(renderFeedback(item));
+
+    const actions = createElement("div", "vnami-status-cell");
+    const playButton = createElement("button", "vnami-row-action", "▶");
     playButton.type = "button";
     playButton.dataset.playTrack = item.bvid;
+    playButton.title = item.playable ? "播放" : "尚未下载";
+    playButton.setAttribute("aria-label", item.playable ? "播放" : "尚未下载");
     playButton.disabled = !item.playable;
     playButton.addEventListener("click", () => playItem(item));
     actions.append(playButton);
 
-    const queueButton = createElement("button", "", state.queue.includes(item.bvid) ? "移出歌单" : "加入歌单");
+    const queueButton = createElement("button", "vnami-row-action", state.queue.includes(item.bvid) ? "−" : "+");
     queueButton.type = "button";
+    queueButton.title = state.queue.includes(item.bvid) ? "移出队列" : "加入队列";
+    queueButton.setAttribute("aria-label", state.queue.includes(item.bvid) ? "移出队列" : "加入队列");
     queueButton.disabled = !item.playable;
     queueButton.addEventListener("click", () => toggleQueue(item));
     actions.append(queueButton);
 
     if (item.videoUrl) {
-      const open = createElement("a", "", item.author ? `B站-${item.author}↗` : "B站↗");
+      const open = createElement("a", "vnami-row-action", "↗");
       open.href = item.videoUrl;
+      open.title = item.author ? `B站-${item.author}` : "B站";
+      open.setAttribute("aria-label", open.title);
       open.target = "_blank";
       open.rel = "noopener noreferrer";
       actions.append(open);
     }
 
-    const correction = createElement("button", "", "纠错");
+    const correction = createElement("button", "vnami-row-action", "!");
     correction.type = "button";
+    correction.title = "纠错";
+    correction.setAttribute("aria-label", "纠错");
     correction.addEventListener("click", () => openCorrection(item));
     actions.append(correction);
-    body.append(actions);
+    actions.append(createElement("span", "vnami-row-badge", item.playable ? "可听" : "待下"));
 
-    if (item.playable) {
-      const feedback = createElement("div", "vnami-feedback");
-      Object.entries(feedbackLabels).forEach(([value, label]) => {
-        const button = createElement("button", "", label);
-        button.type = "button";
-        button.setAttribute("aria-pressed", String(state.feedback[item.bvid] === value));
-        button.addEventListener("click", () => sendFeedback(item, value));
-        feedback.append(button);
-      });
-      body.append(feedback);
-    }
-
-    card.append(renderMedia(item), body);
-    return card;
+    row.append(actions);
+    return row;
   }
 
   async function playItem(item) {
@@ -375,8 +402,8 @@
   }
 
   function refreshCurrentCards() {
-    document.querySelectorAll(".vnami-track-card").forEach((card) => {
-      card.dataset.current = String(card.dataset.bvid === state.currentBvid);
+    document.querySelectorAll(".vnami-track-row").forEach((row) => {
+      row.dataset.current = String(row.dataset.bvid === state.currentBvid);
     });
   }
 
@@ -408,6 +435,19 @@
     const first = state.byBvid.get(state.queue[0]);
     if (first) playItem(first);
     applyFilters();
+  }
+
+  function playAll() {
+    const firstPlayable = state.filtered.find((item) => item.playable)
+      || state.items.find((item) => item.playable);
+    if (!firstPlayable) {
+      setStatus("香奈美还没有找到可播放的本地音频。");
+      return;
+    }
+    const pool = state.filtered.filter((item) => item.playable);
+    state.queue = (pool.length ? pool : state.items.filter((item) => item.playable)).map((item) => item.bvid);
+    updateQueue();
+    playItem(firstPlayable);
   }
 
   function stepTrack(direction) {
@@ -488,7 +528,8 @@
     elements.loadMore.addEventListener("click", renderMore);
     elements.prev.addEventListener("click", () => stepTrack(-1));
     elements.next.addEventListener("click", () => stepTrack(1));
-    elements.randomQueue.addEventListener("click", randomQueue);
+    elements.randomQueueButtons.forEach((button) => button.addEventListener("click", randomQueue));
+    elements.playAll.addEventListener("click", playAll);
     elements.clearQueue.addEventListener("click", () => {
       state.queue = [];
       updateQueue();
@@ -515,6 +556,7 @@
         .map(toItem)
         .filter((item) => item.bvid || item.videoUrl || item.audioUrl);
       state.byBvid = new Map(state.items.filter((item) => item.bvid).map((item) => [item.bvid, item]));
+      updatePlaylistCover();
       updateQueue();
       applyFilters();
     } catch (error) {

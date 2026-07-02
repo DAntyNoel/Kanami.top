@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI 香奈美歌单</title>
   <link rel="stylesheet" href="/res/styles/style.css" />
-  <link rel="stylesheet" href="/v-nami/v-nami.css" />
+  <link rel="stylesheet" href="/v-nami/v-nami.css?v=20260702-cloudmusic2" />
   <link rel="icon" type="image/png" href="/res/images/favicon.png" />
 </head>
 <body class="vnami-page">
@@ -31,75 +31,68 @@
   </header>
 
   <main class="vnami-app" data-vnami-app>
-    <section class="vnami-player-band" aria-label="当前播放">
-      <div class="vnami-now">
-        <div class="vnami-cover" data-player-cover>
-          <span>V-nami</span>
-        </div>
-        <div class="vnami-now-copy">
-          <p class="vnami-kicker">正在播放</p>
-          <h2 data-current-title>香奈美正在等你点歌</h2>
-          <p data-current-meta>随机歌单会从本地已下载音频里挑选。</p>
-          <div class="vnami-now-actions">
-            <a class="vnami-link-button" href="#" target="_blank" rel="noopener noreferrer" data-current-open hidden>B站↗</a>
-          </div>
-        </div>
-      </div>
+    <section class="vnami-topbar" aria-label="歌单搜索">
+      <a class="vnami-back" href="/" aria-label="返回本地舞台" title="返回">‹</a>
+      <label class="vnami-top-search">
+        <span>搜索</span>
+        <input type="search" data-search placeholder="漂洋过海来看你" autocomplete="off" />
+      </label>
+      <button class="vnami-mic" type="button" data-random-queue title="随机歌单" aria-label="随机歌单">♪</button>
+    </section>
 
-      <div class="vnami-player">
-        <audio controls preload="none" data-player-audio></audio>
-        <div class="vnami-player-controls" aria-label="播放控制">
-          <button type="button" data-prev-track title="上一首">上一首</button>
-          <button type="button" data-random-queue title="随机歌单">随机歌单</button>
-          <button type="button" data-next-track title="下一首">下一首</button>
-          <button type="button" data-clear-queue title="清空歌单">清空</button>
+    <section class="vnami-playlist" aria-label="歌单详情">
+      <div class="vnami-playlist-cover" data-playlist-cover>
+        <div class="vnami-cover-art" data-playlist-cover-art>
+          <span>香奈美</span>
         </div>
+        <strong data-stat-playable>--</strong>
       </div>
-
-      <div class="vnami-stats" aria-label="歌单统计">
-        <div>
-          <strong data-stat-total>--</strong>
-          <span>首视频</span>
+      <div class="vnami-playlist-copy">
+        <p class="vnami-kicker">香奈美的本地歌单</p>
+        <h1>我喜欢的 AI 香奈美翻唱</h1>
+        <div class="vnami-owner">
+          <img src="/res/images/favicon.png" alt="" />
+          <strong>香奈美</strong>
+          <span>本地同步创建</span>
         </div>
-        <div>
-          <strong data-stat-playable>--</strong>
-          <span>可收听</span>
-        </div>
-        <div>
-          <strong data-stat-shown>--</strong>
-          <span>当前显示</span>
+        <p class="vnami-playlist-desc">我把 B站 AI 翻唱都排成歌单啦；已经下载的可以直接收听，没下载的先带你去来源页。</p>
+        <div class="vnami-playlist-actions">
+          <button type="button" class="vnami-primary-action" data-play-all>播放全部</button>
+          <button type="button" data-random-queue>随机歌单</button>
+          <button type="button" data-clear-queue>清空队列</button>
         </div>
       </div>
     </section>
 
-    <section class="vnami-controls" aria-label="歌单筛选">
-      <label class="vnami-search">
-        <span>搜索</span>
-        <input type="search" data-search placeholder="标题、原曲、UP 主、标签、BV 号" autocomplete="off" />
-      </label>
-      <label>
-        <span>筛选</span>
-        <select data-filter>
-          <option value="all">全部</option>
-          <option value="playable">可收听</option>
-          <option value="video">有 B站链接</option>
-          <option value="queue">已选歌单</option>
-        </select>
-      </label>
-      <label>
-        <span>排序</span>
-        <select data-sort>
-          <option value="newest">最新发布</option>
-          <option value="available">可听优先</option>
-          <option value="song">原曲名称</option>
-          <option value="author">UP 主</option>
-        </select>
-      </label>
+    <section class="vnami-tabs" aria-label="歌单分区">
+      <button type="button" aria-selected="true">歌曲 <span data-stat-total>--</span></button>
+      <button type="button" disabled>评论</button>
+      <button type="button" disabled>收藏者</button>
+      <div class="vnami-list-tools">
+        <label>
+          <span>筛选</span>
+          <select data-filter>
+            <option value="all">全部</option>
+            <option value="playable">可收听</option>
+            <option value="video">有 B站链接</option>
+            <option value="queue">已选歌单</option>
+          </select>
+        </label>
+        <label>
+          <span>排序</span>
+          <select data-sort>
+            <option value="newest">最新发布</option>
+            <option value="available">可听优先</option>
+            <option value="song">原曲名称</option>
+            <option value="author">UP 主</option>
+          </select>
+        </label>
+      </div>
     </section>
 
     <section class="vnami-queue" aria-label="已选歌单">
       <div class="vnami-section-head">
-        <h2>已选歌单</h2>
+        <h2>播放队列</h2>
         <span data-queue-count>0 首</span>
       </div>
       <div class="vnami-queue-list" data-queue-list>
@@ -108,11 +101,39 @@
     </section>
 
     <section class="vnami-status" data-status aria-live="polite">香奈美正在整理 AI 歌单...</section>
-    <section class="vnami-track-list" data-track-list aria-label="AI 香奈美视频列表"></section>
+
+    <section class="vnami-table" aria-label="AI 香奈美歌曲列表">
+      <div class="vnami-table-head" aria-hidden="true">
+        <span>#</span>
+        <span>标题</span>
+        <span>来源</span>
+        <span>反馈</span>
+        <span>状态</span>
+      </div>
+      <div class="vnami-track-list" data-track-list></div>
+    </section>
+
     <div class="vnami-more">
       <button type="button" data-load-more hidden>再拿一些出来</button>
     </div>
   </main>
+
+  <aside class="vnami-bottom-player" aria-label="当前播放">
+    <div class="vnami-mini-cover" data-player-cover>
+      <span>香奈美</span>
+    </div>
+    <div class="vnami-mini-copy">
+      <strong data-current-title>香奈美正在等你点歌</strong>
+      <span data-current-meta>随机歌单会从本地已下载音频里挑选。</span>
+    </div>
+    <div class="vnami-mini-controls">
+      <button type="button" data-prev-track title="上一首" aria-label="上一首">‹</button>
+      <button type="button" data-next-track title="下一首" aria-label="下一首">›</button>
+    </div>
+    <audio controls preload="none" data-player-audio></audio>
+    <a class="vnami-current-open" href="#" target="_blank" rel="noopener noreferrer" data-current-open hidden>B站↗</a>
+    <span class="vnami-mini-count">显示 <strong data-stat-shown>--</strong> 首</span>
+  </aside>
 
   <dialog class="vnami-dialog" data-correction-dialog>
     <form method="dialog" class="vnami-dialog-form" data-correction-form>
@@ -152,7 +173,7 @@
   </dialog>
 
   <script src="/auth/session.js"></script>
-  <script src="/v-nami/v-nami.js"></script>
+  <script src="/v-nami/v-nami.js?v=20260702-cloudmusic2"></script>
   <script src="/res/scripts/header.js"></script>
 </body>
 </html>
