@@ -109,6 +109,56 @@ python download_worker.py --once
 
 `--once` 是测试批次语义：每个线程最多只拿 1 个视频，默认最多下载 8 个条目，然后退出。
 
+## 懒搜索复查 worker
+
+如果希望后台慢速复查日期窗口，而不是一次性跑完整爬虫，可以启动复查 worker：
+
+```bash
+python review_worker.py
+```
+
+它会读取 `data/kanami_ai_covers.json` 里的本地结果和 `data/crawl_checkpoint.json` 里的已完成日期，默认跳过所有关键词都已经由主爬虫搜查完毕的日期，也跳过 `data/review_checkpoint.json` 中复查 worker 自己已经完成的日期。剩余日期会先按“本地已经爬到的视频数量”从少到多排序；数量相同时优先较新的日期。这样 worker 会先补那些本地结果明显偏少的日期，再慢慢扫其它日期。
+
+复查时会按日期重新调用 B 站搜索接口，并把远端候选和本地 BVID 做比对：
+
+- 远端命中且本地没有：通过 AI/翻唱筛选后加入 `data/kanami_ai_covers.json`，并同步 `.private/vnami_downloads.sqlite3`。
+- 远端命中且本地已有：如果标题、作者、发布时间、标签、简介、封面等元数据变化，会刷新元数据，但保留本地音频路径和资源 URL。
+- 本地有但本轮远端没有：只在 summary 里记为 `localOnly`，不会删除本地结果。
+- 所有复查候选会追加到 `data/review_candidates.jsonl`，便于人工审计。
+
+默认后台请求比主爬虫更慢，`--request-delay 30 --request-jitter 30`。如果只想测试一个日期调度结果：
+
+```bash
+python review_worker.py --once --no-stdin --dry-run
+```
+
+指定日期范围或强制复查主爬虫已完成日期：
+
+```bash
+python review_worker.py \
+  --pubtime-begin 2026-06-01 \
+  --pubtime-end 2026-06-30 \
+  --include-crawl-completed
+```
+
+也可以只复查明确日期：
+
+```bash
+python review_worker.py --date 2026-06-30 --date 2026-06-29
+```
+
+worker 运行时可以直接在终端输入命令插队查询；输入会打断后台等待，先返回 JSON：
+
+```text
+2026-06-30
+list 2026-06-30
+BV12JE8zdEzG
+video BV12JE8zdEzG
+quit
+```
+
+日期命令返回 `video_list`，包含该日搜索到的视频列表以及 `localStatus`；视频命令返回 `video_detail`，包含 B 站详情、当前筛选结果和本地已保存记录。
+
 搜索后端可以切换：
 
 ```bash

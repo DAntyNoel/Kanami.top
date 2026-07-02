@@ -4,15 +4,36 @@ import io
 import json
 import sys
 import time
+import types
 from argparse import Namespace
 from contextlib import redirect_stdout
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from threading import Lock
+from threading import Event, Lock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+try:
+    import httpx  # noqa: F401
+except ModuleNotFoundError:
+    class _MissingHTTPXClient:
+        def __init__(self, *_args: object, **_kwargs: object) -> None:
+            raise RuntimeError("httpx is required for live Bilibili requests")
+
+    class _MissingHTTPXStatusError(Exception):
+        def __init__(self, *_args: object, **_kwargs: object) -> None:
+            super().__init__("httpx is required for live Bilibili requests")
+            self.response = types.SimpleNamespace(status_code=0)
+
+    sys.modules["httpx"] = types.SimpleNamespace(
+        Cookies=dict,
+        Client=_MissingHTTPXClient,
+        Timeout=lambda *_args, **_kwargs: None,
+        HTTPStatusError=_MissingHTTPXStatusError,
+    )
+
 import download_worker
+import review_worker
 from crawler import (
     CoverItem,
     DEFAULT_COMPLETE_THROUGH_DATE,
@@ -35,6 +56,7 @@ from crawler import (
     extract_original_song_name,
     is_search_date_complete,
     item_from_hit,
+    iso_from_pubdate,
     load_completed_search_dates,
     load_processed_statuses,
     load_zero_result_search_dates,
@@ -221,6 +243,77 @@ class FakeDetailBilibili:
         return []
 
 
+class FakeReviewBilibili:
+    def __init__(self) -> None:
+        self.pages: list[int] = []
+
+    def search_videos(
+        self,
+        keyword: str,
+        page: int = 1,
+        page_size: int = 30,
+        pubtime_begin_s: int | None = None,
+        pubtime_end_s: int | None = None,
+    ) -> list[SearchHit]:
+        self.pages.append(page)
+        if page > 1:
+            return []
+        return [
+            SearchHit(
+                bvid="BVREVIEWNEW",
+                aid=None,
+                title="【AI香奈美】《新歌》翻唱",
+                author="tester",
+                arcurl="https://www.bilibili.com/video/BVREVIEWNEW",
+                pubdate=1782748800,
+                source="api",
+            ),
+            SearchHit(
+                bvid="BVREVIEWOLD",
+                aid=None,
+                title="【AI香奈美】《旧歌》翻唱",
+                author="tester",
+                arcurl="https://www.bilibili.com/video/BVREVIEWOLD",
+                pubdate=1782748800,
+                source="api",
+            ),
+            SearchHit(
+                bvid="BVREVIEWMISS",
+                aid=None,
+                title="香奈美剧情片段",
+                author="tester",
+                arcurl="https://www.bilibili.com/video/BVREVIEWMISS",
+                pubdate=1782748800,
+                source="api",
+            ),
+        ]
+
+    def video_view(self, bvid: str | None = None, aid: int | None = None) -> dict[str, object]:
+        if bvid == "BVREVIEWMISS":
+            return {
+                "bvid": bvid,
+                "aid": aid,
+                "title": "香奈美剧情片段",
+                "owner": {"name": "tester"},
+                "pubdate": 1782748800,
+                "desc": "剧情片段",
+                "Tags": [{"tag_name": "香奈美"}],
+            }
+        title = "【AI香奈美】《新歌》翻唱" if bvid == "BVREVIEWNEW" else "【AI香奈美】《旧歌》翻唱"
+        return {
+            "bvid": bvid,
+            "aid": aid,
+            "title": title,
+            "owner": {"name": "tester"},
+            "pubdate": 1782748800,
+            "desc": "单曲翻唱",
+            "Tags": [{"tag_name": "AI翻唱"}, {"tag_name": "香奈美"}],
+        }
+
+    def video_tags(self, bvid: str, aid: int | None = None) -> list[str]:
+        return []
+
+
 def main() -> None:
     assert DEFAULT_KEYWORDS == ["香奈美", "kanami", "かなみ", "カナミ"]
     assert DEFAULT_COMPLETE_THROUGH_DATE == "2023-08-03"
@@ -364,6 +457,126 @@ def main() -> None:
         db_dataset = build_wiki_dataset_from_database(db_path)
         assert list(db_dataset["resourceMap"]) == ["/files/WIKI/audio/v-nami/bilibili_BVDBTEST.mp3"]
         assert db_dataset["items"][0]["audioFile"] == str(downloaded_path)
+    review_defaults = review_worker.build_parser().parse_args(["--no-stdin", "--once"])
+    assert review_defaults.output == DEFAULT_OUTPUT
+    assert review_defaults.database == DEFAULT_DATABASE
+    assert review_defaults.request_delay == 30.0
+    assert review_defaults.request_jitter == 30.0
+    assert review_defaults.idle_interval == 300.0
+    assert review_worker.parse_runtime_command("2026-06-30").kind == "date"
+    assert review_worker.parse_runtime_command("list 2026-06-30").value == "2026-06-30"
+    assert review_worker.parse_runtime_command("video BV12JE8zdEzG").kind == "video"
+    assert review_worker.parse_runtime_command("https://www.bilibili.com/video/BV12JE8zdEzG").kind == "video"
+    assert review_worker.parse_runtime_command("quit").kind == "stop"
+    sparse_items = [
+        CoverItem(
+            bvid="BVCOUNT1",
+            video_url="https://www.bilibili.com/video/BVCOUNT1",
+            author="tester",
+            original_song_name="群青",
+            video_title="count",
+            published_at="2026-06-29T00:00:00+08:00",
+        ),
+        CoverItem(
+            bvid="BVCOUNT2",
+            video_url="https://www.bilibili.com/video/BVCOUNT2",
+            author="tester",
+            original_song_name="群青",
+            video_title="count",
+            published_at="2026-06-29T00:00:00+08:00",
+        ),
+        CoverItem(
+            bvid="BVCOUNT3",
+            video_url="https://www.bilibili.com/video/BVCOUNT3",
+            author="tester",
+            original_song_name="群青",
+            video_title="count",
+            published_at="2026-06-28T00:00:00+08:00",
+        ),
+    ]
+    assert review_worker.local_date_counts(sparse_items)["2026-06-29"] == 2
+    assert review_worker.schedule_review_dates(
+        items=sparse_items,
+        completed_dates={"2026-06-30"},
+        explicit_dates=[],
+        pubtime_begin="2026-06-28",
+        pubtime_end="2026-06-30",
+    ) == ["2026-06-28", "2026-06-29"]
+    assert review_worker.schedule_review_dates(
+        items=sparse_items,
+        completed_dates=set(),
+        explicit_dates=["2026-06-29", "2026-06-28"],
+        pubtime_begin=None,
+        pubtime_end=None,
+    ) == ["2026-06-28", "2026-06-29"]
+    with TemporaryDirectory() as tmp:
+        tmp_root = Path(tmp)
+        old_item = CoverItem(
+            bvid="BVREVIEWOLD",
+            video_url="https://www.bilibili.com/video/BVREVIEWOLD",
+            author="tester",
+            original_song_name="旧歌",
+            video_title="【AI香奈美】《旧歌》翻唱",
+            published_at=iso_from_pubdate(1782748800),
+            pubdate=1782748800,
+            tags=["AI翻唱", "香奈美"],
+            description="单曲翻唱",
+            search_source="api",
+        )
+        local_only_item = CoverItem(
+            bvid="BVREVIEWLOCAL",
+            video_url="https://www.bilibili.com/video/BVREVIEWLOCAL",
+            author="tester",
+            original_song_name="本地曲",
+            video_title="【AI香奈美】《本地曲》翻唱",
+            published_at=iso_from_pubdate(1782748800),
+            pubdate=1782748800,
+            tags=["AI翻唱", "香奈美"],
+            description="单曲翻唱",
+            search_source="api",
+        )
+        output_path = tmp_root / "covers.json"
+        output_path.write_text(
+            json.dumps(build_dataset(items=[old_item, local_only_item], keywords=["香奈美"], pages=1), ensure_ascii=False),
+            encoding="utf-8",
+        )
+        review_args = Namespace(
+            page_size=30,
+            max_pages_per_date=1,
+            audio_dir=tmp_root / "audio",
+            resource_url_prefix="/files/WIKI/audio/v-nami/",
+            review_candidates=tmp_root / "review_candidates.jsonl",
+            dry_run=False,
+            output=output_path,
+            database=tmp_root / "private" / "vnami.sqlite3",
+            include_term=[],
+            exclude_term=[],
+        )
+        review_bilibili = FakeReviewBilibili()
+        review_summary = review_worker.review_date(
+            bilibili=review_bilibili,
+            args=review_args,
+            date_key="2026-06-30",
+            by_bvid={"BVREVIEWOLD": old_item, "BVREVIEWLOCAL": local_only_item},
+            keywords=["香奈美"],
+            pacer=review_worker.InterruptiblePacer(0, 0, Event(), verbose=False),
+        )
+        assert review_bilibili.pages == [1]
+        assert review_summary.remote_results == 3
+        assert review_summary.unique_results == 3
+        assert review_summary.detail_checked == 3
+        assert review_summary.accepted_new == 1
+        assert review_summary.already_local == 1
+        assert review_summary.rejected == 1
+        assert review_summary.local_only == 1
+        assert review_summary.new_bvids == ["BVREVIEWNEW"]
+        assert review_summary.local_only_bvids == ["BVREVIEWLOCAL"]
+        reviewed_payload = json.loads(output_path.read_text(encoding="utf-8"))
+        assert {item["bvid"] for item in reviewed_payload["items"]} == {"BVREVIEWNEW", "BVREVIEWOLD", "BVREVIEWLOCAL"}
+        review_list = review_worker.query_date(review_bilibili, review_args, "2026-06-30")
+        assert review_list["type"] == "video_list"
+        assert review_list["count"] == 3
+        assert {item["localStatus"] for item in review_list["items"]} == {"saved", "missing"}
     assert candidate_status_title("<em>香奈美</em> 的夏日翻唱曲目") == "香奈美 的夏日翻唱曲"
     assert candidate_status_title("") == "无标题"
     completed_dates: dict[str, set[str]] = {}
