@@ -682,6 +682,16 @@ def main() -> None:
     )
     assert not animation_result.accepted
     assert extract_original_song_name("【AI香奈美】《群青》翻唱") == "群青"
+    assert extract_original_song_name("【AI香奈美】失眠-品尝过爱情的香甜") == "失眠"
+    assert extract_original_song_name(
+        "【AI 香奈美】“送你四季”",
+        description="翻唱源：《四季予你》——洛天依",
+        tags=["AI翻唱", "香奈美"],
+    ) == "四季予你"
+    assert extract_original_song_name(
+        "【AI香奈美】银河偶像 强强高音 // AliA - かくれんぼ",
+        tags=["发现《かくれんぼ》", "AI翻唱"],
+    ) == "かくれんぼ"
     item = CoverItem(
         bvid="BV1test",
         video_url="https://www.bilibili.com/video/BV1test",

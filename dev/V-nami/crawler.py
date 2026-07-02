@@ -1004,7 +1004,7 @@ def item_from_hit(
         bvid=bvid,
         video_url=f"https://www.bilibili.com/video/{bvid}",
         author=author,
-        original_song_name=extract_original_song_name(title),
+        original_song_name=extract_original_song_name(title, description=description, tags=tags),
         video_title=title,
         published_at=iso_from_pubdate(pubdate),
         pubdate=pubdate,
@@ -1129,28 +1129,74 @@ def tags_match_ai_cover(tags: list[str]) -> bool:
     return has_ai and has_cover
 
 
-def extract_original_song_name(title: str) -> str:
+def extract_original_song_name(title: str, *, description: str = "", tags: list[str] | None = None) -> str:
+    for candidate in song_names_from_tags(tags or []):
+        if is_song_name_candidate(candidate):
+            return candidate
+
+    candidate = song_name_from_description(description)
+    if is_song_name_candidate(candidate):
+        return candidate
+
     clean = re.sub(r"\s+", " ", title).strip()
     for pattern in SONG_PATTERNS:
-        match = pattern.search(clean)
-        if match:
+        for match in pattern.finditer(clean):
             candidate = strip_song_noise(match.group(1))
-            if candidate:
+            if is_song_name_candidate(candidate):
                 return candidate
 
     parts = re.split(r"[-|/｜·]", clean, maxsplit=2)
     for part in parts:
         candidate = strip_song_noise(part)
-        if candidate and "香奈美" not in candidate and "翻唱" not in candidate.lower():
+        if is_song_name_candidate(candidate):
             return candidate
     return "未识别曲目"
+
+
+def song_names_from_tags(tags: list[str]) -> list[str]:
+    names: list[str] = []
+    for tag in tags:
+        match = re.search(r"发现《([^》]{1,100})》", tag)
+        if match:
+            names.append(strip_song_noise(match.group(1)))
+    return names
+
+
+def song_name_from_description(description: str) -> str:
+    for pattern in [
+        r"(?:原曲|翻唱源)\s*[：:]\s*《([^》]{1,100})》",
+        r"(?:原曲|翻唱源)\s*[：:]\s*([^\n，。；;]{1,60})",
+    ]:
+        match = re.search(pattern, description)
+        if not match:
+            continue
+        candidate = match.group(1).strip()
+        if "《" not in candidate:
+            candidate = re.split(r"\s*[-—]\s*", candidate, maxsplit=1)[0].strip()
+        return strip_song_noise(candidate)
+    return ""
+
+
+def is_song_name_candidate(value: str) -> bool:
+    if not value or value == "未识别曲目":
+        return False
+    if value in {"AI", "ai", "Ai", "卡拉彼丘", "卡拉比丘", "MMD", "RVC", "MMD·RVC", "虚拟"}:
+        return False
+    if re.search(r"https?://|《|》|【|】", value):
+        return False
+    if re.search(r"香奈美|卡拉彼丘|卡拉比丘|AI\s*香奈美|香奈美\s*AI|翻唱", value, re.IGNORECASE):
+        return False
+    if re.fullmatch(r"[\W_]+", value):
+        return False
+    return True
 
 
 def strip_song_noise(value: str) -> str:
     result = value.strip()
     for item in ["AI香奈美", "香奈美AI", "香奈美", "AI", "翻唱", "cover", "Cover", "完整版", "高音质"]:
         result = result.replace(item, "")
-    return re.sub(r"\s+", " ", result).strip(" -_/｜·:：")
+    result = re.sub(r"[【\[「『〖(（]\s*(?:AI|ai|Ai|香奈美|翻唱|cover|Cover)?\s*[】\]」』〗)）]", "", result)
+    return re.sub(r"\s+", " ", result).strip(" -_/｜·:：\"“”‘’【】[]「」『』〖〗")
 
 
 def build_dataset(
