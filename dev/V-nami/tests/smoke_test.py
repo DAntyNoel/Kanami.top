@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import download_worker
 from crawler import (
     CoverItem,
-    DEFAULT_COMPLETE_THROUGH_YEAR,
+    DEFAULT_COMPLETE_THROUGH_DATE,
     DEFAULT_KEYWORDS,
     DEFAULT_OUTPUT,
     EmptyFirstPageTimeout,
@@ -44,14 +44,14 @@ from crawler import (
     print_candidate_status,
     print_search_date,
     print_search_window_summary,
-    print_search_year_complete,
+    print_search_complete_through_date,
     print_zero_result_review,
     processed_skip_reason,
     pubtime_open_date,
     resolve_max_results,
     resolve_search_backend,
     search_hit_from_ytdlp,
-    should_stop_before_complete_year,
+    should_stop_before_complete_date,
     tag_names_from_payload,
     parse_pubtime_bound,
     wbi_search_params,
@@ -223,7 +223,7 @@ class FakeDetailBilibili:
 
 def main() -> None:
     assert DEFAULT_KEYWORDS == ["香奈美", "kanami", "かなみ", "カナミ"]
-    assert DEFAULT_COMPLETE_THROUGH_YEAR == 2021
+    assert DEFAULT_COMPLETE_THROUGH_DATE == "2023-08-03"
     defaults = build_parser().parse_args(["crawl"])
     assert defaults.request_delay == 1.0
     assert defaults.request_jitter == 4.0
@@ -243,6 +243,11 @@ def main() -> None:
     ))
     assert [window.date_key for window in windows] == ["2024-12-31", "2024-12-30", "2024-12-29"]
     assert all(window.pubtime_begin_s <= window.pubtime_end_s for window in windows)
+    default_begin_windows = list(daily_search_windows(
+        None,
+        parse_pubtime_bound("2023-08-05", end_of_day=True),
+    ))
+    assert [window.date_key for window in default_begin_windows] == ["2023-08-05", "2023-08-04", "2023-08-03"]
     open_completed_dates: dict[str, set[str]] = {}
     assert not mark_search_date_complete_if_closed(open_completed_dates, "香奈美", "2024-12-31", "2024-12-31")
     assert open_completed_dates == {}
@@ -386,8 +391,9 @@ def main() -> None:
     finally:
         checkpoint_path.unlink(missing_ok=True)
     assert date_key_from_pubdate(1782748800) == "2026-06-30"
-    assert should_stop_before_complete_year("2020-12-31", 2021)
-    assert not should_stop_before_complete_year("2021-01-01", 2021)
+    assert should_stop_before_complete_date("2023-08-02", "2023-08-03")
+    assert not should_stop_before_complete_date("2023-08-03", "2023-08-03")
+    assert not should_stop_before_complete_date("2023-08-04", "2023-08-03")
     output = io.StringIO()
     with redirect_stdout(output):
         print_search_date("2026-06-30")
@@ -412,8 +418,8 @@ def main() -> None:
     assert output.getvalue() == "需要人工审核：2026-05-15 搜索结果为 0，未标记为已爬完。\n"
     output = io.StringIO()
     with redirect_stdout(output):
-        print_search_year_complete(2021)
-    assert output.getvalue() == "已完成 2021 年及更新视频搜索。\n"
+        print_search_complete_through_date("2023-08-03")
+    assert output.getvalue() == "已完成 2023-08-03 及更新视频搜索。\n"
     output = io.StringIO()
     with redirect_stdout(output):
         print_candidate_status("跳过", "【AI香奈美】《群青》翻唱", "不匹配")

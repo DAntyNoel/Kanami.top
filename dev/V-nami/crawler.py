@@ -27,7 +27,7 @@ DEFAULT_OUTPUT = DATA_DIR / "kanami_ai_covers.json"
 DEFAULT_AUDIO_DIR = DATA_DIR / "audio"
 DEFAULT_CHECKPOINT = DATA_DIR / "crawl_checkpoint.json"
 DEFAULT_RAW_CANDIDATES = DATA_DIR / "raw_candidates.jsonl"
-DEFAULT_COMPLETE_THROUGH_YEAR = 2021
+DEFAULT_COMPLETE_THROUGH_DATE = "2023-08-03"
 DEFAULT_YTDLP_SEARCH_LIMIT = 1000
 COOKIE_JSON = PRIVATE_DIR / "bilibili_cookies.json"
 COOKIE_TXT = PRIVATE_DIR / "bilibili_cookies.txt"
@@ -459,8 +459,8 @@ def crawl(args: argparse.Namespace) -> int:
     if pubtime_begin_s and pubtime_end_s and pubtime_begin_s > pubtime_end_s:
         raise ValueError("--pubtime-begin must be earlier than or equal to --pubtime-end.")
     open_search_date = pubtime_open_date(pubtime_end_s)
-    complete_through_year = DEFAULT_COMPLETE_THROUGH_YEAR if not args.max_candidates_per_run else None
-    max_results = None if complete_through_year else resolve_max_results(args, page_size)
+    complete_through_date = DEFAULT_COMPLETE_THROUGH_DATE if not args.max_candidates_per_run else None
+    max_results = None if complete_through_date else resolve_max_results(args, page_size)
     search_backend = resolve_search_backend(args)
     pacer = CrawlPacer(
         request_delay=args.request_delay,
@@ -547,14 +547,14 @@ def crawl(args: argparse.Namespace) -> int:
                         for hit in hits:
                             search_hits_seen += 1
                             date_key = search_date_key(hit)
-                            if should_stop_before_complete_year(date_key, complete_through_year):
+                            if should_stop_before_complete_date(date_key, complete_through_date):
                                 finish_search_window(
                                     keyword,
                                     current_search_date,
                                     window_summary,
                                     allow_completion=True,
                                 )
-                                print_search_year_complete(complete_through_year)
+                                print_search_complete_through_date(complete_through_date)
                                 return 0
                             if date_key and date_key != current_search_date:
                                 finish_search_window(
@@ -920,7 +920,7 @@ def daily_search_windows(pubtime_begin_s: int | None, pubtime_end_s: int | None)
     begin_dt = (
         datetime.fromtimestamp(pubtime_begin_s, tz=local_tz)
         if pubtime_begin_s
-        else datetime(DEFAULT_COMPLETE_THROUGH_YEAR, 1, 1, tzinfo=local_tz)
+        else datetime.fromisoformat(DEFAULT_COMPLETE_THROUGH_DATE).replace(tzinfo=local_tz)
     )
     end_dt = datetime.fromtimestamp(pubtime_end_s, tz=local_tz) if pubtime_end_s else datetime.now(local_tz)
     current_date = end_dt.date()
@@ -1622,13 +1622,12 @@ def date_key_from_pubdate(pubdate: int | None) -> str:
     return datetime.fromtimestamp(pubdate, tz=timezone.utc).astimezone().date().isoformat()
 
 
-def should_stop_before_complete_year(date_key: str, complete_through_year: int | None) -> bool:
-    if complete_through_year is None or not date_key:
+def should_stop_before_complete_date(date_key: str, complete_through_date: str | None) -> bool:
+    if complete_through_date is None or not date_key:
         return False
-    try:
-        return int(date_key[:4]) < complete_through_year
-    except ValueError:
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date_key):
         return False
+    return date_key < complete_through_date
 
 
 def is_search_date_complete(completed_search_dates: dict[str, set[str]], keyword: str, date_key: str) -> bool:
@@ -1798,9 +1797,9 @@ def print_zero_result_review(date_key: str) -> None:
     print(f"需要人工审核：{date_key} 搜索结果为 0，未标记为已爬完。", flush=True)
 
 
-def print_search_year_complete(year: int | None) -> None:
-    if year is not None:
-        print(f"已完成 {year} 年及更新视频搜索。", flush=True)
+def print_search_complete_through_date(date_key: str | None) -> None:
+    if date_key is not None:
+        print(f"已完成 {date_key} 及更新视频搜索。", flush=True)
 
 
 def processed_status_from_raw_record(raw_record: dict[str, Any]) -> str:
