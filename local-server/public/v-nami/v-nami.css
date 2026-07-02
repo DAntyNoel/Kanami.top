@@ -1,19 +1,19 @@
 .vnami-page {
   min-height: 100vh;
-  background: #0d0e15;
+  background: #160912;
   color: #f7f7f5;
 }
 
 .vnami-page .background {
   background:
-    linear-gradient(180deg, rgba(65, 110, 55, 0.98) 0, rgba(43, 75, 44, 0.94) 270px, rgba(15, 17, 24, 0.96) 540px, #0d0e15 100%),
+    linear-gradient(180deg, rgba(255, 125, 166, 0.94) 0, rgba(178, 74, 126, 0.9) 285px, rgba(65, 28, 54, 0.94) 520px, #160912 100%),
     url("/res/images/backgrounds/Be-Shinning.png");
   background-size: cover;
   opacity: 1;
 }
 
 .vnami-header {
-  background: rgba(47, 85, 45, 0.72);
+  background: rgba(149, 56, 103, 0.72);
   border-color: rgba(255, 255, 255, 0.1);
   box-shadow: none;
   backdrop-filter: blur(16px);
@@ -231,7 +231,9 @@
 .vnami-list-tools select,
 .vnami-more button,
 .vnami-row-action,
-.vnami-feedback button,
+.vnami-feedback-menu summary,
+.vnami-rating-button,
+.vnami-feedback-correction,
 .vnami-dialog-actions button,
 .vnami-icon-button,
 .vnami-current-open {
@@ -488,25 +490,94 @@
   min-width: 0;
 }
 
-.vnami-feedback {
-  display: flex;
-  gap: 8px;
-  align-items: center;
+.vnami-feedback-cell {
+  position: relative;
   min-width: 0;
 }
 
-.vnami-feedback button {
-  min-height: 32px;
-  padding: 0 10px;
-  border-radius: 999px;
-  color: rgba(255, 255, 255, 0.66);
-  font-size: 0.82rem;
+.vnami-feedback-menu {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
 }
 
-.vnami-feedback button[aria-pressed="true"] {
+.vnami-feedback-menu summary {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.78);
+  list-style: none;
+}
+
+.vnami-feedback-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.vnami-feedback-menu summary::after {
+  content: "⌄";
+  color: rgba(255, 255, 255, 0.54);
+  font-size: 0.88rem;
+}
+
+.vnami-feedback-menu[open] summary {
   border-color: rgba(255, 55, 82, 0.78);
   background: rgba(255, 55, 82, 0.18);
   color: #fff;
+}
+
+.vnami-feedback-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 25;
+  width: 214px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(30, 12, 25, 0.98);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34);
+}
+
+.vnami-feedback-panel p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.vnami-rating-list {
+  display: grid;
+  gap: 8px;
+}
+
+.vnami-rating-button,
+.vnami-feedback-correction {
+  min-height: 34px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 10px;
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.84rem;
+  text-align: left;
+}
+
+.vnami-rating-button[aria-pressed="true"] {
+  border-color: rgba(255, 55, 82, 0.82);
+  background: rgba(255, 55, 82, 0.2);
+  color: #fff;
+}
+
+.vnami-feedback-correction {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .vnami-status-cell {
@@ -566,7 +637,7 @@
   align-items: center;
   padding: 12px 42px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(15, 16, 22, 0.96);
+  background: rgba(27, 12, 23, 0.96);
   box-shadow: 0 -18px 40px rgba(0, 0, 0, 0.28);
   backdrop-filter: blur(18px);
 }
@@ -741,7 +812,9 @@
 .vnami-mic:hover,
 .vnami-playlist-actions button:hover,
 .vnami-row-action:hover,
-.vnami-feedback button:hover,
+.vnami-feedback-menu summary:hover,
+.vnami-rating-button:hover,
+.vnami-feedback-correction:hover,
 .vnami-more button:hover,
 .vnami-current-open:hover,
 .vnami-dialog-actions button:hover,
@@ -756,7 +829,9 @@
 .vnami-playlist-actions button:focus-visible,
 .vnami-list-tools select:focus-visible,
 .vnami-row-action:focus-visible,
-.vnami-feedback button:focus-visible,
+.vnami-feedback-menu summary:focus-visible,
+.vnami-rating-button:focus-visible,
+.vnami-feedback-correction:focus-visible,
 .vnami-more button:focus-visible,
 .vnami-current-open:focus-visible,
 .vnami-dialog-form select:focus-visible,
@@ -887,9 +962,14 @@
   }
 
   .vnami-source-cell,
-  .vnami-feedback,
+  .vnami-feedback-cell,
   .vnami-status-cell {
     grid-column: 2;
+  }
+
+  .vnami-feedback-panel {
+    left: 0;
+    right: auto;
   }
 
   .vnami-status-cell {

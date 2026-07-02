@@ -249,10 +249,22 @@ async function main() {
     });
     assert.equal(feedback.response.status, 201);
     assert.equal(feedback.json.ok, true);
-    const feedbackRecord = JSON.parse(fs.readFileSync(path.join(vnamiFeedbackRoot, "feedback.jsonl"), "utf8").trim());
-    assert.equal(feedbackRecord.bvid, "BVTEST");
-    assert.equal(feedbackRecord.value, "great");
-    assert.equal(Object.hasOwn(feedbackRecord, "ip"), false);
+    const problemFeedback = await request("/api/v-nami/feedback", {
+      method: "POST",
+      body: JSON.stringify({ bvid: "BVTEST", value: "problem", page: "/v-nami" })
+    });
+    assert.equal(problemFeedback.response.status, 201);
+    assert.equal(problemFeedback.json.ok, true);
+    const feedbackRecords = fs.readFileSync(path.join(vnamiFeedbackRoot, "feedback.jsonl"), "utf8")
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line));
+    assert.equal(feedbackRecords[0].bvid, "BVTEST");
+    assert.equal(feedbackRecords[0].value, "great");
+    assert.equal(feedbackRecords[1].bvid, "BVTEST");
+    assert.equal(feedbackRecords[1].value, "problem");
+    assert.equal(Object.hasOwn(feedbackRecords[0], "ip"), false);
+    assert.equal(Object.hasOwn(feedbackRecords[1], "ip"), false);
 
     const correction = await request("/api/v-nami/correction", {
       method: "POST",

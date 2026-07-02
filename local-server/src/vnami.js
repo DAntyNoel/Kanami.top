@@ -8,7 +8,7 @@ const API_PREFIX = "/api/v-nami";
 const MAX_JSON_BYTES = 64 * 1024;
 const MAX_MESSAGE_LENGTH = 1000;
 const MAX_SUGGESTION_LENGTH = 500;
-const FEEDBACK_VALUES = new Set(["great", "normal", "question"]);
+const FEEDBACK_VALUES = new Set(["great", "normal", "question", "problem"]);
 const CORRECTION_TYPES = new Set(["title", "song", "author", "tag", "link", "audio", "other"]);
 const BVID_RE = /^BV[0-9A-Za-z_-]{2,30}$/u;
 

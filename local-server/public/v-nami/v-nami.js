@@ -5,11 +5,12 @@
   const feedbackKey = "kanami:vnami:feedback:v1";
   const collator = new Intl.Collator("zh-Hans-CN", { numeric: true, sensitivity: "base" });
   const dateFormatter = new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium" });
-  const feedbackLabels = {
-    great: "很赞",
-    normal: "一般",
-    question: "疑问"
-  };
+  const ratingOptions = [
+    { stars: 3, value: "great", label: "赞" },
+    { stars: 2, value: "normal", label: "还行" },
+    { stars: 1, value: "question", label: "疑问" },
+    { stars: 0, value: "problem", label: "有问题" }
+  ];
 
   const state = {
     items: [],
@@ -98,6 +99,24 @@
 
   function itemTitle(item) {
     return item.originalSongName || item.title || item.videoTitle || item.bvid || "未命名 AI 翻唱";
+  }
+
+  function randomSongName() {
+    const candidates = state.items
+      .map((item) => itemTitle(item))
+      .filter((title) => title && title !== "未命名 AI 翻唱");
+    if (!candidates.length) return "";
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  function updateSearchPlaceholder() {
+    const title = randomSongName();
+    if (title) elements.search.placeholder = title;
+  }
+
+  function ratingLabel(stars, label) {
+    const mark = stars ? `${"★".repeat(stars)} ` : "";
+    return `${mark}${stars}星 ${label}`;
   }
 
   function formatDate(item) {
@@ -315,20 +334,35 @@
     return cell;
   }
 
-  function renderFeedback(item) {
-    const feedback = createElement("div", "vnami-feedback");
-    if (!item.playable) {
-      feedback.append(createElement("span", "vnami-row-badge", "待下载"));
-      return feedback;
-    }
-    Object.entries(feedbackLabels).forEach(([value, label]) => {
-      const button = createElement("button", "", label);
+  function renderFeedbackMenu(item) {
+    const cell = createElement("div", "vnami-feedback-cell");
+    const menu = createElement("details", "vnami-feedback-menu");
+    const summary = createElement("summary", "", "反馈");
+    const panel = createElement("div", "vnami-feedback-panel");
+    panel.append(createElement("p", "", "香奈美想知道这首怎么样"));
+
+    const ratings = createElement("div", "vnami-rating-list");
+    ratingOptions.forEach(({ stars, value, label }) => {
+      const button = createElement("button", "vnami-rating-button", ratingLabel(stars, label));
       button.type = "button";
       button.setAttribute("aria-pressed", String(state.feedback[item.bvid] === value));
-      button.addEventListener("click", () => sendFeedback(item, value));
-      feedback.append(button);
+      button.addEventListener("click", () => {
+        menu.open = false;
+        sendFeedback(item, value);
+      });
+      ratings.append(button);
     });
-    return feedback;
+
+    const correction = createElement("button", "vnami-feedback-correction", "信息纠错");
+    correction.type = "button";
+    correction.addEventListener("click", () => {
+      menu.open = false;
+      openCorrection(item);
+    });
+    panel.append(ratings, correction);
+    menu.append(summary, panel);
+    cell.append(menu);
+    return cell;
   }
 
   function renderRow(item, index) {
@@ -342,7 +376,7 @@
     source.append(createElement("div", "vnami-source-main", item.videoTitle || item.title || "B站 AI 翻唱"));
     source.append(createElement("div", "vnami-source-sub", `${formatDate(item)} · ${item.bvid}`));
     row.append(source);
-    row.append(renderFeedback(item));
+    row.append(renderFeedbackMenu(item));
 
     const actions = createElement("div", "vnami-status-cell");
     const playButton = createElement("button", "vnami-row-action", "▶");
@@ -372,12 +406,6 @@
       actions.append(open);
     }
 
-    const correction = createElement("button", "vnami-row-action", "!");
-    correction.type = "button";
-    correction.title = "纠错";
-    correction.setAttribute("aria-label", "纠错");
-    correction.addEventListener("click", () => openCorrection(item));
-    actions.append(correction);
     actions.append(createElement("span", "vnami-row-badge", item.playable ? "可听" : "待下"));
 
     row.append(actions);
@@ -542,6 +570,11 @@
     elements.dialog.addEventListener("click", (event) => {
       if (event.target === elements.dialog) closeCorrection();
     });
+    document.addEventListener("click", (event) => {
+      document.querySelectorAll(".vnami-feedback-menu[open]").forEach((menu) => {
+        if (!menu.contains(event.target)) menu.open = false;
+      });
+    });
   }
 
   async function loadItems() {
@@ -556,6 +589,7 @@
         .map(toItem)
         .filter((item) => item.bvid || item.videoUrl || item.audioUrl);
       state.byBvid = new Map(state.items.filter((item) => item.bvid).map((item) => [item.bvid, item]));
+      updateSearchPlaceholder();
       updatePlaylistCover();
       updateQueue();
       applyFilters();
