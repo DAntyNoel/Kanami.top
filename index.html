@@ -19,7 +19,7 @@
       <span class="site-logo-text">kanami.top</span>
     </a>
     <div class="site-header-copy" aria-label="当前页面">
-      <h1>香奈美的应援舞台</h1>
+      <p class="site-header-title">香奈美的应援舞台</p>
     </div>
     <nav class="site-nav" aria-label="站点入口">
       <a href="/resource/" class="site-nav-link">星光收藏室</a>
@@ -30,7 +30,7 @@
   <main class="main-content">
     <section class="section welcome home-hero">
       <div class="welcome-copy">
-        <p class="eyebrow">kanami.top</p>
+        <p class="eyebrow">香奈美的应援舞台</p>
         <h1>香奈美的应援舞台，已经为引航者点亮啦</h1>
         <p><span class="highlight">我会把表情、故事、小游戏和聊天舞台都整理在这里。</span></p>
         <p>想先从哪里开始呢？香奈美已经把入口摆到最前面了。</p>
@@ -41,7 +41,7 @@
         </div>
       </div>
       <figure class="welcome-visual">
-        <img src="res/images/lovekanami.jpg" alt="香奈美应援主视觉" />
+        <img src="res/images/lovekanami.jpg" alt="香奈美应援主视觉" decoding="async" fetchpriority="high" width="420" height="420" />
         <figcaption>香奈美会在这里唱给你听。</figcaption>
       </figure>
     </section>
@@ -49,7 +49,7 @@
     <section class="section stamps">
       <div class="stamps-header">
         <div>
-          <p class="eyebrow">Kanami stamps</p>
+          <p class="eyebrow">香奈美的表情包</p>
           <h2>香奈美给你挑了一批表情</h2>
         </div>
         <button id="shuffle-stamps" class="btn-small">换一批</button>
@@ -62,11 +62,11 @@
 
     <section class="section game" id="games">
       <div class="game-header">
-        <p class="eyebrow">Kanami games</p>
+        <p class="eyebrow">香奈美的小游戏</p>
         <h2>来玩香奈美的小舞台</h2>
       </div>
       <p class="game-lead">试试香奈美的小游戏吧～</p>
-      <div class="game-grid" aria-label="KANAMI games">
+      <div class="game-grid" aria-label="香奈美的小游戏区">
         <a href="games/eat-kanami/index.html" target="_blank" rel="noopener noreferrer" class="game-card game-card-live">
           <span class="game-card-status">可玩</span>
           <span class="game-card-title">EatKanami</span>
@@ -120,17 +120,17 @@
 
     <section class="section services">
       <div class="services-header">
-        <p class="eyebrow">Backstage</p>
+        <p class="eyebrow">香奈美的后台</p>
         <h2>后台入口</h2>
       </div>
       <p class="services-lead">这里是香奈美给维护者留的入口，普通引航者可以先去资源和小游戏舞台。</p>
       <details class="backstage-panel">
         <summary>展开后台入口</summary>
-        <div class="game-grid services-grid" aria-label="KANAMI services">
-          <a href="https://local-server.kanami.top/" target="_blank" rel="noopener noreferrer" class="game-card service-card game-card-live">
-            <span class="game-card-status">本地</span>
+        <div class="game-grid services-grid" aria-label="香奈美的后台服务">
+          <a href="https://local-server.kanami.top/" target="_blank" rel="noopener noreferrer" class="game-card service-card game-card-live" data-local-server-card data-local-server-origin="https://local-server.kanami.top">
+            <span class="game-card-status" data-local-server-status>本地</span>
             <span class="game-card-title">本地服务主页</span>
-            <span class="game-card-copy">我把图库、登录和本地 WIKI 舞台都收在这里，维护时可以从服务主页进入。</span>
+            <span class="game-card-copy" data-local-server-copy>我把图库、登录和本地 WIKI 舞台都收在这里，维护时可以从服务主页进入。</span>
             <span class="game-card-action">打开服务主页</span>
           </a>
           <a href="https://cliproxy.kanami.top/management.html" target="_blank" rel="noopener noreferrer" class="game-card service-card game-card-live">
@@ -147,7 +147,7 @@
           </a>
         </div>
       </details>
-      <div class="game-grid services-grid public-tools" aria-label="KANAMI public tools">
+      <div class="game-grid services-grid public-tools" aria-label="香奈美的公开工具">
         <a href="games/china-ex/" class="game-card service-card game-card-live">
           <span class="game-card-status">地图</span>
           <span class="game-card-title">香奈美中国制霸</span>

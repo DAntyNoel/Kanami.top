@@ -208,7 +208,19 @@ body.gallery-page {
     border-color: rgba(198, 93, 75, 0.45);
     box-shadow: 0 22px 48px rgba(32, 42, 54, 0.16);
     transform: translateY(-3px);
-    outline: none;
+}
+
+/* 键盘焦点保留可见焦点环，避免仅靠阴影导致对比度不足。 */
+.gallery-tile:focus-visible {
+    outline: 3px solid #23766e;
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gallery-tile:hover,
+    .gallery-tile:focus-visible {
+        transform: none;
+    }
 }
 
 .gallery-tile-image {

@@ -1,31 +1,69 @@
-const images = [
-    "res/images/backgrounds/Be-Shinning.png",
-    "res/images/backgrounds/Soda.png",
-];
-  
+// 资源基址：默认使用站点根的固定引用链接，本地运行时可通过
+// window.KANAMI_RESOURCE_BASE 覆盖到本地服务，静态站与本地服务共用同一份解析逻辑。
+const KANAMI_RESOURCE_BASE = String(window.KANAMI_RESOURCE_BASE || "/").replace(/\/?$/, "/");
+function kanamiResourceUrl(relativePath) {
+  return `${KANAMI_RESOURCE_BASE}${String(relativePath).replace(/^\/+/, "")}`;
+}
+
+// 浏览器是否支持 WebP，决定背景图优先选择 webp 还是 png 回退。
+function kanamiSupportsWebp() {
+  try {
+    const canvas = document.createElement("canvas");
+    return canvas.toDataURL("image/webp").startsWith("data:image/webp");
+  } catch {
+    return false;
+  }
+}
+
+const prefersReducedMotion = window.matchMedia
+  ? window.matchMedia("(prefers-reduced-motion: reduce)")
+  : { matches: false, addEventListener() {} };
+
 document.addEventListener("DOMContentLoaded", () => {
-    let index = 0;
-    const bg = document.querySelector(".background");
-    if (!bg) return;
-  
-    // 初始化背景
-    if (!bg.style.backgroundImage) {
-      bg.style.backgroundImage = `url(${images[0]})`;
+  const bg = document.querySelector(".background");
+  if (!bg) return;
+
+  const ext = kanamiSupportsWebp() ? "webp" : "png";
+  const images = [
+    kanamiResourceUrl(`res/images/backgrounds/Be-Shinning.${ext}`),
+    kanamiResourceUrl(`res/images/backgrounds/Soda.${ext}`)
+  ];
+  let index = 0;
+
+  // 首屏只设置第一张背景，避免预载第二张大图。
+  if (!bg.style.backgroundImage) {
+    bg.style.backgroundImage = `url("${images[0]}")`;
+  }
+  bg.style.opacity = 1;
+
+  // 尊重系统“减少动态效果”，此时不做 30 秒轮播，保留首张静态背景。
+  if (prefersReducedMotion.matches) return;
+
+  let timer = null;
+  function changeBackground() {
+    bg.style.opacity = 0; // 淡出当前
+    setTimeout(() => {
+      index = (index + 1) % images.length;
+      // 预解码下一张后再淡入，减少切换时的闪烁。
+      const next = new Image();
+      next.decoding = "async";
+      next.src = images[index];
+      bg.style.backgroundImage = `url("${images[index]}")`;
+      bg.style.opacity = 1; // 淡入新背景
+    }, 1000); // 与 CSS transition 的时间保持一致
+  }
+
+  timer = setInterval(changeBackground, 30000); // 每 30 秒切换一次
+
+  // 运行中切到“减少动态效果”时停止轮播。
+  prefersReducedMotion.addEventListener?.("change", (event) => {
+    if (event.matches && timer) {
+      clearInterval(timer);
+      timer = null;
     }
-    bg.style.opacity = 1;
-  
-    function changeBackground() {
-      bg.style.opacity = 0; // 淡出当前
-      setTimeout(() => {
-        index = (index + 1) % images.length;
-        bg.style.backgroundImage = `url(${images[index]})`;
-        bg.style.opacity = 1; // 淡入新背景
-      }, 1000); // 与 CSS transition 的时间保持一致
-    }
-  
-    setInterval(changeBackground, 30000); // 每 30 秒切换一次
   });
-  
+});
+
 // 随机表情包展示功能
 document.addEventListener("DOMContentLoaded", () => {
   const stampsDir = "res/images/stamps/";
@@ -151,8 +189,19 @@ document.addEventListener("DOMContentLoaded", () => {
     active: "emotes",
     query: "",
     data: {},
-    flat: {}
+    flat: {},
+    loaded: new Set(),
+    loading: new Map()
   };
+
+  function groupCount(id) {
+    return state.loaded.has(id) ? (state.flat[id]?.length || 0) : null;
+  }
+
+  function countLabel(id) {
+    const count = groupCount(id);
+    return count === null ? "" : ` ${count}`;
+  }
 
   function normalizeText(value) {
     return String(value ?? "").toLowerCase();
@@ -350,6 +399,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!groups.some((group) => group.id === groupId)) return;
     state.active = groupId;
     render();
+    // 切换分类时才按需拉取该分类数据，避免首屏加载全部分类。
+    ensureGroupLoaded(groupId).then(() => {
+      if (state.active === groupId) render();
+    });
     if (options.scroll) {
       requestAnimationFrame(jumpToPanel);
     }
@@ -360,8 +413,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderStats() {
-    const mediaTotal = mediaGroups.reduce((sum, group) => sum + (state.flat[group.id]?.length || 0), 0);
-    const oathTotal = state.flat.oath?.length || 0;
+    const mediaTotal = mediaGroups.reduce((sum, group) => sum + (groupCount(group.id) || 0), 0);
+    const oathTotal = groupCount("oath") || 0;
     stats.innerHTML = "";
     stats.append(
       chip(`媒体 ${mediaTotal}`),
@@ -380,7 +433,7 @@ document.addEventListener("DOMContentLoaded", () => {
       button.setAttribute("role", "tab");
       button.setAttribute("aria-controls", "wiki-resource-panel");
       button.setAttribute("aria-selected", String(group.id === state.active));
-      button.textContent = `${group.label} ${state.flat[group.id]?.length || 0}`;
+      button.textContent = `${group.label}${countLabel(group.id)}`;
       button.addEventListener("click", () => {
         setActiveGroup(group.id);
       });
@@ -397,7 +450,8 @@ document.addEventListener("DOMContentLoaded", () => {
       button.className = "wiki-resource-toc-link";
       button.setAttribute("aria-current", String(group.id === state.active));
       button.appendChild(createEl("span", "", group.label));
-      button.appendChild(createEl("span", "wiki-resource-toc-count", state.flat[group.id]?.length || 0));
+      const count = groupCount(group.id);
+      button.appendChild(createEl("span", "wiki-resource-toc-count", count === null ? "…" : count));
       button.addEventListener("click", () => {
         setActiveGroup(group.id, { scroll: true });
       });
@@ -527,6 +581,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderPanel() {
     const items = activeItems();
     panel.innerHTML = "";
+    if (!state.loaded.has(state.active)) {
+      panel.appendChild(createEl("p", "wiki-resource-empty", "香奈美正在取出这一格的收藏，稍等一下哦。"));
+      return;
+    }
     if (!items.length) {
       panel.appendChild(createEl("p", "wiki-resource-empty", "香奈美没有在星光收藏室里找到匹配内容。"));
       return;
@@ -585,33 +643,47 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function loadBundledResources() {
-    const bundled = window.KANAMI_WIKI_DATA;
-    if (!bundled) return false;
-    const missing = groups.some((group) => !bundled[group.id]);
-    if (missing) return false;
-    state.data = Object.fromEntries(groups.map((group) => [group.id, bundled[group.id]]));
-    for (const group of mediaGroups) {
+  function ingestGroup(group, raw) {
+    state.data[group.id] = raw || {};
+    if (group.id === "oath") {
+      state.flat.oath = flattenOath(state.data.oath || {});
+    } else {
       state.flat[group.id] = flattenMedia(group.id, state.data[group.id] || {});
     }
-    state.flat.oath = flattenOath(state.data.oath || {});
-    return true;
+    state.loaded.add(group.id);
   }
 
-  async function loadResources() {
-    await loadGroupConfig();
-    if (loadBundledResources()) return;
-    const responses = await Promise.all(groups.map(async (group) => {
-      const response = await fetch(wikiBase + group.file);
-      if (!response.ok && group.file.startsWith("custom_")) return [group.id, {}];
-      if (!response.ok) throw new Error(`${group.file} ${response.status}`);
-      return [group.id, await response.json()];
-    }));
-    state.data = Object.fromEntries(responses);
-    for (const group of mediaGroups) {
-      state.flat[group.id] = flattenMedia(group.id, state.data[group.id] || {});
+  // 优先复用本地运行时注入的 bundle（若存在该分类），否则按需 fetch 单个分类 JSON。
+  function ensureGroupLoaded(groupId) {
+    if (state.loaded.has(groupId)) return Promise.resolve();
+    if (state.loading.has(groupId)) return state.loading.get(groupId);
+
+    const group = groups.find((item) => item.id === groupId);
+    if (!group) return Promise.resolve();
+
+    const bundled = window.KANAMI_WIKI_DATA;
+    if (bundled && bundled[groupId]) {
+      ingestGroup(group, bundled[groupId]);
+      return Promise.resolve();
     }
-    state.flat.oath = flattenOath(state.data.oath || {});
+
+    const task = (async () => {
+      try {
+        const response = await fetch(wikiBase + group.file, { cache: "no-store" });
+        if (!response.ok) {
+          if (group.file.startsWith("custom_")) {
+            ingestGroup(group, {});
+            return;
+          }
+          throw new Error(`${group.file} ${response.status}`);
+        }
+        ingestGroup(group, await response.json());
+      } finally {
+        state.loading.delete(groupId);
+      }
+    })();
+    state.loading.set(groupId, task);
+    return task;
   }
 
   search.addEventListener("input", () => {
@@ -619,8 +691,24 @@ document.addEventListener("DOMContentLoaded", () => {
     renderPanel();
   });
 
-  loadResources()
-    .then(render)
+  loadGroupConfig()
+    .then(async () => {
+      render();
+      // 先加载首屏激活分类，其余分类等切换时再按需取。
+      await ensureGroupLoaded(state.active);
+      render();
+      // 后台静默补齐各分类计数，让 tab/目录数字逐步亮起来，但不阻塞首屏。
+      // audio.json 体积很大（约 588KB），不参与后台预取，仅在切到语音音乐分类时按需加载。
+      const DEFERRED_GROUPS = new Set(["audio"]);
+      for (const group of groups) {
+        if (group.id === state.active || DEFERRED_GROUPS.has(group.id)) continue;
+        ensureGroupLoaded(group.id).then(() => {
+          renderStats();
+          renderTabs();
+          renderToc();
+        }).catch(() => {});
+      }
+    })
     .catch((error) => {
       console.error("Failed to load WIKI resources", error);
       panel.innerHTML = "";
@@ -639,8 +727,59 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   backTop.addEventListener("click", () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: prefersReducedMotion.matches ? "auto" : "smooth" });
   });
   window.addEventListener("scroll", syncBackTop, { passive: true });
   syncBackTop();
+});
+
+// 本地服务状态探针：静态主页（GitHub Pages）按需探测本地服务 /health，
+// 在线时点亮“本地服务主页”卡片状态，离线时降级提示。无需服务端改写首页 HTML，
+// 静态站即可自动同步本地服务的真实在线状态。
+document.addEventListener("DOMContentLoaded", () => {
+  const card = document.querySelector("[data-local-server-card]");
+  if (!card) return;
+  // 由本地运行时注入并自增强时，无需静态探针重复处理。
+  if (window.KANAMI_LOCAL_SERVER?.enabled) return;
+
+  const origin = (card.dataset.localServerOrigin || "").replace(/\/$/, "");
+  if (!origin) return;
+
+  const statusEl = card.querySelector("[data-local-server-status]");
+  const copyEl = card.querySelector("[data-local-server-copy]");
+  const onlineCopy = copyEl?.textContent || "";
+  const offlineCopy = "香奈美的本地舞台暂时离线，发布后这里会自动亮起来。";
+
+  function setState(state) {
+    card.dataset.localServerState = state;
+    if (!statusEl) return;
+    if (state === "online") {
+      statusEl.textContent = "在线";
+      if (copyEl) copyEl.textContent = onlineCopy;
+    } else if (state === "offline") {
+      statusEl.textContent = "离线";
+      if (copyEl) copyEl.textContent = offlineCopy;
+    }
+  }
+
+  async function probe() {
+    setState("checking");
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 3500);
+    try {
+      const response = await fetch(`${origin}/health`, {
+        method: "GET",
+        cache: "no-store",
+        signal: controller.signal
+      });
+      const payload = await response.json().catch(() => null);
+      setState(response.ok && payload?.ok ? "online" : "offline");
+    } catch {
+      setState("offline");
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  probe();
 });

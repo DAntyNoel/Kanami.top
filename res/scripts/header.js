@@ -100,13 +100,17 @@
     const available = copy.clientWidth;
     const lines = directChildren(copy, "h1, p, strong, span").filter((line) => !line.matches(".game-kicker"));
 
+    // 先统一清掉上一轮的内联样式（写），再统一读取 scrollWidth（读），
+    // 最后统一写入跑马灯距离，避免在循环里读写交替触发逐行强制重排。
     lines.forEach((line) => {
       line.dataset.headerOverflowLine = "false";
       line.style.removeProperty("--kanami-marquee-distance");
-      const overflow = Math.ceil(line.scrollWidth - available);
-      if (overflow > 4) {
+    });
+    const overflows = lines.map((line) => Math.ceil(line.scrollWidth - available));
+    lines.forEach((line, i) => {
+      if (overflows[i] > 4) {
         line.dataset.headerOverflowLine = "true";
-        line.style.setProperty("--kanami-marquee-distance", `-${overflow}px`);
+        line.style.setProperty("--kanami-marquee-distance", `-${overflows[i]}px`);
       }
     });
   }
@@ -135,9 +139,19 @@
     document.querySelectorAll(HEADER_SELECTOR).forEach(enhanceHeader);
   }
 
+  // resize 时用 rAF 合并多次回调，避免每个 resize tick 都触发整页页眉重排。
+  let resizeFrame = 0;
+  function scheduleEnhance() {
+    if (resizeFrame) return;
+    resizeFrame = requestAnimationFrame(() => {
+      resizeFrame = 0;
+      enhanceAllHeaders();
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     enhanceAllHeaders();
-    window.addEventListener("resize", enhanceAllHeaders);
+    window.addEventListener("resize", scheduleEnhance);
     document.addEventListener("click", (event) => {
       document.querySelectorAll(`.${MENU_CLASS}[open]`).forEach((menu) => {
         if (!menu.contains(event.target)) menu.removeAttribute("open");

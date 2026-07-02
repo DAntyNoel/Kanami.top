@@ -51,15 +51,35 @@ function isDetailedHealthAllowed(req, url) {
   return req.headers["x-kanami-admin-token"] === config.adminToken || url.searchParams.get("token") === config.adminToken;
 }
 
+// 仅允许固定的静态主站源跨域读取最小健康状态，供 GitHub Pages 的状态探针使用。
+const HEALTH_ALLOWED_ORIGINS = new Set([
+  "https://kanami.top",
+  "https://www.kanami.top"
+]);
+
+function applyHealthCors(req, res) {
+  const origin = String(req.headers.origin || "");
+  if (!HEALTH_ALLOWED_ORIGINS.has(origin)) return;
+  res.setHeader("Access-Control-Allow-Origin", origin);
+  res.setHeader("Vary", "Origin");
+}
+
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
 
     if (req.method === "OPTIONS") {
-      res.writeHead(204, {
-        "Access-Control-Allow-Methods": "GET,HEAD,POST,PATCH,DELETE,OPTIONS",
+      // 仅对登记的健康检查源回显允许跨域，其余预检不开放跨域读取。
+      const headers = {
+        "Access-Control-Allow-Methods": "GET,HEAD,OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type,X-Kanami-Admin-Token"
-      });
+      };
+      const origin = String(req.headers.origin || "");
+      if (url.pathname === "/health" && HEALTH_ALLOWED_ORIGINS.has(origin)) {
+        headers["Access-Control-Allow-Origin"] = origin;
+        headers["Vary"] = "Origin";
+      }
+      res.writeHead(204, headers);
       res.end();
       return;
     }
@@ -73,6 +93,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if ((req.method === "GET" || req.method === "HEAD") && url.pathname === "/health") {
+      applyHealthCors(req, res);
       sendJson(req, res, 200, publicHealthPayload());
       return;
     }

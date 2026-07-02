@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "groups": [
+    {
+      "id": "kanami_ai_covers",
+      "label": "香奈美 AI 翻唱",
+      "file": "custom_kanami_ai_covers.json",
+      "manageable": true,
+      "custom": true,
+      "fields": [
+        {
+          "key": "videoUrl",
+          "label": "视频链接",
+          "required": true
+        },
+        {
+          "key": "author",
+          "label": "作者",
+          "required": true
+        },
+        {
+          "key": "originalSongName",
+          "label": "原唱曲目名称",
+          "required": true
+        },
+        {
+          "key": "videoTitle",
+          "label": "视频标题",
+          "required": true
+        },
+        {
+          "key": "publishedAt",
+          "label": "发布日期",
+          "required": true
+        },
+        {
+          "key": "bvid",
+          "label": "BVID",
+          "required": true
+        }
+      ]
+    }
+  ]
+}

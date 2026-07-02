@@ -97,6 +97,7 @@ body {
 }
 
 .site-header-copy h1,
+.site-header-copy .site-header-title,
 .site-header-copy p {
     width: max-content;
     max-width: none;
@@ -104,7 +105,8 @@ body {
     white-space: nowrap;
 }
 
-.site-header-copy h1 {
+.site-header-copy h1,
+.site-header-copy .site-header-title {
     color: #45335f;
     font-size: clamp(1rem, 1.8vw, 1.25rem);
     font-weight: 850;
@@ -374,6 +376,25 @@ p {
     background: linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(183, 213, 255, 0.36));
 }
 
+/* 本地服务卡片随探针结果同步状态。 */
+[data-local-server-state="checking"] [data-local-server-status] {
+    color: #8a7f97;
+}
+
+[data-local-server-state="online"] [data-local-server-status] {
+    background: rgba(76, 175, 120, 0.18);
+    color: #2f7d4f;
+}
+
+[data-local-server-state="offline"] {
+    opacity: 0.72;
+}
+
+[data-local-server-state="offline"] [data-local-server-status] {
+    background: rgba(120, 120, 120, 0.16);
+    color: #6b6470;
+}
+
 .service-card .game-card-action {
     overflow-wrap: anywhere;
 }
@@ -466,7 +487,6 @@ p {
     color: #5b66c4;
     font-size: 0.76rem;
     font-weight: 700;
-    text-transform: uppercase;
 }
 
 .game-card-title {
@@ -579,5 +599,42 @@ p {
     .public-tools,
     .backstage-panel .services-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* 键盘可见焦点：默认 UA 焦点环在浅色背景上对比度不足，统一补一圈高对比焦点。 */
+.site-nav-link:focus-visible,
+.btn:focus-visible,
+.btn-small:focus-visible,
+.game-card:focus-visible,
+.inline-link:focus-visible,
+.kanami-header-menu summary:focus-visible,
+.backstage-panel summary:focus-visible {
+    outline: 3px solid #5b66c4;
+    outline-offset: 2px;
+    border-radius: 8px;
+}
+
+/* 尊重“减少动态效果”：关闭跑马灯、入场动画与悬浮位移，仅保留必要的可见性变化。 */
+@media (prefers-reduced-motion: reduce) {
+    .background {
+        transition: none;
+    }
+
+    [data-header-overflow-line="true"] {
+        animation: none;
+    }
+
+    .site-nav-link,
+    .btn,
+    .game-card,
+    .game-card-live {
+        transition: none;
+    }
+
+    .site-nav-link:hover,
+    .btn:hover,
+    .game-card-live:hover {
+        transform: none;
     }
 }
