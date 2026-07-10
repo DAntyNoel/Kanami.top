@@ -10,6 +10,36 @@ if (-not (Test-Path ".env")) {
     exit 1
 }
 
+$ConfigPath = Join-Path $ProjectDir "config.yaml"
+if (Test-Path $ConfigPath -PathType Container) {
+    Write-Error "config.yaml is a directory. Remove it and create a file before starting local Docker."
+    exit 1
+}
+if (-not (Test-Path $ConfigPath -PathType Leaf)) {
+    $ExistingContainer = $false
+    try {
+        $ExistingContainer = @(
+            docker ps -a --format "{{.Names}}" 2>$null |
+                Where-Object { $_ -eq "kanami-cliproxy-api" }
+        ).Count -gt 0
+    } catch {
+        $ExistingContainer = $false
+    }
+
+    if ($ExistingContainer) {
+        docker cp "kanami-cliproxy-api:/CLIProxyAPI/config.yaml" $ConfigPath
+        if ($LASTEXITCODE -eq 0 -and (Test-Path $ConfigPath -PathType Leaf)) {
+            Write-Host "Exported existing container config to config.yaml."
+        } else {
+            New-Item -Path $ConfigPath -ItemType File -Force | Out-Null
+            Write-Host "Created empty config.yaml. The container will populate it on first start."
+        }
+    } else {
+        New-Item -Path $ConfigPath -ItemType File -Force | Out-Null
+        Write-Host "Created empty config.yaml. The container will populate it on first start."
+    }
+}
+
 $ComposeArgs = @("--env-file", ".env", "-f", "docker-compose.yml")
 $UsageKeeperComposeArgs = @("--env-file", ".env", "-f", "docker-compose.usage-keeper.yml")
 

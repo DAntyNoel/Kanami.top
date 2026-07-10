@@ -5,8 +5,8 @@
 ## 目录
 
 - `cliproxyapi/`：CLIProxyAPI 上游 submodule。
-- `Dockerfile`：从 submodule 构建核心 Go 服务，并使用本站的启动脚本生成运行配置。
-- `start_script.sh`：启动前根据环境变量和密钥文件生成 `config.yaml`。
+- `Dockerfile`：从 submodule 构建核心 Go 服务，并使用本站的启动脚本准备运行配置。
+- `start_script.sh`：启动前根据环境变量和密钥文件生成 `config.yaml`；Render 部署可覆写，本地 Docker 默认只在首次空配置时生成。
 - `docker-compose.yml`：本地 Docker + Cloudflare Tunnel 的唯一运行方式。
 - `secrets/`：本地密钥文件目录，只保留 `.gitkeep`。
 - `worker/`：Cloudflare Worker 转发方式，结构参考 `chatbot/worker`。
@@ -59,7 +59,17 @@ cp .env.example .env
 docker compose --env-file .env -f docker-compose.yml up -d --build
 ```
 
-`.env`、`secrets/*`、真实 API key、OAuth auth JSON 和运行日志都不提交。
+本地 Docker 会把 `cliproxy/config.yaml` 挂载到容器内。`restart-local-mac.sh` / `restart-local-windows.ps1` 会在首次启动前优先从既有 `kanami-cliproxy-api` 容器导出当前配置；如果没有旧容器，则创建空文件并由容器第一次启动时填充。之后管理面板写入的 provider、模型和鉴权配置会保留在宿主机文件里，重启不会再被启动脚本覆盖。
+
+如果不通过 restart 脚本而是直接运行 compose，请先创建配置文件：
+
+```bash
+: > config.yaml
+```
+
+`.env`、`config.yaml`、`secrets/*`、真实 API key、OAuth auth JSON 和运行日志都不提交。
+
+Render 这类需要每次启动从环境变量重建配置的部署，保持 `CONFIG_OVERWRITE=true` 或不设置该变量即可继续使用旧的覆写行为；本地 compose 默认设置为 `CONFIG_OVERWRITE=false`。
 
 如果构建时卡在 `failed to fetch anonymous token` 或 `i/o timeout`，说明 Docker Hub 基础镜像拉取失败。可以在 `cliproxy/.env` 中临时启用镜像源：
 

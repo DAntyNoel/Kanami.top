@@ -16,6 +16,8 @@ CODEX_AUTH_AUTO_RESTORE="${CODEX_AUTH_AUTO_RESTORE:-true}"
 CODEX_AUTH_REQUIRED="${CODEX_AUTH_REQUIRED:-true}"
 PROXY_URL="${PROXY_URL:-}"
 REDIS_USAGE_QUEUE_RETENTION_SECONDS="${REDIS_USAGE_QUEUE_RETENTION_SECONDS:-3600}"
+CONFIG_FILE="${CONFIG_FILE:-$APP_DIR/config.yaml}"
+CONFIG_OVERWRITE="${CONFIG_OVERWRITE:-true}"
 SCRIPT_DIR="$(CDPATH= cd "$(dirname "$0")" && pwd)"
 
 quote_yaml() {
@@ -131,10 +133,19 @@ restore_codex_auth() {
   chmod 600 "$AUTH_FILE"
 }
 
+is_truthy() {
+  case "$(printf "%s" "$1" | tr '[:upper:]' '[:lower:]')" in
+    1|true|yes|y|on) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 load_api_keys
 restore_codex_auth
 
-cat > "$APP_DIR/config.yaml" <<EOF
+if [ ! -s "$CONFIG_FILE" ] || is_truthy "$CONFIG_OVERWRITE"; then
+  mkdir -p "$(dirname "$CONFIG_FILE")"
+  cat > "$CONFIG_FILE" <<EOF
 host: ""
 port: ${PORT:-8317}
 remote-management:
@@ -148,6 +159,9 @@ usage-statistics-enabled: true
 redis-usage-queue-retention-seconds: ${REDIS_USAGE_QUEUE_RETENTION_SECONDS}
 proxy-url: $(quote_yaml "$PROXY_URL")
 EOF
+else
+  echo "Using existing config without startup overwrite: $CONFIG_FILE"
+fi
 
 cd "$APP_DIR"
 exec ./CLIProxyAPI

@@ -11,6 +11,20 @@ if [ ! -f ".env" ]; then
   exit 1
 fi
 
+if [ -d "config.yaml" ]; then
+  echo "config.yaml is a directory. Remove it and create a file before starting local Docker." >&2
+  exit 1
+fi
+if [ ! -f "config.yaml" ]; then
+  if docker ps -a --format '{{.Names}}' 2>/dev/null | grep -Fxq "kanami-cliproxy-api" &&
+    docker cp "kanami-cliproxy-api:/CLIProxyAPI/config.yaml" "config.yaml"; then
+    echo "Exported existing container config to config.yaml."
+  else
+    : > "config.yaml"
+    echo "Created empty config.yaml. The container will populate it on first start."
+  fi
+fi
+
 compose() {
   docker compose --env-file .env -f docker-compose.yml "$@"
 }
