@@ -224,6 +224,9 @@ def main() -> None:
     assert defaults.request_jitter == 4.0
     assert defaults.cooldown_seconds == 1800.0
     assert defaults.output == DEFAULT_OUTPUT
+    assert defaults.resume is True
+    assert build_parser().parse_args(["crawl", "--resume"]).resume is True
+    assert build_parser().parse_args(["crawl", "--fresh"]).resume is False
     assert defaults.pubtime_begin is None
     assert defaults.pubtime_end is None
     pubtime_begin = parse_pubtime_bound("2024-01-01", end_of_day=False)

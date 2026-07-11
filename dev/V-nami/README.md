@@ -53,7 +53,7 @@ python crawler.py status
 采集过程中，WBI API 搜索按发布时间从新到旧返回；每完成一页就会立刻检查该页候选，并先输出 `当前搜索日期：YYYY-MM-DD`，再输出该日期下的 `已保存：标题前10字` 或 `跳过（原因）：标题前10字`。跳过原因会区分 `已保存`、`不匹配`、`缺少BVID`、`异常`、`日期已完成` 等状态。每天结束都会输出 `日期总结`，包含 API 页数、请求数、搜索结果数、已爬详情数、已保存数、跳过数、异常数和空结果重试数。当某一天的搜索结果已经完整检查完，checkpoint 会记录该日期，后续 `--resume` 遇到同一关键词的同一天结果会快速跳过。
 B 站搜索对宽关键词有结果窗口上限，单靠 page 递增会在旧日期前开始重复返回同一批候选；V-nami 会把 `--pubtime-begin` / `--pubtime-end` 拆成 1 天一个搜索窗口，从结束日向前滚动。早于结束日的日期完成后会写入 checkpoint；结束日当天不会标记完成，方便下次增量更新继续检查当天新增内容。如果某天第一页 `result` 为空，会视为异常并固定等待 30 秒后重试，最多 6 次；重试后仍为空的日期只会写入 `zeroResultSearchDates` 供人工审核，不会写入已完成日期。
 视频详情会优先使用 detail 返回里的 tags；只有 detail 没带 tags 时才 fallback 到 tag 接口，且不会在 detail 和 tags 之间额外 sleep。
-默认输出是 `data/kanami_ai_covers.json`，默认请求等待是 `--request-delay 1 --request-jitter 4`，默认风控冷却是 `--cooldown-seconds 1800`。
+默认输出是 `data/kanami_ai_covers.json`，并自动从已有输出 JSON 和 checkpoint 恢复采集。只有明确传入 `--fresh` 时才会从空数据开始并覆盖已有状态。默认请求等待是 `--request-delay 1 --request-jitter 4`，默认风控冷却是 `--cooldown-seconds 1800`。
 
 ```bash
 python crawler.py crawl --pages 3
@@ -64,7 +64,6 @@ python crawler.py crawl --pages 3
 ```bash
 python crawler.py crawl \
   --search-only \
-  --resume \
   --deep-search \
   --max-candidates-per-run 80
 ```
@@ -74,7 +73,6 @@ python crawler.py crawl \
 ```bash
 python crawler.py crawl \
   --search-only \
-  --resume \
   --keyword AI香奈美 \
   --pubtime-begin 2024-12-01 \
   --pubtime-end 2024-12-31 \
@@ -128,7 +126,7 @@ python crawler.py crawl --search-backend yt-dlp
 
 运行时还会维护：
 
-- `data/crawl_checkpoint.json`：已处理候选 key、完整检查过的搜索日期，以及需要人工审核的 0 结果日期，用于 `--resume`。
+- `data/crawl_checkpoint.json`：已处理候选 key、完整检查过的搜索日期，以及需要人工审核的 0 结果日期；爬虫默认读取它继续采集。
 - `data/raw_candidates.jsonl`：每个候选的视频信息、筛选结果和拒绝原因。
 - `.private/vnami_downloads.sqlite3`：下载 worker 的私有状态库，保存待下载目录、全量元数据、下载状态和本地 mp3 路径。
 
