@@ -1,0 +1,19 @@
+{
+  "model": "gpt-5.6-sol",
+  "stream": true,
+  "input": [
+    {
+      "type": "message",
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "Preserve only the essential context."
+        }
+      ]
+    },
+    {
+      "type": "compaction_trigger"
+    }
+  ]
+}
