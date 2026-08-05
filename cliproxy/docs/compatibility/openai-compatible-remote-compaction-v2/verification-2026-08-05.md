@@ -85,6 +85,21 @@ failed: false
 
 最近一次记录的 usage 为 input 327、output 34、total 361 tokens，说明 Responses terminal usage 也被兼容分支正确采集。
 
+## 公网验收
+
+在本地验证完成后，同一个无敏感状态的最小 trigger 探针经 Cloudflare 公网入口执行：
+
+```text
+GET https://cliproxy.kanami.top/healthz -> HTTP 200
+POST https://cliproxy.kanami.top/v1/responses -> HTTP 200
+response.output_item.added: type=compaction, encrypted_content present
+response.output_item.done: type=compaction, encrypted_content present
+response.completed: output contains type=compaction, encrypted_content present
+unique compaction item count: 1
+```
+
+公网原始 SSE 同样只暂存在系统临时目录，结构检查后立即删除。该结果证明修复不只在本地 origin 生效，也已通过实际公网入口和 Cloudflare connector。
+
 ## 尚未执行的敏感验证
 
 真实“压缩后下一轮”需要读取上游返回的不透明 `encrypted_content`，再把它作为请求载荷发送回外部 xia 服务。该动作涉及敏感状态重放，本次未在缺少额外明确授权时执行。
