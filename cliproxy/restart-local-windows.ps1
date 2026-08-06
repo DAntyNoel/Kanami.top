@@ -42,6 +42,7 @@ if (-not (Test-Path $ConfigPath -PathType Leaf)) {
 
 $ComposeArgs = @("--env-file", ".env", "-f", "docker-compose.yml")
 $UsageKeeperComposeArgs = @("--env-file", ".env", "-f", "docker-compose.usage-keeper.yml")
+$UsageKeeperDataVolume = "kanami-cpa-usage-keeper-data"
 
 function Get-DotEnvValue {
     param([Parameter(Mandatory = $true)][string]$Name)
@@ -154,6 +155,24 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 if (Test-Truthy $StartUsageKeeper) {
+    Write-Host "Ensuring CPA Usage Keeper data volume exists..."
+    docker volume create --label com.kanami.service=cpa-usage-keeper $UsageKeeperDataVolume | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "usage keeper data volume creation failed with exit code $LASTEXITCODE"
+    }
+
+    docker compose @UsageKeeperComposeArgs run --rm --no-deps -T --entrypoint /bin/sh cpa-usage-keeper -c "test -s /data/app.db"
+    $UsageKeeperVolumeProbeExitCode = $LASTEXITCODE
+    if ($UsageKeeperVolumeProbeExitCode -ne 0 -and $UsageKeeperVolumeProbeExitCode -ne 1) {
+        throw "usage keeper data volume probe failed with exit code $UsageKeeperVolumeProbeExitCode"
+    }
+    $LegacyUsageKeeperDb = Join-Path $ProjectDir "keeper\app.db"
+    if ($UsageKeeperVolumeProbeExitCode -eq 1 -and
+        (Test-Path $LegacyUsageKeeperDb -PathType Leaf) -and
+        (Get-Item $LegacyUsageKeeperDb).Length -gt 0) {
+        throw "legacy keeper/app.db exists while $UsageKeeperDataVolume is empty; refusing to start a blank database. Back up app.db/app.db-wal/app.db-shm, checkpoint the WAL, seed the named volume, then rerun."
+    }
+
     Write-Host "Restarting CPA Usage Keeper in detached mode..."
     $UsageKeeperRunArgs = @($UsageKeeperComposeArgs)
     if ((Test-Truthy $StartKeeperTunnel) -and -not [string]::IsNullOrWhiteSpace($KeeperTunnelToken)) {

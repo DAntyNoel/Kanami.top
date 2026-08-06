@@ -88,6 +88,7 @@ CLIProxyAPI v6.10.0 之后本体不再预置完整数据统计。本站使用独
 
 ```bash
 cd cliproxy
+docker volume create --label com.kanami.service=cpa-usage-keeper kanami-cpa-usage-keeper-data
 docker compose --env-file .env -f docker-compose.usage-keeper.yml up -d --force-recreate
 ```
 
@@ -138,7 +139,13 @@ $env:START_USAGE_KEEPER = "false"
 .\cliproxy\restart-local-windows.ps1
 ```
 
-Usage Keeper 的 SQLite、备份和日志保存在 `cliproxy/keeper/`，该目录只提交 `.gitkeep`，实际运行数据不提交。
+Usage Keeper 的 SQLite 主库、内置备份和日志保存在外部 Docker named volume `kanami-cpa-usage-keeper-data`，避免 Windows bind mount 影响 WAL/SHM 崩溃恢复，也避免 `docker compose down -v` 误删数据库。重启脚本会幂等创建该卷，实际运行数据不提交。
+
+从旧版 `cliproxy/keeper/app.db*` bind mount 升级时，重启脚本若发现旧数据库存在但 named volume 为空，会拒绝启动空库。此时必须先停止 Keeper，完整备份同一时间点的 `app.db`、`app.db-wal`、`app.db-shm`，在副本上完成 WAL checkpoint 和完整性检查，再把生成的单文件 `app.db` 写入 named volume。不要直接丢弃 WAL，也不要混用不同时间点的文件。
+
+迁移并完成重启验收后，旧 `cliproxy/keeper/app.db*` 只作为离线历史归档保留，不再被容器读取；确认备份策略后再人工清理。
+
+生产环境默认固定 Keeper 镜像 digest，避免 `latest` 在重建时静默漂移。如需升级，先完整备份数据库并在 `cliproxy/.env` 中显式设置 `CPA_USAGE_KEEPER_IMAGE`，完成兼容性验证后再更新 Compose 默认值。
 
 ## Cloudflare Worker
 

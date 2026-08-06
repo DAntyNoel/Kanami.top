@@ -33,6 +33,8 @@ usage_keeper_compose() {
   docker compose --env-file .env -f docker-compose.usage-keeper.yml "$@"
 }
 
+USAGE_KEEPER_DATA_VOLUME="kanami-cpa-usage-keeper-data"
+
 env_value() {
   key="$1"
   awk -v key="$key" -F= '
@@ -109,6 +111,24 @@ fi
 compose ps
 
 if truthy "$START_USAGE_KEEPER"; then
+  echo "Ensuring CPA Usage Keeper data volume exists..."
+  docker volume create --label com.kanami.service=cpa-usage-keeper "$USAGE_KEEPER_DATA_VOLUME" >/dev/null
+
+  if usage_keeper_compose run --rm --no-deps -T --entrypoint /bin/sh cpa-usage-keeper -c 'test -s /data/app.db'; then
+    :
+  else
+    volume_probe_exit=$?
+    if [ "$volume_probe_exit" -ne 1 ]; then
+      echo "usage keeper data volume probe failed with exit code $volume_probe_exit" >&2
+      exit "$volume_probe_exit"
+    fi
+    if [ -s "keeper/app.db" ]; then
+      echo "legacy keeper/app.db exists while $USAGE_KEEPER_DATA_VOLUME is empty; refusing to start a blank database." >&2
+      echo "Back up app.db/app.db-wal/app.db-shm, checkpoint the WAL, seed the named volume, then rerun." >&2
+      exit 1
+    fi
+  fi
+
   echo "Restarting CPA Usage Keeper in detached mode..."
   if truthy "$START_KEEPER_TUNNEL" && [ -n "$KEEPER_TUNNEL_TOKEN" ]; then
     echo "Keeper Cloudflare Tunnel token found; restarting keeper and tunnel connector."

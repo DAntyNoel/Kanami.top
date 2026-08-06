@@ -2,7 +2,7 @@ name: kanami-cliproxy-usage
 
 services:
   cpa-usage-keeper:
-    image: ${CPA_USAGE_KEEPER_IMAGE:-ghcr.io/willxup/cpa-usage-keeper:latest}
+    image: ${CPA_USAGE_KEEPER_IMAGE:-ghcr.io/willxup/cpa-usage-keeper@sha256:bb93afd2f9ad24577529c7a0153181d148d1e62898fbdbe3e10971a34571a2a1}
     container_name: kanami-cpa-usage-keeper
     restart: unless-stopped
     environment:
@@ -22,7 +22,9 @@ services:
     ports:
       - "127.0.0.1:${USAGE_KEEPER_PORT:-12704}:8080"
     volumes:
-      - ./keeper:/data
+      # SQLite WAL/SHM must stay on Docker's Linux filesystem. Windows bind
+      # mounts can leave an unrecoverable wal-index after an abrupt restart.
+      - keeper-data:/data
     networks:
       - cliproxy
 
@@ -49,3 +51,8 @@ networks:
   cliproxy:
     name: kanami-cliproxy_default
     external: true
+
+volumes:
+  keeper-data:
+    external: true
+    name: kanami-cpa-usage-keeper-data
