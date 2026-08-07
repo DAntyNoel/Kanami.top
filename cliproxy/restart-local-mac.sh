@@ -65,6 +65,11 @@ cli_proxy_image() {
   printf '%s\n' "${image:-kanami-cliproxy:latest}"
 }
 
+memory_killbot_image() {
+  image=$(env_value "CLIPROXY_MEMORY_KILLBOT_IMAGE")
+  printf '%s\n' "${image:-kanami-cliproxy-memory-killbot:local}"
+}
+
 START_USAGE_KEEPER="${START_USAGE_KEEPER:-$(env_value "START_USAGE_KEEPER")}"
 START_USAGE_KEEPER="${START_USAGE_KEEPER:-true}"
 START_KEEPER_TUNNEL="${START_KEEPER_TUNNEL:-$(env_value "START_KEEPER_TUNNEL")}"
@@ -81,14 +86,16 @@ else
 fi
 
 CLI_PROXY_IMAGE_NAME=$(cli_proxy_image)
+MEMORY_KILLBOT_IMAGE_NAME=$(memory_killbot_image)
 
-if docker image inspect "$CLI_PROXY_IMAGE_NAME" >/dev/null 2>&1; then
-  echo "Found local Docker image: $CLI_PROXY_IMAGE_NAME"
-  echo "Starting without rebuilding CLIProxyAPI..."
+if docker image inspect "$CLI_PROXY_IMAGE_NAME" >/dev/null 2>&1 &&
+  docker image inspect "$MEMORY_KILLBOT_IMAGE_NAME" >/dev/null 2>&1; then
+  echo "Found local Docker images: $CLI_PROXY_IMAGE_NAME and $MEMORY_KILLBOT_IMAGE_NAME"
+  echo "Starting without rebuilding CLIProxyAPI or memory killbot..."
   UP_ARGS="-d --no-build --force-recreate"
 else
-  echo "Missing local Docker image: $CLI_PROXY_IMAGE_NAME"
-  echo "Building CLIProxyAPI before start..."
+  echo "One or more local images are missing: $CLI_PROXY_IMAGE_NAME, $MEMORY_KILLBOT_IMAGE_NAME"
+  echo "Building CLIProxyAPI and memory killbot before start..."
   UP_ARGS="-d --build --force-recreate"
 fi
 

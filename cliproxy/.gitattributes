@@ -1,0 +1,2 @@
+*.sh text eol=lf
+memory-killbot/** text eol=lf

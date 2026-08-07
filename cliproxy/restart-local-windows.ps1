@@ -83,6 +83,11 @@ $CliProxyImageValue = Get-DotEnvValue "CLI_PROXY_IMAGE"
 if ($CliProxyImageValue) {
     $CliProxyImage = $CliProxyImageValue
 }
+$MemoryKillbotImage = "kanami-cliproxy-memory-killbot:local"
+$MemoryKillbotImageValue = Get-DotEnvValue "CLIPROXY_MEMORY_KILLBOT_IMAGE"
+if ($MemoryKillbotImageValue) {
+    $MemoryKillbotImage = $MemoryKillbotImageValue
+}
 
 $StartUsageKeeper = $env:START_USAGE_KEEPER
 if (-not $StartUsageKeeper) {
@@ -124,13 +129,16 @@ if ($RunningContainers.Count -gt 0) {
 
 Write-Host "Starting local Cloudflare Docker services in detached mode..."
 docker image inspect $CliProxyImage *> $null
-if ($LASTEXITCODE -eq 0) {
-    Write-Host "Found local Docker image: $CliProxyImage"
-    Write-Host "Starting without rebuilding CLIProxyAPI..."
+$CliProxyImagePresent = $LASTEXITCODE -eq 0
+docker image inspect $MemoryKillbotImage *> $null
+$MemoryKillbotImagePresent = $LASTEXITCODE -eq 0
+if ($CliProxyImagePresent -and $MemoryKillbotImagePresent) {
+    Write-Host "Found local Docker images: $CliProxyImage and $MemoryKillbotImage"
+    Write-Host "Starting without rebuilding CLIProxyAPI or memory killbot..."
     $UpArgs = @("up", "-d", "--no-build", "--force-recreate")
 } else {
-    Write-Host "Missing local Docker image: $CliProxyImage"
-    Write-Host "Building CLIProxyAPI before start..."
+    Write-Host "One or more local images are missing: $CliProxyImage, $MemoryKillbotImage"
+    Write-Host "Building CLIProxyAPI and memory killbot before start..."
     $UpArgs = @("up", "-d", "--build", "--force-recreate")
 }
 

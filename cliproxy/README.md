@@ -80,6 +80,35 @@ CLOUDFLARED_IMAGE=docker.1ms.run/cloudflare/cloudflared:latest
 GOPROXY=https://goproxy.cn,direct
 ```
 
+## Docker 内存 Killbot
+
+`docker-compose.yml` 会构建并常驻运行 `cliproxy-memory-killbot`。它通过 Docker socket 每 30 秒读取一次 `kanami-cliproxy-api` 的 working set（`usage - inactive_file`），不修改 CLIProxyAPI 源码：
+
+- 连续 3 次达到 8 GiB 时记录告警；
+- 连续 3 次达到 12 GiB 时请求 Docker 重启一次 CLIProxyAPI；
+- 成功重启后锁存，直到 working set 降到 6 GiB 以下，避免重启循环；
+- 重启失败或 killbot 在动作中中断时保留 30 分钟冷却，之后允许重试；
+- 状态事件最多保留 100 条，重启诊断快照默认最多保留 20 份。
+
+这些阈值针对当前约 14 GiB 的 Docker Desktop WSL VM，不是 Windows 宿主内存阈值。容器内 killbot 看不到 `com.docker.backend.exe` 的宿主私有内存。
+
+状态接口只绑定本机：
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:12715/status | ConvertTo-Json -Depth 8
+```
+
+首次只启动 killbot、不重建 CLIProxyAPI：
+
+```powershell
+docker compose --env-file .env -f docker-compose.yml build cliproxy-memory-killbot
+docker compose --env-file .env -f docker-compose.yml up -d --no-deps cliproxy-memory-killbot
+```
+
+Docker socket 即使标记为只读挂载仍是高权限接口。因此 killbot 没有远程重启端点，也没有公网入口；容器使用只读根目录、移除全部 Linux capability、`no-new-privileges`、128 MiB 内存和 64 PID 上限，并对日志、事件与快照设置了上限。可在 `.env` 中覆盖阈值和采样参数，示例见 `.env.example`。
+
+回滚时只需停止 `cliproxy-memory-killbot` 并恢复原 Compose；不要执行 `docker compose down -v`。数据卷 `kanami-cliproxy-memory-killbot-data` 只保存有界状态和诊断快照，可先保留用于排查。
+
 ## CPA Usage Keeper
 
 CLIProxyAPI v6.10.0 之后本体不再预置完整数据统计。本站使用独立的 CPA Usage Keeper 做 SQLite 持久化和可视化，并且用单独的 Compose 文件旁路部署，避免重建或重启现有 `cli-proxy-api` 与 `cloudflared` 容器。

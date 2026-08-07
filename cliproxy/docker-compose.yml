@@ -37,6 +37,61 @@ services:
       - ./secrets/api-keys.txt:/CLIProxyAPI/api-keys.txt:ro
     restart: unless-stopped
 
+  cliproxy-memory-killbot:
+    image: ${CLIPROXY_MEMORY_KILLBOT_IMAGE:-kanami-cliproxy-memory-killbot:local}
+    pull_policy: build
+    build:
+      context: ./memory-killbot
+      dockerfile: Dockerfile
+      args:
+        GO_BUILDER_IMAGE: ${GO_BUILDER_IMAGE:-golang:1.26-alpine}
+    container_name: kanami-cliproxy-memory-killbot
+    command: ["run"]
+    environment:
+      KILLBOT_CONTAINER_NAME: kanami-cliproxy-api
+      KILLBOT_CONTAINER_WARN_BYTES: ${KILLBOT_CONTAINER_WARN_BYTES:-8GiB}
+      KILLBOT_CONTAINER_RESTART_BYTES: ${KILLBOT_CONTAINER_RESTART_BYTES:-12GiB}
+      KILLBOT_CONTAINER_RECOVERY_BYTES: ${KILLBOT_CONTAINER_RECOVERY_BYTES:-6GiB}
+      KILLBOT_CONTAINER_WARN_SAMPLES: ${KILLBOT_CONTAINER_WARN_SAMPLES:-3}
+      KILLBOT_CONTAINER_RESTART_SAMPLES: ${KILLBOT_CONTAINER_RESTART_SAMPLES:-3}
+      KILLBOT_SAMPLE_INTERVAL: ${KILLBOT_SAMPLE_INTERVAL:-30s}
+      KILLBOT_DOCKER_TIMEOUT: ${KILLBOT_DOCKER_TIMEOUT:-8s}
+      KILLBOT_RESTART_TIMEOUT: ${KILLBOT_RESTART_TIMEOUT:-15s}
+      KILLBOT_RESTART_COOLDOWN: ${KILLBOT_RESTART_COOLDOWN:-30m}
+      KILLBOT_ERROR_SAMPLES: ${KILLBOT_ERROR_SAMPLES:-3}
+      KILLBOT_SNAPSHOT_RETENTION: ${KILLBOT_SNAPSHOT_RETENTION:-20}
+      KILLBOT_LISTEN_ADDRESS: ":8080"
+      KILLBOT_DATA_DIR: /data
+      KILLBOT_DOCKER_SOCKET: /var/run/docker.sock
+    ports:
+      - "127.0.0.1:${KILLBOT_STATUS_PORT:-12715}:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - cliproxy-memory-killbot-data:/data
+    depends_on:
+      - cli-proxy-api
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 128m
+    pids_limit: 64
+    tmpfs:
+      - /tmp:size=8m,mode=1777,noexec,nosuid,nodev
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/cliproxy-memory-killbot", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: local
+      options:
+        max-size: "5m"
+        max-file: "3"
+
   cloudflared:
     image: ${CLOUDFLARED_IMAGE:-cloudflare/cloudflared:latest}
     container_name: kanami-cliproxy-cloudflared
@@ -48,3 +103,5 @@ services:
 volumes:
   cli-proxy-auth:
     name: kanami-cliproxy-auth
+  cliproxy-memory-killbot-data:
+    name: kanami-cliproxy-memory-killbot-data
