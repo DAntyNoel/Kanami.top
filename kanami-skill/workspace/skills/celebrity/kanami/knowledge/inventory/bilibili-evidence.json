@@ -1,0 +1,170 @@
+{
+  "observed_at": "2026-08-14",
+  "timezone": "Asia/Shanghai",
+  "account": {
+    "endpoint": "https://api.bilibili.com/x/web-interface/card?mid=660091334",
+    "code": 0,
+    "mid": 660091334,
+    "name": "卡拉彼丘",
+    "official_verify_type": 1,
+    "official_verify_desc": "卡拉彼丘官方账号",
+    "archive_count_reported": 125
+  },
+  "detail_endpoint_template": "https://api.bilibili.com/x/web-interface/view?bvid={bvid}",
+  "verified_videos": [
+    {
+      "bvid": "BV1W2421L7wT",
+      "title": "《卡拉彼丘》香奈美主题曲「你看世界好美」| 2月1日正式公测",
+      "owner_mid": 660091334,
+      "owner_name": "卡拉彼丘",
+      "published_at": "2024-01-30T17:59:28+08:00",
+      "duration_seconds": 145,
+      "pages": 1,
+      "catalog_status": "core"
+    },
+    {
+      "bvid": "BV1HZ421g71j",
+      "title": "萌萌香香的香奈美",
+      "owner_mid": 660091334,
+      "owner_name": "卡拉彼丘",
+      "published_at": "2024-06-10T13:30:00+08:00",
+      "duration_seconds": 82,
+      "pages": 1,
+      "catalog_status": "core"
+    },
+    {
+      "bvid": "BV12JDGYLEsT",
+      "title": "《卡拉彼丘》香奈美传说时装·「世纪歌姬」| 展示PV",
+      "owner_mid": 660091334,
+      "owner_name": "卡拉彼丘",
+      "published_at": "2024-11-06T18:00:00+08:00",
+      "duration_seconds": 92,
+      "pages": 1,
+      "catalog_status": "core-skin"
+    },
+    {
+      "bvid": "BV1LjSqYhE7a",
+      "title": "《卡拉彼丘》第八赛季「蚀刻迷局」10月31日开启！",
+      "owner_mid": 660091334,
+      "owner_name": "卡拉彼丘",
+      "published_at": "2024-10-30T18:00:00+08:00",
+      "duration_seconds": 101,
+      "pages": 1,
+      "catalog_status": "screened-low-priority"
+    },
+    {
+      "bvid": "BV1AnoPYNEiL",
+      "title": "《你看世界好美》日文复现丨美しい世界へ",
+      "owner_mid": 660091334,
+      "owner_name": "卡拉彼丘",
+      "published_at": "2025-04-16T12:06:08+08:00",
+      "duration_seconds": 244,
+      "pages": 1,
+      "catalog_status": "core-language-variant"
+    },
+    {
+      "bvid": "BV13LtUzyE49",
+      "title": "《卡拉彼丘》2025线下嘉年华精彩回顾",
+      "owner_mid": 660091334,
+      "owner_name": "卡拉彼丘",
+      "published_at": "2025-08-08T18:01:24+08:00",
+      "duration_seconds": 89,
+      "pages": 1,
+      "catalog_status": "screened-low-priority"
+    },
+    {
+      "bvid": "BV1tCFKz7EEH",
+      "title": "【卡拉彼丘】香奈美「花的私语」ver. 1/7 比例手办展示",
+      "owner_mid": 660091334,
+      "owner_name": "卡拉彼丘",
+      "published_at": "2026-02-03T12:00:00+08:00",
+      "duration_seconds": 46,
+      "pages": 1,
+      "catalog_status": "screened-visual-only"
+    },
+    {
+      "bvid": "BV1yqPmzTEzW",
+      "title": "《卡拉彼丘》新赛季「长廊追迹」3月10日正式开启！",
+      "owner_mid": 660091334,
+      "owner_name": "卡拉彼丘",
+      "published_at": "2026-03-09T14:00:00+08:00",
+      "duration_seconds": 121,
+      "pages": 1,
+      "catalog_status": "screened-low-priority"
+    },
+    {
+      "bvid": "BV1NdQwB5EFi",
+      "title": "《卡拉彼丘》新版本4月14号正式开启！",
+      "owner_mid": 660091334,
+      "owner_name": "卡拉彼丘",
+      "published_at": "2026-04-11T12:00:00+08:00",
+      "duration_seconds": 136,
+      "pages": 1,
+      "catalog_status": "screened-low-priority"
+    },
+    {
+      "bvid": "BV1hCKw6VE2i",
+      "title": "《卡拉彼丘》新赛季「暗帷迷踪」7月21日正式开启！",
+      "owner_mid": 660091334,
+      "owner_name": "卡拉彼丘",
+      "published_at": "2026-07-19T12:00:00+08:00",
+      "duration_seconds": 174,
+      "pages": 1,
+      "catalog_status": "screened-low-priority"
+    },
+    {
+      "bvid": "BV1d93p69EKU",
+      "title": "《卡拉彼丘》香奈美传说时装「心之奏鸣」主题曲 | Cuter Me",
+      "owner_mid": 660091334,
+      "owner_name": "卡拉彼丘",
+      "published_at": "2026-07-30T12:00:00+08:00",
+      "duration_seconds": 188,
+      "pages": 2,
+      "catalog_status": "core-skin"
+    },
+    {
+      "bvid": "BV1TwGA6XEhK",
+      "title": "《卡拉彼丘》香奈美传说时装·「心之奏鸣」| 展示PV",
+      "owner_mid": 660091334,
+      "owner_name": "卡拉彼丘",
+      "published_at": "2026-08-02T12:00:00+08:00",
+      "duration_seconds": 162,
+      "pages": 1,
+      "catalog_status": "core-skin"
+    },
+    {
+      "bvid": "BV1m7um6BEgB",
+      "title": "《卡拉彼丘》2026线下嘉年华精彩回顾",
+      "owner_mid": 660091334,
+      "owner_name": "卡拉彼丘",
+      "published_at": "2026-08-09T20:00:00+08:00",
+      "duration_seconds": 355,
+      "pages": 2,
+      "page_durations_seconds": [41, 314],
+      "catalog_status": "conditional"
+    }
+  ],
+  "enumeration": {
+    "visible_series_count": 7,
+    "visible_series_video_count": 49,
+    "keywords": [
+      "香奈美",
+      "Kanami",
+      "你看世界好美",
+      "Cuter Me",
+      "Be Shining",
+      "世纪歌姬",
+      "心之奏鸣",
+      "宿舍",
+      "剪刀手",
+      "明",
+      "回归演唱会"
+    ],
+    "limitations": [
+      "space account info returned -401 or -799 on different public requests",
+      "space WBI archive search returned -352 under anti-crawler checks",
+      "public search type endpoint returned HTTP 412",
+      "current catalog is not claimed to be an absolute account-wide enumeration"
+    ]
+  }
+}

@@ -1,0 +1,50 @@
+project: kanami
+display_name: 香奈美
+language: zh-CN
+status: gate-a-awaiting-user-confirmation
+
+character:
+  family: celebrity
+  fictional_character_adapter: true
+  persona_priority: true
+  default_user_relationship: 熟悉且受到重视的引航者
+  pledge_mode_default: false
+
+collection:
+  strategy: web+local
+  accessed_at: 2026-08-14
+  primary_expression_baseline: 中文 PC 正史
+  skin_material_policy: 独立情境保留，不覆盖基础人格
+  canon_scope:
+    - 卡拉彼丘 WIKI 中的香奈美资料
+    - 游戏内官方设定、角色小传、剧情、通讯、回归信和语音
+    - 卡拉彼丘官方 B 站账号发布的香奈美相关视频
+    - 用户后续提供且可确认来自官方的材料
+  non_canon_visual_sources:
+    - ../../../../../KanamiBot/data/advanced_media/香奈美
+
+upstream:
+  repository: https://github.com/titanwings/colleague-skill.git
+  branch: dot-skill
+  commit: 22d96a76e05b91939493f604a0a46198d0d7f978
+  preparation: temporary-read-only-clone
+  global_install: false
+  writer_auto_install_must_be_disabled: true
+
+gates:
+  A_material_catalog: ready_for_user_confirmation
+  B_research_summary: pending
+  C_mental_models: pending
+  D_persona_preview: pending
+  E_final_acceptance: pending
+
+evidence_policy:
+  labels:
+    - CANON_DIRECT
+    - CANON_SYNTHESIS
+    - IN_CHARACTER_INFERENCE
+    - UNKNOWN
+  preserve_long_transcripts: false
+  require_source_url: true
+  require_context_and_counterparty: true
+  require_evidence_inference_separation: true
