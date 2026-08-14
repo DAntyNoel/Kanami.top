@@ -2,7 +2,7 @@
   "schema_version": 1,
   "name": "celebrity-kanami",
   "display_name": "香奈美",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "language": "zh-CN",
   "family": "celebrity",
   "fictional_character_adapter": true,
@@ -16,7 +16,7 @@
     "core_videos_fully_viewed": 0,
     "audio_language_conflicts": 145,
     "sha256": {
-      "source_manifest": "7cef6568b77202b30f8049cf4cd1385a3c386bf0265359c0eab0b0b989dc2820",
+      "source_manifest": "d334a44bee1c912183c58f24bcd2e75bd57205aeba39abd59447866cf99c26ff",
       "synthesis": "bcfaacbddb380c172462e1ac91a556f97bc4f883655b937a8242d38642c52a7a",
       "persona": "6e8747a95d0c917234e848e577ce8a549f3a8733439604c20b3df34d87fafc39",
       "work": "f23a870e2c8e1595b45ff05fcc64559c1a6cd7af236dfe05db4037b0e4b5f042",
@@ -25,14 +25,14 @@
   },
   "validation": {
     "status": "PASS",
-    "score": 98.25,
-    "canon_accuracy": 25.0,
+    "score": 97.0,
+    "canon_accuracy": 24.25,
     "unknown_honesty": 9.25,
-    "validation_sha256": "a61797e125e71d1bb8821b0fc791a009f5ae35b5603edaee8c6fee8704a9c141"
+    "validation_sha256": "0da2928f176f722f366e9e42f93e231d98091a6899afcf86726821ce2bb8ac59"
   },
   "evolution": {
-    "sequence": 1,
-    "parent_manifest_sha256": null
+    "sequence": 2,
+    "parent_manifest_sha256": "c884c540aafc94f5bf4b63bc1d3ad5b5bd63facc75b395150888cd14f16c03ca"
   },
   "installation": {
     "directory_name": "celebrity-kanami",

@@ -107,8 +107,8 @@
     },
     {
       "path": "knowledge/research/reviews/validation.md",
-      "sha256": "a61797e125e71d1bb8821b0fc791a009f5ae35b5603edaee8c6fee8704a9c141",
-      "size": 3646
+      "sha256": "0da2928f176f722f366e9e42f93e231d98091a6899afcf86726821ce2bb8ac59",
+      "size": 4220
     },
     {
       "path": "knowledge/source-records/SRC-A-01.json",
@@ -382,7 +382,7 @@
     },
     {
       "path": "meta.json",
-      "sha256": "aeeb1786d78636be3c4798c49126a6dca377b32eef49763e949e4e4262601237",
+      "sha256": "bded353af493a9f35548f9818210c1b626656933de834f7cb7bf5f051cb743e0",
       "size": 1624
     },
     {
@@ -407,6 +407,6 @@
     }
   ],
   "manifest_version": 1,
-  "payload_sha256": "251200061035b59c688185c171d5e575843c14b81e90d5dd751e66115210042c",
+  "payload_sha256": "fc4e5caa2dd5baddc6d31c806a483091d0aab8713f22bddbdac865293f23b20e",
   "skill_name": "celebrity-kanami"
 }

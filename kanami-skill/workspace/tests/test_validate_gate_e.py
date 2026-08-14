@@ -45,6 +45,20 @@ class GateEValidationTests(unittest.TestCase):
         audit = gate_e.validate(CHARACTER_ROOT, DIST_ROOT, TRANSCRIPT_ROOT)
         self.assertEqual([], audit.failures)
 
+    def test_source_snapshot_hashes_match_workspace_bytes(self) -> None:
+        metadata = gate_e.load_json(DIST_ROOT / "meta.json")
+        self.assertEqual(
+            [], gate_e.validate_source_snapshot_hashes(metadata, CHARACTER_ROOT)
+        )
+
+        tampered = copy.deepcopy(metadata)
+        tampered["source_snapshot"]["sha256"]["source_manifest"] = "0" * 64
+        errors = gate_e.validate_source_snapshot_hashes(tampered, CHARACTER_ROOT)
+        self.assertTrue(
+            any("source_manifest" in error and "actual=" in error for error in errors),
+            errors,
+        )
+
     def test_final_validation_requires_transcript_root(self) -> None:
         audit = gate_e.validate(CHARACTER_ROOT, DIST_ROOT)
         failures = {row["name"] for row in audit.failures}

@@ -63,6 +63,13 @@ EXPECTED_BEHAVIOR_FILES = frozenset(
         "references/work.md",
     }
 )
+SOURCE_SNAPSHOT_FILES = {
+    "source_manifest": Path("knowledge/source_manifest.md"),
+    "synthesis": Path("knowledge/research/reviews/synthesis.md"),
+    "persona": Path("persona.md"),
+    "work": Path("work.md"),
+    "gate_d_preview": Path("gates/gate-d-persona-preview.md"),
+}
 WINDOWS_RESERVED_NAMES = frozenset(
     {"con", "prn", "aux", "nul", "clock$"}
     | {f"com{index}" for index in range(1, 10)}
@@ -251,6 +258,46 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def validate_source_snapshot_hashes(meta: object, root: Path) -> list[str]:
+    """Verify metadata provenance against the research workspace bytes."""
+
+    if not isinstance(meta, dict):
+        return ["formal metadata root is not an object"]
+    snapshot = meta.get("source_snapshot")
+    if not isinstance(snapshot, dict):
+        return ["source_snapshot is not an object"]
+    declared = snapshot.get("sha256")
+    if not isinstance(declared, dict):
+        return ["source_snapshot.sha256 is not an object"]
+
+    errors: list[str] = []
+    expected_keys = set(SOURCE_SNAPSHOT_FILES)
+    if set(declared) != expected_keys:
+        errors.append(
+            "source snapshot keys mismatch: "
+            f"expected={sorted(expected_keys)}, actual={sorted(declared)}"
+        )
+    for name, relative in SOURCE_SNAPSHOT_FILES.items():
+        path = root / relative
+        expected = declared.get(name)
+        if not isinstance(expected, str) or SHA256_RE.fullmatch(expected) is None:
+            errors.append(f"{name}: invalid declared SHA-256 {expected!r}")
+            continue
+        if not path.is_file():
+            errors.append(f"{name}: missing source file {path}")
+            continue
+        try:
+            actual = sha256_file(path)
+        except OSError as exc:
+            errors.append(f"{name}: cannot hash {path}: {exc}")
+            continue
+        if actual != expected:
+            errors.append(
+                f"{name}: declared={expected}, actual={actual}, path={path}"
+            )
+    return errors
+
+
 def collect_keys(value: Any) -> set[str]:
     keys: set[str] = set()
     if isinstance(value, dict):
@@ -370,6 +417,13 @@ def validate(
     except (OSError, UnicodeError, json.JSONDecodeError, ValueError) as exc:
         audit.check(False, "input decoding", str(exc))
         return audit
+
+    source_snapshot_errors = validate_source_snapshot_hashes(meta, root)
+    audit.check(
+        not source_snapshot_errors,
+        "source snapshot provenance",
+        f"errors={source_snapshot_errors}",
+    )
 
     try:
         if not isinstance(evaluation_schema, dict):
@@ -805,7 +859,7 @@ def validate(
     )
     audit.check(
         "结论：`PASS`" in validation_report
-        and f"{declared_total}／100" in validation_report
+        and f"{float(declared_total):.2f}／100" in validation_report
         and "人工音频回听 0" in validation_report
         and "完整观看 0" in validation_report
         and "145" in validation_report,

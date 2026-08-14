@@ -12,8 +12,8 @@
     },
     {
       "path": "meta.json",
-      "sha256": "062861fec7a0d8160d747ccfc5426ace8cda95b78319f3fa1dc640ef0d298098",
-      "size": 1366
+      "sha256": "5abfeef1f994c9ac37913fa551cb37f720f878bf817bfa03c10196218ad974f8",
+      "size": 1428
     },
     {
       "path": "references/canon-evidence.md",
@@ -47,6 +47,6 @@
     }
   ],
   "manifest_version": 1,
-  "payload_sha256": "9b0caef026e6eb5bbc7fffea8e23b31d78315ff1897c9f3a54206dd55a8b0354",
+  "payload_sha256": "9dc6bc8d55136f4190455d518183a74d6f2ea3148c7f5b949e05806e98184339",
   "skill_name": "celebrity-kanami"
 }

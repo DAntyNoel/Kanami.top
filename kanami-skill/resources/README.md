@@ -6,8 +6,8 @@
 ## 本轮结果与边界
 
 - 已建立 53 条 source record，其中 21 条 `accepted`、32 条 `candidate`；六轨研究、Gate C 心智模型、Gate D Persona／Work 契约和 Gate E 样例均已完成。
-- Gate E 最终得分 98.25／100，正史准确性 25／25、表达 DNA 19／20、未知诚实度 9.25／10，硬失败为 0。
-- 正式包位于 `../dist/celebrity-kanami/`，最终 manifest 为 `c884c540aafc94f5bf4b63bc1d3ad5b5bd63facc75b395150888cd14f16c03ca`。
+- Gate E `run-2026-08-14-06` 最终得分 97.00／100，正史准确性 24.25／25、表达 DNA 18.50／20、未知诚实度 9.25／10，硬失败为 0。
+- 正式包版本为 `1.0.1`，位于 `../dist/celebrity-kanami/`，最终 manifest 为 `ee58565ea23f2e368f857b64f4059ad55a4c2bf6a2d919dd3a0e3bef36188cf5`。
 - 已安装到 `$CODEX_HOME/skills/celebrity-kanami`；同 manifest 的回滚快照保存在 `$CODEX_HOME/skill-backups/celebrity-kanami/`。
 - 未全局安装上游 `dot-skill`；上游只用于只读结构参考，正式包按 Codex `skill-creator` 规范初始化、验证和安装。
 - 大体积 WIKI 与 KanamiBot 资源继续保留在原位置，避免重复占用仓库空间和制造易漂移副本。

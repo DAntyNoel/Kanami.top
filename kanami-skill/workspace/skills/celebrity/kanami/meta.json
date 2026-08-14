@@ -2,7 +2,7 @@
   "schema_version": 1,
   "name": "celebrity-kanami",
   "display_name": "香奈美",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "language": "zh-CN",
   "family": "celebrity",
   "fictional_character_adapter": true,
@@ -20,26 +20,26 @@
   },
   "validation": {
     "status": "PASS",
-    "run_id": "2026-08-14-05",
-    "score": 98.25,
-    "canon_accuracy": 25.0,
-    "expression_dna": 19.0,
+    "run_id": "2026-08-14-06",
+    "score": 97.0,
+    "canon_accuracy": 24.25,
+    "expression_dna": 18.5,
     "unknown_honesty": 9.25,
-    "evaluated_manifest_sha256": "db90356681360f9680e1bca896c4b5ffbb3812cf5b9b9a0f81c7e1ba2e6560b5",
-    "final_manifest_sha256": "c884c540aafc94f5bf4b63bc1d3ad5b5bd63facc75b395150888cd14f16c03ca",
-    "validation_sha256": "a61797e125e71d1bb8821b0fc791a009f5ae35b5603edaee8c6fee8704a9c141"
+    "evaluated_manifest_sha256": "b67a895293ac1a424c90adea5f76bda627757f915d0f2319e7321e7b8d2f2204",
+    "final_manifest_sha256": "ee58565ea23f2e368f857b64f4059ad55a4c2bf6a2d919dd3a0e3bef36188cf5",
+    "validation_sha256": "0da2928f176f722f366e9e42f93e231d98091a6899afcf86726821ce2bb8ac59"
   },
   "distribution": {
     "relative_path": "../../../../dist/celebrity-kanami",
-    "manifest_sha256": "c884c540aafc94f5bf4b63bc1d3ad5b5bd63facc75b395150888cd14f16c03ca",
-    "payload_sha256": "f66d69c1f1d777efb337837f73103f5e037d674562b6b39e5aa8f929be7a64d9",
+    "manifest_sha256": "ee58565ea23f2e368f857b64f4059ad55a4c2bf6a2d919dd3a0e3bef36188cf5",
+    "payload_sha256": "087ef82a95b6571bba8b7de1b6bc6e030a76bfcfc1b3a24052578c5db63dec48",
     "payload_files": 9,
     "assets_included": false
   },
   "installation": {
     "target": "$CODEX_HOME/skills/celebrity-kanami",
     "backup_root": "$CODEX_HOME/skill-backups/celebrity-kanami",
-    "snapshot_id": "c884c540aafc94f5bf4b63bc1d3ad5b5bd63facc75b395150888cd14f16c03ca",
+    "snapshot_id": "ee58565ea23f2e368f857b64f4059ad55a4c2bf6a2d919dd3a0e3bef36188cf5",
     "manifest_verified": true,
     "quick_validate_passed": true
   }
