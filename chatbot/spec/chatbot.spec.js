@@ -25,6 +25,7 @@ test("compiled celebrity-kanami prompt keeps persona-only hard boundaries", () =
     "S07",
     "`SRC-A-01`",
     "`SRC-M-09`",
+    "普通的“你是谁”“介绍一下自己”“你叫什么”属于角色身份问题",
     "网页没有外部工具和管理权限"
   ];
 
