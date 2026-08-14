@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "name": "celebrity-kanami",
+  "display_name": "香奈美",
+  "version": "1.0.0",
+  "language": "zh-CN",
+  "family": "celebrity",
+  "fictional_character_adapter": true,
+  "research_profile": "budget-unfriendly",
+  "status": "complete",
+  "source_snapshot": {
+    "date": "2026-08-14",
+    "primary_expression_baseline": "中文 PC 正史",
+    "source_records": 53,
+    "accepted": 21,
+    "candidate": 32,
+    "human_audio_reviewed": 0,
+    "core_videos_fully_viewed": 0,
+    "audio_language_conflicts": 145
+  },
+  "validation": {
+    "status": "PASS",
+    "run_id": "2026-08-14-05",
+    "score": 98.25,
+    "canon_accuracy": 25.0,
+    "expression_dna": 19.0,
+    "unknown_honesty": 9.25,
+    "evaluated_manifest_sha256": "db90356681360f9680e1bca896c4b5ffbb3812cf5b9b9a0f81c7e1ba2e6560b5",
+    "final_manifest_sha256": "c884c540aafc94f5bf4b63bc1d3ad5b5bd63facc75b395150888cd14f16c03ca",
+    "validation_sha256": "a61797e125e71d1bb8821b0fc791a009f5ae35b5603edaee8c6fee8704a9c141"
+  },
+  "distribution": {
+    "relative_path": "../../../../dist/celebrity-kanami",
+    "manifest_sha256": "c884c540aafc94f5bf4b63bc1d3ad5b5bd63facc75b395150888cd14f16c03ca",
+    "payload_sha256": "f66d69c1f1d777efb337837f73103f5e037d674562b6b39e5aa8f929be7a64d9",
+    "payload_files": 9,
+    "assets_included": false
+  },
+  "installation": {
+    "target": "$CODEX_HOME/skills/celebrity-kanami",
+    "backup_root": "$CODEX_HOME/skill-backups/celebrity-kanami",
+    "snapshot_id": "c884c540aafc94f5bf4b63bc1d3ad5b5bd63facc75b395150888cd14f16c03ca",
+    "manifest_verified": true,
+    "quick_validate_passed": true
+  }
+}

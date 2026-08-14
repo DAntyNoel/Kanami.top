@@ -1,0 +1,4 @@
+# Content-addressed research and Skill packages require byte-stable checkouts.
+* -text
+# Markdown uses two-space hard line breaks in compact metadata blocks.
+*.md whitespace=-blank-at-eol

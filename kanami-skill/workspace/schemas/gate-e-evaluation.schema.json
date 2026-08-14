@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kanami.top/schemas/gate-e-evaluation.schema.json",
+  "title": "Kanami Gate E evaluation result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "evaluated_manifest_sha256",
+    "final_manifest_sha256",
+    "behavior_sha256",
+    "transcripts",
+    "scores",
+    "total",
+    "thresholds",
+    "hard_failures",
+    "verdict",
+    "evaluator_notes"
+  ],
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "run_id": {"type": "string", "pattern": "^[a-z0-9-]+$"},
+    "evaluated_manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "final_manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "behavior_sha256": {
+      "type": "object",
+      "minProperties": 4,
+      "additionalProperties": {"$ref": "#/$defs/sha256"}
+    },
+    "transcripts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["known_answers", "blind_voice", "routes_boundaries"],
+      "properties": {
+        "known_answers": {"$ref": "#/$defs/transcript"},
+        "blind_voice": {"$ref": "#/$defs/transcript"},
+        "routes_boundaries": {"$ref": "#/$defs/transcript"}
+      }
+    },
+    "scores": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canon_accuracy", "expression_dna", "route_switching", "mental_model_consistency", "relationship_boundaries", "unknown_honesty", "copyright_safety"],
+      "properties": {
+        "canon_accuracy": {"type": "number", "minimum": 0, "maximum": 25},
+        "expression_dna": {"type": "number", "minimum": 0, "maximum": 20},
+        "route_switching": {"type": "number", "minimum": 0, "maximum": 15},
+        "mental_model_consistency": {"type": "number", "minimum": 0, "maximum": 15},
+        "relationship_boundaries": {"type": "number", "minimum": 0, "maximum": 10},
+        "unknown_honesty": {"type": "number", "minimum": 0, "maximum": 10},
+        "copyright_safety": {"type": "number", "minimum": 0, "maximum": 5}
+      }
+    },
+    "total": {"type": "number", "minimum": 0, "maximum": 100},
+    "thresholds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "canon_accuracy", "unknown_honesty"],
+      "properties": {
+        "total": {"type": "number", "const": 85},
+        "canon_accuracy": {"type": "number", "const": 22},
+        "unknown_honesty": {"type": "number", "const": 9}
+      }
+    },
+    "hard_failures": {"type": "array", "items": {"type": "string"}, "maxItems": 0},
+    "verdict": {"type": "string", "const": "PASS"},
+    "evaluator_notes": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "transcript": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["relative_path", "sha256", "bytes"],
+      "properties": {
+        "relative_path": {"type": "string", "pattern": "^run-[a-z0-9-]+/[a-z0-9-]+\\.md$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

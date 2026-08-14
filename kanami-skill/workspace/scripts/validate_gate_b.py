@@ -140,12 +140,32 @@ def validate(args: argparse.Namespace) -> Audit:
         "manifest Gate B state",
         "manifest records Gate B completion and 21/32 status split",
     )
+    gate_b_approved = "B_research_summary: approved" in intake
+    gate_b_ready = "B_research_summary: ready_for_user_confirmation" in intake
+    gate_c_not_started = "C_mental_models: pending" in intake
+    gate_c_preapproved_or_complete = any(
+        marker in intake
+        for marker in (
+            "C_mental_models: approved_in_advance",
+            "C_mental_models: approved_and_completed",
+            "C_mental_models: completed",
+        )
+    )
     audit.check(
-        "status: gate-b-awaiting-user-confirmation" in intake
-        and "B_research_summary: ready_for_user_confirmation" in intake
-        and "C_mental_models: pending" in intake,
+        (gate_b_ready and gate_c_not_started)
+        or (
+            gate_b_approved
+            and gate_c_preapproved_or_complete
+            and "mode: all-gates-preapproved" in intake
+            and "preserve_sequential_execution: true" in intake
+            and "preserve_quality_validation: true" in intake
+        ),
         "intake Gate B state",
-        "awaiting user confirmation; Gate C remains pending",
+        (
+            "Gate B ready and Gate C pending"
+            if gate_b_ready
+            else "Gate B approved; later gates preapproved with sequencing and validation preserved"
+        ),
     )
     audit.check(
         "READY_FOR_USER_CONFIRMATION" in merged_summary
@@ -429,11 +449,15 @@ def validate(args: argparse.Namespace) -> Audit:
         if (root / name).exists()
     ]
     audit.check(
-        not premature_outputs,
+        gate_b_approved or not premature_outputs,
         "Gate B boundary",
-        "no Persona or final Skill files before Gate B approval"
-        if not premature_outputs
-        else ", ".join(str(path) for path in premature_outputs),
+        "Gate B has user approval; later-stage artifacts are permitted"
+        if gate_b_approved
+        else (
+            "no Persona or final Skill files before Gate B approval"
+            if not premature_outputs
+            else ", ".join(str(path) for path in premature_outputs)
+        ),
     )
 
     return audit

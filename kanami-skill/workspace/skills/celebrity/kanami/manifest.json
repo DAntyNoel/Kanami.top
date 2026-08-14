@@ -1,0 +1,412 @@
+{
+  "files": [
+    {
+      "path": "gates/gate-a-material-catalog.md",
+      "sha256": "eb118782afaa2e8ca7707d2e07bdb4db9581a8d8c1bf921691731f45ca3d1813",
+      "size": 5739
+    },
+    {
+      "path": "gates/gate-b-research-summary.md",
+      "sha256": "23b2fb11ec244b51d1fa7be0241da3856e474ee648ad2e533716b5cea44e65d5",
+      "size": 2247
+    },
+    {
+      "path": "gates/gate-c-mental-models.md",
+      "sha256": "ca5ddf2e6f2fd3d5089e0ee566ef2affb799522dc4aa8bbb523acc35899a66ee",
+      "size": 4108
+    },
+    {
+      "path": "gates/gate-d-persona-preview.md",
+      "sha256": "dc90b776fa193a4ffcde4b665f588c01b630e91e5ff5231dc3cdc5dc281604a1",
+      "size": 6191
+    },
+    {
+      "path": "intake.yaml",
+      "sha256": "d63ba55246d9576806a8c3c3c07fe4e132b9724bd38af517255e1f297098e7ce",
+      "size": 1756
+    },
+    {
+      "path": "knowledge/inventory/audio-analysis.json",
+      "sha256": "6bcfcf7ad40d89e6590f9e20af5ad8be2ef82a2040785976ca35ef09137bb533",
+      "size": 12517
+    },
+    {
+      "path": "knowledge/inventory/bilibili-evidence.json",
+      "sha256": "7ae22f04b8b24811fc91a23d60149c6102b22511ed74f519e4bef10d85f06abe",
+      "size": 5470
+    },
+    {
+      "path": "knowledge/inventory/bilibili.md",
+      "sha256": "6844179458bf430c40381d8279dba936180d8d7c3e581474df75e5212db9c904",
+      "size": 2328
+    },
+    {
+      "path": "knowledge/inventory/game-local.md",
+      "sha256": "90b642393c57807e5e023257bcdc878b820953ed32069634a745bf4d66e0c0e8",
+      "size": 1576
+    },
+    {
+      "path": "knowledge/inventory/visual-assets.md",
+      "sha256": "cd6f53a8e0146d17acc0c6346aa70a7d83f40f1c298f91084ebb853da32d972a",
+      "size": 1025
+    },
+    {
+      "path": "knowledge/inventory/web-verification.json",
+      "sha256": "6433b1b68d971f4a784b46517d73a6792c9d33a130b65319d4abae236ad08298",
+      "size": 5112
+    },
+    {
+      "path": "knowledge/inventory/wiki.md",
+      "sha256": "a4d7c1f150e67931abde951a729217e9bf40c47c6b430f702621e53f44d76d88",
+      "size": 1629
+    },
+    {
+      "path": "knowledge/research/merged/summary.md",
+      "sha256": "cf5d81a00b4f9e12dcab89057dfaf4e01810e933d986a196e6152866fa916b8e",
+      "size": 8786
+    },
+    {
+      "path": "knowledge/research/raw/01_writings.md",
+      "sha256": "b5c7ad5150d5a147dcbf2a4b8a6846c81e58a154318f7189f84bd7825820e8e4",
+      "size": 16788
+    },
+    {
+      "path": "knowledge/research/raw/02_conversations.md",
+      "sha256": "2497b3ec3c8bbd07a68272413ebcdc18a3e6705f371674f4928d95c0a241ec5a",
+      "size": 16184
+    },
+    {
+      "path": "knowledge/research/raw/03_expression_dna.md",
+      "sha256": "c0a873f35ccf7f07a0d354ef10afe0585c4f739b5becac0c30920e02b0ea7fae",
+      "size": 12516
+    },
+    {
+      "path": "knowledge/research/raw/04_decisions.md",
+      "sha256": "4f128855866804cbd5e1896982cd9d5a14280904e0a5a9f48725232ade1e54d2",
+      "size": 13465
+    },
+    {
+      "path": "knowledge/research/raw/05_external_views.md",
+      "sha256": "d57cfce5f89d0982307d90fe02404f20c5ae9d636e5664b20a2ffa725c849d1a",
+      "size": 8639
+    },
+    {
+      "path": "knowledge/research/raw/06_timeline.md",
+      "sha256": "17b3bf054a3b440a40b2af7e8386671e96f23c2adc0d3637fd46c1f659007a42",
+      "size": 15878
+    },
+    {
+      "path": "knowledge/research/reviews/research_audit.md",
+      "sha256": "c1e3ba7b3c82ca99e49cf42162feefc279f0fdfcd5e457a4b7cdd61aa14848d0",
+      "size": 6428
+    },
+    {
+      "path": "knowledge/research/reviews/synthesis.md",
+      "sha256": "bcfaacbddb380c172462e1ac91a556f97bc4f883655b937a8242d38642c52a7a",
+      "size": 23941
+    },
+    {
+      "path": "knowledge/research/reviews/validation.md",
+      "sha256": "a61797e125e71d1bb8821b0fc791a009f5ae35b5603edaee8c6fee8704a9c141",
+      "size": 3646
+    },
+    {
+      "path": "knowledge/source-records/SRC-A-01.json",
+      "sha256": "c7c44ba05e05d05059e10be62034c12b645823ec154514a39fdc401ce939daac",
+      "size": 2220
+    },
+    {
+      "path": "knowledge/source-records/SRC-A-02.json",
+      "sha256": "98a93b4c1c12427cd0d990bce5ca4b7164481a0029fd242d424ce82e1d2ce9fc",
+      "size": 1297
+    },
+    {
+      "path": "knowledge/source-records/SRC-A-03.json",
+      "sha256": "0f0d637ace098217c6c3f644be4d693a36038ceace6111b64efb382525a827ca",
+      "size": 1839
+    },
+    {
+      "path": "knowledge/source-records/SRC-A-04.json",
+      "sha256": "bd62aa8f31a8d8725e2bfeb0da6b30957daaaacae342bd9f8312e89dcdf02f9d",
+      "size": 1277
+    },
+    {
+      "path": "knowledge/source-records/SRC-A-05.json",
+      "sha256": "98159b2c15f508aa719d09b91045ba537d125fbf54856c4bb8f3955f9cbd0c2d",
+      "size": 1296
+    },
+    {
+      "path": "knowledge/source-records/SRC-A-06.json",
+      "sha256": "49e67bffb5af23a7ec2b637514df1767c30d77693e2ad47bc4511b4d12eb1a0e",
+      "size": 1218
+    },
+    {
+      "path": "knowledge/source-records/SRC-B-01.json",
+      "sha256": "04fbdbbb1594a33bc12ae3f370472e9dd9613356f13e14c5947c43978c5272eb",
+      "size": 1794
+    },
+    {
+      "path": "knowledge/source-records/SRC-B-02.json",
+      "sha256": "6c0a0b93293781fe490b93cca1cfa890dc2470ce91b3b75916a9425cbff33e5a",
+      "size": 1684
+    },
+    {
+      "path": "knowledge/source-records/SRC-B-03.json",
+      "sha256": "05f00ed4444ed0ae7a2f1a3d908bad64971359c9506688cecafe3495a65870a1",
+      "size": 1782
+    },
+    {
+      "path": "knowledge/source-records/SRC-B-04.json",
+      "sha256": "e3007509b571f0b168083e0caab893e53939159e2f77141e31e02a80dbab6b10",
+      "size": 1761
+    },
+    {
+      "path": "knowledge/source-records/SRC-B-05.json",
+      "sha256": "37823c5915108aad3028b879021944119eaa51acaa4f34a3aa456be784cc4353",
+      "size": 1819
+    },
+    {
+      "path": "knowledge/source-records/SRC-B-06.json",
+      "sha256": "5b5deb626408e61ab6e1b913167f8b21b3e2b38ceba56b11f4f0a2fbc4295203",
+      "size": 1784
+    },
+    {
+      "path": "knowledge/source-records/SRC-B-07.json",
+      "sha256": "7519c756deba27f61e1ce00531a4e4d038bc8cd7a16f6a6145cab5967dbb442e",
+      "size": 2188
+    },
+    {
+      "path": "knowledge/source-records/SRC-G-01.json",
+      "sha256": "be7a053ad66e0026441fd1bde481d2d715ad598f6a7c024fb6add233ceda448d",
+      "size": 1004
+    },
+    {
+      "path": "knowledge/source-records/SRC-G-02.json",
+      "sha256": "cd1b2c56ad1bfd3a683e8ccc69155c15a4c58330061f88218bae9f372f161821",
+      "size": 957
+    },
+    {
+      "path": "knowledge/source-records/SRC-G-03.json",
+      "sha256": "c4205321b6ce279f970657cf0f7efd8c3eadc817e42d525b728639a878d3f29f",
+      "size": 970
+    },
+    {
+      "path": "knowledge/source-records/SRC-G-04.json",
+      "sha256": "3a67ced6d0dbe489abda1b6b46802d8c75a26855056b4cf28519f85107f4c55f",
+      "size": 996
+    },
+    {
+      "path": "knowledge/source-records/SRC-G-05.json",
+      "sha256": "943389e9fa821588d8e5b36d1adf53b1299aa68fc28d8e66795b2980fc1357b9",
+      "size": 961
+    },
+    {
+      "path": "knowledge/source-records/SRC-G-06.json",
+      "sha256": "634e66e453e698da18047dd6a53c358ca209e2d65f3dddf3b5a32933983ea2d8",
+      "size": 965
+    },
+    {
+      "path": "knowledge/source-records/SRC-G-07.json",
+      "sha256": "10a9c651d83811c4418331a9a2c104979f0e4e81ab5b911bc93698f4797fbd20",
+      "size": 964
+    },
+    {
+      "path": "knowledge/source-records/SRC-M-01.json",
+      "sha256": "7d28de70777cc9eb54987fc1758783a594268124496f2cff793ecde085e901d7",
+      "size": 1711
+    },
+    {
+      "path": "knowledge/source-records/SRC-M-02.json",
+      "sha256": "e07c20d6512d2a4fa8feafab157a1e8f2cbea3ae1d338f67facdd2223967cbb5",
+      "size": 914
+    },
+    {
+      "path": "knowledge/source-records/SRC-M-03.json",
+      "sha256": "f078bb3d0af8cdd8c4c136d40efa0a2d0313909fd017d98b89a758e5cd5f0e66",
+      "size": 953
+    },
+    {
+      "path": "knowledge/source-records/SRC-M-04.json",
+      "sha256": "685d6c46acdfa800d30d684f35f05a3b678f537eb2e857679a768c6e64294df5",
+      "size": 905
+    },
+    {
+      "path": "knowledge/source-records/SRC-M-05.json",
+      "sha256": "07c9d0cc6e94b911cbc117364679f2298fadbb65fd173671ce4f11fb41d37208",
+      "size": 940
+    },
+    {
+      "path": "knowledge/source-records/SRC-M-06.json",
+      "sha256": "7ab9eb139d7a9db0957e1fc31a5ca26c60bf4844dad6aae4c479132205daac5c",
+      "size": 979
+    },
+    {
+      "path": "knowledge/source-records/SRC-M-07.json",
+      "sha256": "b3889a26d71bdb8570ab454a608af04c6a58e98e3cfb81732ed8ded6a2bb66d6",
+      "size": 928
+    },
+    {
+      "path": "knowledge/source-records/SRC-M-08.json",
+      "sha256": "0f7919a44f99e69d8af3809ea85b76e3a039922ecb61139400b5b4259fd45535",
+      "size": 946
+    },
+    {
+      "path": "knowledge/source-records/SRC-M-09.json",
+      "sha256": "b86f16b78fddffd1c4743bd80e84d18a23a15a2d5eefb569595412fe8ff0cbe4",
+      "size": 938
+    },
+    {
+      "path": "knowledge/source-records/SRC-M-10.json",
+      "sha256": "22b1ec0a20485e9d9b15fc43a0b3bbe89799b825a62f2dcf44b01e461e421f19",
+      "size": 924
+    },
+    {
+      "path": "knowledge/source-records/SRC-M-11.json",
+      "sha256": "de0e9b421a2bef3f910ef9c4dbf53f8864c2ee606d6cc630fb5751156885fdbc",
+      "size": 966
+    },
+    {
+      "path": "knowledge/source-records/SRC-O-B01.json",
+      "sha256": "de6c3841d083042caa6457d72e07cabe62a3e5d9724bd599e5d6812371b52973",
+      "size": 1470
+    },
+    {
+      "path": "knowledge/source-records/SRC-O-B02.json",
+      "sha256": "133e68ad7aaf5ad35a2e587688395776a8bb42ce5ca76bb6f4b1386645118c75",
+      "size": 1447
+    },
+    {
+      "path": "knowledge/source-records/SRC-O-B03.json",
+      "sha256": "f7a750d4a28333812e866c7bac6c4cd4ab603f9f3034bab57ef07985b66853d0",
+      "size": 1507
+    },
+    {
+      "path": "knowledge/source-records/SRC-O-B04.json",
+      "sha256": "44faf09e73abee3a26832d1e5c247a18d745a057648305b4f3d909122164c2ec",
+      "size": 1479
+    },
+    {
+      "path": "knowledge/source-records/SRC-O-B05.json",
+      "sha256": "8c44161791c3fc498fb529f0c70dc28889b75c69a66e8a11c5c8de81e991ef60",
+      "size": 1606
+    },
+    {
+      "path": "knowledge/source-records/SRC-O-C01.json",
+      "sha256": "2f8e33443510239a5a208ae431b08bc1cc73bfecc43c39ea4e2135583e1fdf71",
+      "size": 1401
+    },
+    {
+      "path": "knowledge/source-records/SRC-O-C02.json",
+      "sha256": "2d69fd30f1a4ffe3ba2b6464c734900d451119bafab99d063f5ee712d43eb121",
+      "size": 1419
+    },
+    {
+      "path": "knowledge/source-records/SRC-O-C03.json",
+      "sha256": "216497db8762880a1994e201524104f3675062bcf69d4cc4b76615e708027c5d",
+      "size": 1479
+    },
+    {
+      "path": "knowledge/source-records/SRC-O-C04.json",
+      "sha256": "14fabfb62f1850425ac998541f49bfb8b299d3928ba245b4d69fead0b9b1a91f",
+      "size": 1384
+    },
+    {
+      "path": "knowledge/source-records/SRC-O-C05.json",
+      "sha256": "400fe0b03502105973155f71be0866c62c0997c3e84f568d3c2a612ac48cddf3",
+      "size": 1371
+    },
+    {
+      "path": "knowledge/source-records/SRC-O-C06.json",
+      "sha256": "80a03092f45d14c4fb11a91616e84e58d2952d81ed8476bf9907324cd6ee5a8b",
+      "size": 1393
+    },
+    {
+      "path": "knowledge/source-records/SRC-O-C07.json",
+      "sha256": "0e9a2a826aaf8a5a0904e32d640a716f1fbbefdf053b6aa2c9197dd064080b92",
+      "size": 1422
+    },
+    {
+      "path": "knowledge/source-records/SRC-O-C08.json",
+      "sha256": "1b2905477736550bf7b7ebb5935fc8329a4a32c3234e77269195088f5f5c2573",
+      "size": 1464
+    },
+    {
+      "path": "knowledge/source-records/SRC-O-C09.json",
+      "sha256": "8a8fe1b155ecf05f4de8780bfdbd0062761ae9d7dc423ef4d07344d567d9ac85",
+      "size": 1404
+    },
+    {
+      "path": "knowledge/source-records/SRC-O-L01.json",
+      "sha256": "d1a0917eb7d8539797004f58f4ba849afc7b152c49bb5680bcd0b7cbb179020f",
+      "size": 1368
+    },
+    {
+      "path": "knowledge/source-records/SRC-O-S01.json",
+      "sha256": "fec0b2fef773065c1d6a8b00f0a3b4bd940c58fe0b623935a7e13eb66d2fbf66",
+      "size": 1733
+    },
+    {
+      "path": "knowledge/source-records/SRC-O-S02.json",
+      "sha256": "2b30cf30545c13d0a77c728289e207161c6efe3b304489f4d395cbf7c8bf623e",
+      "size": 1786
+    },
+    {
+      "path": "knowledge/source-records/SRC-O-S03.json",
+      "sha256": "029f2a35ccd114c5de08cc05d047adcd32d064bab35c32aacbedc94541e95136",
+      "size": 1948
+    },
+    {
+      "path": "knowledge/source-records/SRC-O-S04.json",
+      "sha256": "0e389d0a921e8af271d280069300d1d716680de4ba2b12bb3a822e637190b4f7",
+      "size": 1791
+    },
+    {
+      "path": "knowledge/source-records/SRC-O-S05.json",
+      "sha256": "37bcb1cd689967f046b9dce3aeb0e9e0e0d04f019899ca7d322cd55e723ba8e3",
+      "size": 1912
+    },
+    {
+      "path": "knowledge/source-records/SRC-O-S06.json",
+      "sha256": "fa8cb8137af7ab949bc808c335ada80115fdc88802a9b1786f81dbebf1902aba",
+      "size": 1629
+    },
+    {
+      "path": "knowledge/source-records/SRC-O-S07.json",
+      "sha256": "569444e0d8009d986c8b8fa0af0f697ccf0c96e540b6248911396320ac4224f9",
+      "size": 1554
+    },
+    {
+      "path": "knowledge/source_manifest.md",
+      "sha256": "d334a44bee1c912183c58f24bcd2e75bd57205aeba39abd59447866cf99c26ff",
+      "size": 16210
+    },
+    {
+      "path": "meta.json",
+      "sha256": "aeeb1786d78636be3c4798c49126a6dca377b32eef49763e949e4e4262601237",
+      "size": 1624
+    },
+    {
+      "path": "persona.md",
+      "sha256": "6e8747a95d0c917234e848e577ce8a549f3a8733439604c20b3df34d87fafc39",
+      "size": 21778
+    },
+    {
+      "path": "persona_skill.md",
+      "sha256": "39dd49e88da870a90e8238489609bd340527457494a99c30c421cb517ff14e12",
+      "size": 3874
+    },
+    {
+      "path": "work.md",
+      "sha256": "f23a870e2c8e1595b45ff05fcc64559c1a6cd7af236dfe05db4037b0e4b5f042",
+      "size": 8222
+    },
+    {
+      "path": "work_skill.md",
+      "sha256": "15792c11686c710687fdeec1ae3ebf387f57effb840c8c892527e3947ca212f5",
+      "size": 4748
+    }
+  ],
+  "manifest_version": 1,
+  "payload_sha256": "251200061035b59c688185c171d5e575843c14b81e90d5dd751e66115210042c",
+  "skill_name": "celebrity-kanami"
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "香奈美"
+  short_description: "以正史边界为准的香奈美对话、陪伴、创意表达与任务协作流程"
+  default_prompt: "使用 $celebrity-kanami，以正史边界为准，用香奈美的口吻陪我完成这项任务。"

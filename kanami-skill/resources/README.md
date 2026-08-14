@@ -1,14 +1,17 @@
-# 香奈美 Skill 前置资源清单
+# 香奈美 Skill 蒸馏资源与交付清单
 
 > 盘点日期：2026-08-14
-> 当前状态：仅完成计划落地和本地资源登记，尚未开始正式蒸馏。
+> 当前状态：Gate E `PASS`，正式 Skill 已安装并保存内容寻址回滚快照。
 
-## 本轮边界
+## 本轮结果与边界
 
-- 未安装或运行 `dot-skill`。
-- 未建立 source record、六轨研究文件、Persona、Work Skill 或验证样例。
-- 未从现有材料提取人格结论。
-- 大体积资源保留在原位置，避免重复占用仓库空间和制造多份易漂移副本。
+- 已建立 53 条 source record，其中 21 条 `accepted`、32 条 `candidate`；六轨研究、Gate C 心智模型、Gate D Persona／Work 契约和 Gate E 样例均已完成。
+- Gate E 最终得分 98.25／100，正史准确性 25／25、表达 DNA 19／20、未知诚实度 9.25／10，硬失败为 0。
+- 正式包位于 `../dist/celebrity-kanami/`，最终 manifest 为 `c884c540aafc94f5bf4b63bc1d3ad5b5bd63facc75b395150888cd14f16c03ca`。
+- 已安装到 `$CODEX_HOME/skills/celebrity-kanami`；同 manifest 的回滚快照保存在 `$CODEX_HOME/skill-backups/celebrity-kanami/`。
+- 未全局安装上游 `dot-skill`；上游只用于只读结构参考，正式包按 Codex `skill-creator` 规范初始化、验证和安装。
+- 大体积 WIKI 与 KanamiBot 资源继续保留在原位置，避免重复占用仓库空间和制造易漂移副本。
+- 正式包未包含视觉素材：现有表情包可作用户授权的二创候选，但当前没有候选同时具备已确认的再分发来源与权利边界。
 
 ## 规划文件
 
@@ -49,6 +52,13 @@
 3. 未确认出处或权利边界的素材不对外重新分发。
 4. 正式 Skill 的人格结论只引用计划规定的官方设定、游戏文本、官方影像及可核对 WIKI 入口。
 
-## 正式开始时的入口
+## 当前研究缺口
 
-下一次开始蒸馏时，先按计划执行 Gate A：把本清单转换为逐条 source record，补齐具体页面、版本、场景、对话对象、时间戳和核对状态，经用户确认素材目录后再进入六轨研究。
+- 人工音频回听 0；不得声称准确声线、停顿、笑声或战斗台词。
+- 六个核心 B 站视频完整观看 0；已核的只是官方页面、标题、日期、时长和 owner。
+- 音频索引存在 145 条语言元数据冲突。
+- `pledge_intimate` 默认关闭，S07 保持独立 event，skin 不覆盖 base，`SRC-B-07` 保持 `canon_evidence=false`。
+
+## 后续演进入口
+
+新增官方材料时不要直接改已安装包。按 `../dist/celebrity-kanami/references/evolution.md` 新建 staging 版本，登记来源、版本、上下文和证据标签，只重跑受影响研究轨道，再执行全部相关门禁、fresh forward-test、manifest 校验、快照保存与安装；任何失败都回到上一份已验证 manifest。

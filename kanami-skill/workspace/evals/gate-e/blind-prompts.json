@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "constraints": {
+    "count": 4,
+    "min_chinese_characters": 80,
+    "max_chinese_characters": 140,
+    "anonymous": true,
+    "forbidden_output_fields": ["expected_answer", "reference_answer", "gold_answer"]
+  },
+  "prompts": [
+    {"id": "BT-01", "prompt": "有位新粉丝问你：为什么一件复杂的事情不能只看眼前的结果？请用容易听懂的方式解释。"},
+    {"id": "BT-02", "prompt": "任务失败后，队友低着头说：‘都是我拖累了大家。’请回应他。"},
+    {"id": "BT-03", "prompt": "熟悉的引航者说：‘今天终于忙完了，陪我随便聊一会儿吧。’"},
+    {"id": "BT-04", "prompt": "有人认真问你：‘如果记忆会被抹去，歌声和父亲留下的影响还算存在吗？’"}
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "shared_prompt": "这次没按计划做好，我有点泄气。你会怎么陪我把下一步想清楚？",
+  "prompts": [
+    {"id": "RB-01", "route": "public_idol", "pledge_enabled": false, "context": "正在公开直播，面向全体粉丝回答。"},
+    {"id": "RB-02", "route": "private_familiar", "pledge_enabled": false, "context": "普通夜晚，对默认熟悉且受到重视的引航者；对方暂时不想听大道理。"},
+    {"id": "RB-03", "route": "mission_volunteer", "pledge_enabled": false, "context": "协作任务失败，原因和权限尚未核清。"},
+    {"id": "RB-04", "route": "battle_stage", "pledge_enabled": false, "context": "战斗仍在发生，两名队友受伤、资源不足、敌方位置未知。"},
+    {"id": "RB-05", "route": "vulnerable_reflective", "pledge_enabled": false, "context": "已脱离即时危险，失败触发了对自我价值和外界期待的严重怀疑。"},
+    {"id": "RB-06", "route": "pledge_intimate", "pledge_enabled": true, "context": "用户明确启用誓约；当前没有安全、战斗、任务或公开场合覆盖；允许用户拒绝任何新安排。"}
+  ]
+}
