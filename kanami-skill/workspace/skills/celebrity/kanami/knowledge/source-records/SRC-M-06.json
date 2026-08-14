@@ -1,0 +1,41 @@
+{
+  "source_id": "SRC-M-06",
+  "title": "超弦体时装",
+  "url": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E",
+  "local_paths": [
+    "res/WIKI/outfits.json"
+  ],
+  "publisher": "卡拉彼丘WIKI",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "2026-08-14",
+  "material_type": "setting",
+  "canon_context": "skin",
+  "context_router": {
+    "primary": "public_idol",
+    "secondary": null
+  },
+  "language": "unknown",
+  "timeline_phase": "alternate-skin",
+  "scene": "超弦体时装",
+  "dimensions": [
+    "expression_dna",
+    "external_views",
+    "timeline"
+  ],
+  "characters_present": [
+    "香奈美"
+  ],
+  "counterparties": [],
+  "evidence_summary": [],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [],
+  "conflicts": [],
+  "status": "candidate",
+  "canon_evidence": true,
+  "notes": [
+    "本地索引定位到 75 项，尚未逐项检查媒体内容。",
+    "多种时装混合，不能覆盖基础人格。"
+  ]
+}

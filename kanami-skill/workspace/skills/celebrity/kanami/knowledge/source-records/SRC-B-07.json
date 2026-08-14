@@ -1,0 +1,51 @@
+{
+  "source_id": "SRC-B-07",
+  "title": "《卡拉彼丘》2026线下嘉年华精彩回顾",
+  "url": "https://www.bilibili.com/video/BV1m7um6BEgB/",
+  "local_paths": [
+    "kanami-skill/workspace/skills/celebrity/kanami/knowledge/inventory/bilibili-evidence.json",
+    "kanami-skill/workspace/skills/celebrity/kanami/knowledge/inventory/web-verification.json"
+  ],
+  "publisher": "卡拉彼丘官方账号",
+  "published_at": "2026-08-09",
+  "version": null,
+  "accessed_at": "2026-08-14",
+  "material_type": "pv",
+  "canon_context": "event",
+  "context_router": {
+    "primary": "public_idol",
+    "secondary": null
+  },
+  "language": "mixed",
+  "timeline_phase": "current",
+  "scene": "《卡拉彼丘》2026线下嘉年华精彩回顾",
+  "dimensions": [
+    "external_views",
+    "timeline"
+  ],
+  "characters_present": [
+    "未确认"
+  ],
+  "counterparties": [],
+  "evidence_summary": [
+    "平台元数据确认 bvid=BV1m7um6BEgB、owner.mid=660091334、发布日期 2026-08-09、时长 355 秒和分 P 数 2。",
+    "2026-08-14 已核对具体 BV 页面标题与可见发布者；页面中的“香奈美”仅来自相关推荐 COS 标题，未证明视频本体包含她。"
+  ],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [],
+  "conflicts": [
+    "没有字幕、角色说话人或内容时间戳，平台标题与元数据不能替代视频内容证据。",
+    "该视频不得进入基础人格、关系或时间线结论。",
+    "页面正文检索到的香奈美字样位于相关推荐的 COS 投稿标题，而不是官方视频内容说明。",
+    "页面未出现回归演唱会字样，故继续保持条件候选，不进入基础人格证据。"
+  ],
+  "status": "candidate",
+  "canon_evidence": false,
+  "notes": [
+    "平台元数据已核对：owner.mid=660091334，时长 355 秒，分 P 数 2，目录状态 conditional。",
+    "尚未完成观看、字幕／说话人和内容时间戳核验，故保持 candidate。",
+    "现有标题与简介不能证明香奈美为重要角色，保留为条件候选。",
+    "2026-08-14 已在浏览器中核对页面标题与可见发布者；未完整观看内容，仍保持 candidate。"
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "source_id": "SRC-O-S02",
+  "title": "羁绊剧情1：回归演唱会",
+  "url": "https://wiki.biligame.com/klbq/%E5%89%A7%E6%83%85%E6%95%85%E4%BA%8B/%E9%A6%99%E5%A5%88%E7%BE%8E%E7%BE%81%E7%BB%8A%E5%89%A7%E6%83%85%E3%80%8A%E5%9B%9E%E5%BD%92%E6%BC%94%E5%94%B1%E4%BC%9A%E3%80%8B",
+  "local_paths": [
+    "res/WIKI/oath_texts.json"
+  ],
+  "publisher": "卡拉彼丘WIKI",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "2026-08-14",
+  "material_type": "story",
+  "canon_context": "pledge",
+  "context_router": {
+    "primary": "pledge_intimate",
+    "secondary": null
+  },
+  "language": "zh-CN",
+  "timeline_phase": "unknown",
+  "scene": "羁绊剧情1：回归演唱会",
+  "dimensions": [
+    "writings",
+    "conversations",
+    "expression_dna",
+    "decisions",
+    "external_views",
+    "timeline"
+  ],
+  "characters_present": [
+    "香奈美",
+    "引航者",
+    "某位粉丝"
+  ],
+  "counterparties": [
+    "引航者",
+    "某位粉丝",
+    "观众"
+  ],
+  "evidence_summary": [
+    "oath::story[1].scene[2].line[0:18] 与 scene[3].line[29:55] 记载回归演唱会遇雨、观众离场、脚踝受伤后仍完成演出，并在演后讨论包装、粉丝期待与只展示讨喜一面。"
+  ],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [
+    "职业完成度可能掩盖健康代价；该观察窗属于 PLEDGE_ONLY，不证明她永远忽视停损。"
+  ],
+  "conflicts": [
+    "解锁日期和游戏版本未知；场景行混有旁白与玩家选项。"
+  ],
+  "status": "accepted",
+  "canon_evidence": true,
+  "notes": [
+    "本地结构定位到 4 个场景、110 行原始内容。",
+    "本地正文已完成 Gate B 释义化提炼；仍按明确说话人前缀、旁白和分支边界审慎引用，不复制长原文。"
+  ]
+}

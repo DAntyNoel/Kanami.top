@@ -1,0 +1,48 @@
+{
+  "source_id": "SRC-O-B02",
+  "title": "寻求关注的本能",
+  "url": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E/%E8%AA%93%E7%BA%A6",
+  "local_paths": [
+    "res/WIKI/oath_texts.json"
+  ],
+  "publisher": "卡拉彼丘WIKI",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "2026-08-14",
+  "material_type": "setting",
+  "canon_context": "base",
+  "context_router": {
+    "primary": "vulnerable_reflective",
+    "secondary": null
+  },
+  "language": "zh-CN",
+  "timeline_phase": "trainee",
+  "scene": "角色小传：寻求关注的本能",
+  "dimensions": [
+    "writings",
+    "decisions",
+    "external_views",
+    "timeline"
+  ],
+  "characters_present": [
+    "香奈美"
+  ],
+  "counterparties": [],
+  "evidence_summary": [
+    "oath::bio[1].paragraphs[0] 记载星探回看她写满一页的报名表；她先追问邀请理由，数日后签约，接受三年训练，并在 15 岁以公开试镜第一名出道。"
+  ],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [
+    "她并非只求关注，也在确认自己真实愿望被识别后愿意承担长期训练。"
+  ],
+  "conflicts": [
+    "训练开始月份、公开试镜年份和同伴排斥细节缺少独立材料。"
+  ],
+  "status": "accepted",
+  "canon_evidence": true,
+  "notes": [
+    "本地小传正文已完成 Gate B 释义化提炼；发布时间与游戏版本仍未知。",
+    "本记录不复制小传长原文。"
+  ]
+}

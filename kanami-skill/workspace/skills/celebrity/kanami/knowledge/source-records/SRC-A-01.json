@@ -1,0 +1,53 @@
+{
+  "source_id": "SRC-A-01",
+  "title": "对局语音",
+  "url": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E/%E8%AF%AD%E9%9F%B3%E5%8F%B0%E8%AF%8D",
+  "local_paths": [
+    "res/WIKI/audio.json",
+    "kanami-skill/workspace/skills/celebrity/kanami/knowledge/inventory/audio-analysis.json",
+    "kanami-skill/workspace/skills/celebrity/kanami/knowledge/inventory/web-verification.json"
+  ],
+  "publisher": "卡拉彼丘WIKI",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "2026-08-14",
+  "material_type": "voice",
+  "canon_context": "battle",
+  "context_router": {
+    "primary": "battle_stage",
+    "secondary": null
+  },
+  "language": "mixed",
+  "timeline_phase": "unknown",
+  "scene": "对局语音",
+  "dimensions": [
+    "conversations",
+    "expression_dna",
+    "decisions"
+  ],
+  "characters_present": [
+    "香奈美"
+  ],
+  "counterparties": [],
+  "evidence_summary": [
+    "页面可见宿舍、对局、花的私语、世纪歌姬、心之奏鸣和系统播报语音分区，并展示中文、日文、英文候选文本。",
+    "页面明确说明角色台词由千问 ASR 与 Whisper ASR 听写并配合人工后期校对，因此页面文本只能作为转写候选，关键措辞仍需回听音频。",
+    "页面标题与更新日期 2026-07-24 已在可见 DOM 中核对；本次没有播放任何音频。"
+  ],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [
+    "对局候选文本较短且叹句较多，可作为 battle_stage 节奏假设；未回听前不得确认为准确措辞或声线。"
+  ],
+  "conflicts": [
+    "网页可见文本可能包含转写误差；关键措辞、声线、停顿和说话对象尚未通过音频回听确认。"
+  ],
+  "status": "candidate",
+  "canon_evidence": true,
+  "notes": [
+    "本地索引定位到 350 项，尚未逐项检查媒体内容。",
+    "索引含 WIKI text 候选，但未完成回听、说话对象和时间戳核验；文件名语言与 metadata language 还存在冲突，故保持 candidate。",
+    "音频索引的可复现语言与文本统计见 audio-analysis.json。",
+    "2026-08-14 已在浏览器中核对页面标题与可见内容；未播放音频，仍保持 candidate。"
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "source_id": "SRC-B-05",
+  "title": "《卡拉彼丘》香奈美传说时装「心之奏鸣」主题曲 | Cuter Me",
+  "url": "https://www.bilibili.com/video/BV1d93p69EKU/",
+  "local_paths": [
+    "kanami-skill/workspace/skills/celebrity/kanami/knowledge/inventory/bilibili-evidence.json",
+    "kanami-skill/workspace/skills/celebrity/kanami/knowledge/inventory/web-verification.json"
+  ],
+  "publisher": "卡拉彼丘官方账号",
+  "published_at": "2026-07-30",
+  "version": null,
+  "accessed_at": "2026-08-14",
+  "material_type": "song",
+  "canon_context": "skin",
+  "context_router": {
+    "primary": "public_idol",
+    "secondary": null
+  },
+  "language": [
+    "zh-CN",
+    "ja-JP"
+  ],
+  "timeline_phase": "alternate-skin",
+  "scene": "《卡拉彼丘》香奈美传说时装「心之奏鸣」主题曲 | Cuter Me",
+  "dimensions": [
+    "writings",
+    "expression_dna"
+  ],
+  "characters_present": [
+    "香奈美"
+  ],
+  "counterparties": [],
+  "evidence_summary": [
+    "平台元数据确认 bvid=BV1d93p69EKU、owner.mid=660091334、发布日期 2026-07-30、时长 188 秒和分 P 数 2。",
+    "2026-08-14 已在具体 BV 页面核对标题与可见发布者；尚未完整观看视频内容。"
+  ],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [],
+  "conflicts": [
+    "没有字幕、角色说话人或内容时间戳，平台标题与元数据不能替代视频内容证据。"
+  ],
+  "status": "candidate",
+  "canon_evidence": true,
+  "notes": [
+    "平台元数据已核对：owner.mid=660091334，时长 188 秒，分 P 数 2，目录状态 core-skin。",
+    "尚未完成观看、字幕／说话人和内容时间戳核验，故保持 candidate。",
+    "2026-08-14 已在浏览器中核对页面标题与可见发布者；未完整观看内容，仍保持 candidate。"
+  ]
+}

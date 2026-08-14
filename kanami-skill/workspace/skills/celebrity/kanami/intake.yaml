@@ -1,7 +1,7 @@
 project: kanami
 display_name: 香奈美
 language: zh-CN
-status: gate-a-awaiting-user-confirmation
+status: gate-b-awaiting-user-confirmation
 
 character:
   family: celebrity
@@ -32,8 +32,8 @@ upstream:
   writer_auto_install_must_be_disabled: true
 
 gates:
-  A_material_catalog: ready_for_user_confirmation
-  B_research_summary: pending
+  A_material_catalog: approved
+  B_research_summary: ready_for_user_confirmation
   C_mental_models: pending
   D_persona_preview: pending
   E_final_acceptance: pending

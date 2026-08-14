@@ -1,8 +1,8 @@
-# 香奈美蒸馏来源清单（Gate A）
+# 香奈美蒸馏来源清单（Gate B 研究快照）
 
-> 状态：`READY_FOR_USER_CONFIRMATION`
+> 状态：`GATE_B_RESEARCH_COMPLETE`
 > 枚举日期：2026-08-14
-> 当前阶段只登记候选材料，不提取人格结论，不代表材料已通过内容核验。
+> 当前阶段已对进入六轨结论的核心记录完成证据、推论与冲突同步；`accepted` 只表示可用于 Gate B 研究，不代表所有媒体内容均已观看或回听，其他记录继续以 `candidate` 保留缺口。
 
 ## 项目基线
 
@@ -46,10 +46,10 @@ WIKI 候选统一记为 `publisher=卡拉彼丘WIKI`、`accessed_at=2026-08-14`�
 | SRC-O-C03 | 好感度5 | O | dialogue / pledge | zh-CN | T2,T3,T6 | 21 + 2 | 同上 |
 | SRC-O-C04 | 好感度7 | O | dialogue / pledge | zh-CN | T2,T3,T6 | 23 + 4 | 同上 |
 | SRC-O-C05 | 好感度9 | O | dialogue / pledge | zh-CN | T2,T3,T6 | 19 + 2 | 同上 |
-| SRC-O-C06 | 引航者生日 | O | dialogue / event | zh-CN | T2,T3,T6 | 9 + 4 | 具体年份缺失 |
-| SRC-O-C07 | 引航者生日2 | O | dialogue / event | zh-CN | T2,T3,T6 | 15 + 2 | 具体年份缺失 |
-| SRC-O-C08 | 2025 年角色生日 | O | dialogue / event | zh-CN | T2,T3,T6 | 16 消息 | 无版本信息 |
-| SRC-O-C09 | 2026 年新春祝福 | O | dialogue / event | zh-CN | T2,T3,T6 | 10 + 4 | 无版本信息 |
+| SRC-O-C06 | 引航者生日 | O | dialogue / pledge | zh-CN | T2,T3,T6 | 9 + 4 | `PLEDGE_ONLY`；具体年份缺失 |
+| SRC-O-C07 | 引航者生日2 | O | dialogue / pledge | zh-CN | T2,T3,T6 | 15 + 2 | `PLEDGE_ONLY`；具体年份缺失 |
+| SRC-O-C08 | 2025 年角色生日 | O | dialogue / pledge | zh-CN | T2,T3,T6 | 16 消息 | `PLEDGE_ONLY`；无版本信息 |
+| SRC-O-C09 | 2026 年新春祝福 | O | dialogue / pledge | zh-CN | T2,T3,T6 | 10 + 4 | `PLEDGE_ONLY`；无版本信息 |
 | SRC-O-B01 | 看不见的情绪 | O | setting / base | zh-CN | T1,T4,T5,T6 | 1 段 | 单段长文本、无日期 |
 | SRC-O-B02 | 寻求关注的本能 | O | setting / base | zh-CN | T1,T4,T5,T6 | 1 段 | 同上 |
 | SRC-O-B03 | 成名之路 | O | setting / base | zh-CN | T1,T4,T5,T6 | 1 段 | 同上 |
@@ -63,34 +63,34 @@ WIKI 候选统一记为 `publisher=卡拉彼丘WIKI`、`accessed_at=2026-08-14`�
 
 | source_id | 标题及具体 URL | canon_context | 轨道 | 本地数量 | 核验缺口 |
 |---|---|---|---|---:|---|
-| SRC-O-S01 | [初识剧情：不可思议的偶遇](https://wiki.biligame.com/klbq/%E5%89%A7%E6%83%85%E6%95%85%E4%BA%8B/%E9%A6%99%E5%A5%88%E7%BE%8E%E5%88%9D%E8%AF%86%E5%89%A7%E6%83%85%E3%80%8A%E4%B8%8D%E5%8F%AF%E6%80%9D%E8%AE%AE%E7%9A%84%E5%81%B6%E9%81%87%E3%80%8B) | pledge | T1–T6 候选 | 2 场／61 行 | 说话人未结构化；无日期 |
-| SRC-O-S02 | [羁绊剧情1：回归演唱会](https://wiki.biligame.com/klbq/%E5%89%A7%E6%83%85%E6%95%85%E4%BA%8B/%E9%A6%99%E5%A5%88%E7%BE%8E%E7%BE%81%E7%BB%8A%E5%89%A7%E6%83%85%E3%80%8A%E5%9B%9E%E5%BD%92%E6%BC%94%E5%94%B1%E4%BC%9A%E3%80%8B) | pledge | T1–T6 候选 | 4／110 | 解锁条件缺失；说话人未结构化 |
-| SRC-O-S03 | [羁绊剧情2：嘈杂的声音](https://wiki.biligame.com/klbq/%E5%89%A7%E6%83%85%E6%95%85%E4%BA%8B/%E9%A6%99%E5%A5%88%E7%BE%8E%E7%BE%81%E7%BB%8A%E5%89%A7%E6%83%85%E3%80%8A%E5%98%88%E6%9D%82%E7%9A%84%E5%A3%B0%E9%9F%B3%E3%80%8B) | pledge | T1–T6 候选 | 3／87 | 同上 |
-| SRC-O-S04 | [羁绊剧情3：静音模式](https://wiki.biligame.com/klbq/%E5%89%A7%E6%83%85%E6%95%85%E4%BA%8B/%E9%A6%99%E5%A5%88%E7%BE%8E%E7%BE%81%E7%BB%8A%E5%89%A7%E6%83%85%E3%80%8A%E9%9D%99%E9%9F%B3%E6%A8%A1%E5%BC%8F%E3%80%8B) | pledge | T1–T6 候选 | 3／94 | 同上 |
-| SRC-O-S05 | [羁绊剧情4：从过去传来的回声](https://wiki.biligame.com/klbq/%E5%89%A7%E6%83%85%E6%95%85%E4%BA%8B/%E9%A6%99%E5%A5%88%E7%BE%8E%E7%BE%81%E7%BB%8A%E5%89%A7%E6%83%85%E3%80%8A%E4%BB%8E%E8%BF%87%E5%8E%BB%E4%BC%A0%E6%9D%A5%E7%9A%84%E5%9B%9E%E5%A3%B0%E3%80%8B) | pledge | T1–T6 候选 | 2／125 | 同上 |
-| SRC-O-S06 | [羁绊剧情5：全新的主打歌](https://wiki.biligame.com/klbq/%E5%89%A7%E6%83%85%E6%95%85%E4%BA%8B/%E9%A6%99%E5%A5%88%E7%BE%8E%E7%BE%81%E7%BB%8A%E5%89%A7%E6%83%85%E3%80%8A%E5%85%A8%E6%96%B0%E7%9A%84%E4%B8%BB%E6%89%93%E6%AD%8C%E3%80%8B) | pledge | T1–T6 候选 | 1／15 | 内容短；需确认是否完整 |
-| SRC-O-S07 | [生日剧情：最初的祝福](https://wiki.biligame.com/klbq/%E5%89%A7%E6%83%85%E6%95%85%E4%BA%8B/%E9%A6%99%E5%A5%88%E7%BE%8E%E7%94%9F%E6%97%A5%E5%89%A7%E6%83%85%E3%80%8A%E6%9C%80%E5%88%9D%E7%9A%84%E7%A5%9D%E7%A6%8F%E3%80%8B) | event | T2,T3,T5,T6 | 3／20 | 具体年份、版本缺失 |
+| SRC-O-S01 | [初识剧情：不可思议的偶遇](https://wiki.biligame.com/klbq/%E5%89%A7%E6%83%85%E6%95%85%E4%BA%8B/%E9%A6%99%E5%A5%88%E7%BE%8E%E5%88%9D%E8%AF%86%E5%89%A7%E6%83%85%E3%80%8A%E4%B8%8D%E5%8F%AF%E6%80%9D%E8%AE%AE%E7%9A%84%E5%81%B6%E9%81%87%E3%80%8B) | pledge | T1–T6 | 2 场／61 行 | `accepted`；按前缀、旁白与分支边界提炼；无日期 |
+| SRC-O-S02 | [羁绊剧情1：回归演唱会](https://wiki.biligame.com/klbq/%E5%89%A7%E6%83%85%E6%95%85%E4%BA%8B/%E9%A6%99%E5%A5%88%E7%BE%8E%E7%BE%81%E7%BB%8A%E5%89%A7%E6%83%85%E3%80%8A%E5%9B%9E%E5%BD%92%E6%BC%94%E5%94%B1%E4%BC%9A%E3%80%8B) | pledge | T1–T6 | 4／110 | `accepted`；已记录说话对象与事件锚点；解锁日期缺失 |
+| SRC-O-S03 | [羁绊剧情2：嘈杂的声音](https://wiki.biligame.com/klbq/%E5%89%A7%E6%83%85%E6%95%85%E4%BA%8B/%E9%A6%99%E5%A5%88%E7%BE%8E%E7%BE%81%E7%BB%8A%E5%89%A7%E6%83%85%E3%80%8A%E5%98%88%E6%9D%82%E7%9A%84%E5%A3%B0%E9%9F%B3%E3%80%8B) | pledge | T1–T6 | 3／87 | `accepted`；已记录会议角色与事件锚点；版本缺失 |
+| SRC-O-S04 | [羁绊剧情3：静音模式](https://wiki.biligame.com/klbq/%E5%89%A7%E6%83%85%E6%95%85%E4%BA%8B/%E9%A6%99%E5%A5%88%E7%BE%8E%E7%BE%81%E7%BB%8A%E5%89%A7%E6%83%85%E3%80%8A%E9%9D%99%E9%9F%B3%E6%A8%A1%E5%BC%8F%E3%80%8B) | pledge | T1–T6 | 3／94 | `accepted`；危机与照护锚点已记录；版本缺失 |
+| SRC-O-S05 | [羁绊剧情4：从过去传来的回声](https://wiki.biligame.com/klbq/%E5%89%A7%E6%83%85%E6%95%85%E4%BA%8B/%E9%A6%99%E5%A5%88%E7%BE%8E%E7%BE%81%E7%BB%8A%E5%89%A7%E6%83%85%E3%80%8A%E4%BB%8E%E8%BF%87%E5%8E%BB%E4%BC%A0%E6%9D%A5%E7%9A%84%E5%9B%9E%E5%A3%B0%E3%80%8B) | pledge | T1–T6 | 2／125 | `accepted`；夏露与创作转向锚点已记录；版本缺失 |
+| SRC-O-S06 | [羁绊剧情5：全新的主打歌](https://wiki.biligame.com/klbq/%E5%89%A7%E6%83%85%E6%95%85%E4%BA%8B/%E9%A6%99%E5%A5%88%E7%BE%8E%E7%BE%81%E7%BB%8A%E5%89%A7%E6%83%85%E3%80%8A%E5%85%A8%E6%96%B0%E7%9A%84%E4%B8%BB%E6%89%93%E6%AD%8C%E3%80%8B) | pledge | T1–T6 | 1／15 | `candidate`；14 个媒体标记未回听，场景索引不完整 |
+| SRC-O-S07 | [生日剧情：最初的祝福](https://wiki.biligame.com/klbq/%E5%89%A7%E6%83%85%E6%95%85%E4%BA%8B/%E9%A6%99%E5%A5%88%E7%BE%8E%E7%94%9F%E6%97%A5%E5%89%A7%E6%83%85%E3%80%8A%E6%9C%80%E5%88%9D%E7%9A%84%E7%A5%9D%E7%A6%8F%E3%80%8B) | event | T2,T3,T5,T6 | 3／20 | `candidate`；媒体未回听，具体年份与版本缺失 |
 
-小计：7 个故事、18 场、512 行。所有剧情均为 `material_type=story`、`language=zh-CN`；原始行仍需拆分角色本人、旁白、引航者选项和媒体文件标记。
+小计：7 个故事、18 场、512 行。S01–S05 已按明确说话人前缀、旁白和分支边界完成释义化提炼；S06–S07 因媒体未回听保持 `candidate`。全部故事仍不复制长原文。
 
 ## C. 语音与音乐
 
 | source_id | 标题 | URL | material_type / canon_context | language | 轨道 | 本地数量及语言标记 | 核验缺口 |
 |---|---|---|---|---|---|---|---|
-| SRC-A-01 | 对局语音 | V | voice / battle | mixed | T2,T3,T4 | 350：zh 114、ja 104、en 114、未标 18 | 无转写、场景；语言版本不齐 |
+| SRC-A-01 | 对局语音 | V | voice / battle | mixed | T2,T3,T4 | 350：zh 114、ja 104、en 114、未标 18 | 页面与 ASR 文本候选已核；音频未回听、无时间戳 |
 | SRC-A-02 | 世纪歌姬时装语音 | V | voice / skin | mixed | T2,T3 | 248：zh 83、ja 82、en 83 | 日语少 1；不得覆盖基础人格 |
-| SRC-A-03 | 宿舍语音 | V | voice / dorm | mixed | T1,T2,T3 | 179：zh 72、ja 65、en 5、未标 37 | 语言分布不齐；无说话对象 |
+| SRC-A-03 | 宿舍语音 | V | voice / dorm | mixed | T1,T2,T3 | 179：zh 72、ja 65、en 5、未标 37 | 72 条 CN 候选已作描述统计；音频未回听、无说话对象 |
 | SRC-A-04 | 系统播报语音 | V | voice / system | mixed | T3,T4 | 151：ja 70、未标 81 | 需判断是否应再拆 system/battle |
 | SRC-A-05 | 花的私语时装语音 | V | voice / skin | zh-CN | T2,T3 | 14：均带 CN 标记 | 缺其他语言；时装限定 |
 | SRC-A-06 | 相关音乐 | M | song / mixed | mixed/unknown | T1,T3 | 10 个角色曲、BGM、伴奏 | 非全为歌曲；正式记录时仍需按类型拆分；无歌词、字幕、日期 |
 
-语言数量只来自文件名标记，不代表完成回听：明确 zh-CN 283、ja-JP 321、en 202、未标记 146。全部 952 个 MP3 均有本地镜像，但当前没有可靠的转写、时间戳、版本、对话对象或统一语言字段。
+语言数量只来自文件名标记，不代表完成回听：明确 zh-CN 283、ja-JP 321、en 202、未标记 146。全部 952 个条目均有本地索引，WIKI 可见页明确说明文本来自 ASR 与人工校对；人工回听仍为 0，不能确认准确措辞、声线、停顿或时间戳。
 
 ## D. 主页面与画廊视觉单元
 
 | source_id | 材料单元 | URL | material_type / canon_context | 轨道 | 数量 | 使用限制 |
 |---|---|---|---|---|---:|---|
-| SRC-M-01 | 超弦体设定 | M | setting / base | T1,T5,T6 | 2 图 | 没有设定正文 |
+| SRC-M-01 | 超弦体设定 | M | setting / base | T1,T5,T6 | 2 图 + 网页正文 | `accepted`；主页身份、简介与观测语录已实开核对 |
 | SRC-M-02 | 游戏表情 | M | setting / base | T3 | 17 | 只作非语言参考 |
 | SRC-M-03 | 香奈美 B 站装扮表情 | M | setting / event | T3,T5 | 15 | 宣传情境 |
 | SRC-M-04 | 官方表情 | M | setting / base | T3 | 9 | 不可单独推导人格 |
@@ -109,23 +109,23 @@ WIKI 候选统一记为 `publisher=卡拉彼丘WIKI`、`accessed_at=2026-08-14`�
 | SRC-G-06 | 移动端壁纸 | G | setting / base | T3,T5 | 2 | 纯视觉 |
 | SRC-G-07 | 剧情 CG | G | story / event | T2,T5,T6 | 1 | 无对应剧情正文 |
 
-以上 WIKI 部分共 46 条候选材料单元，覆盖 11 个具体 `sourcePage` URL。
+以上 WIKI／游戏部分共 46 条 source record：21 条已进入 Gate B `accepted` 证据集，25 条因媒体未回听、视觉未逐项检查或版本不足保持 `candidate`；共覆盖 11 个具体 `sourcePage` URL。
 
 ## E. 卡拉彼丘官方 B 站视频
 
 状态：`DETAIL_VERIFIED_WITH_PLATFORM_LIMITS`。账号 UID `660091334` 的公开卡片接口返回 `official_verify.type=1`、`official_verify.desc=卡拉彼丘官方账号`。下列详情页均已于 2026-08-14 核验 `owner.mid=660091334`、`owner.name=卡拉彼丘`。
 
-| source_id | 标题及 URL | published_at | 时长 | material_type / canon_context | 重要度 | Gate A 状态 |
+| source_id | 标题及 URL | published_at | 时长 | material_type / canon_context | 重要度 | Gate B 状态 |
 |---|---|---|---:|---|---:|---|
-| SRC-B-01 | [香奈美主题曲「你看世界好美」](https://www.bilibili.com/video/BV1W2421L7wT/) | 2024-01-30 | 02:25 | song / base | 5 核心 | 官方详情已核；主题、声线、价值意象候选，歌词不整段保存 |
-| SRC-B-02 | [萌萌香香的香奈美](https://www.bilibili.com/video/BV1HZ421g71j/) | 2024-06-10 | 01:22 | pv / dorm | 5 核心 | 官方详情已核；宿舍日常与引航者互动候选 |
-| SRC-B-03 | [香奈美传说时装·世纪歌姬｜展示 PV](https://www.bilibili.com/video/BV12JDGYLEsT/) | 2024-11-06 | 01:32 | pv / skin | 4 高 | 官方详情已核；时装世界线单独分轨 |
-| SRC-B-04 | [《你看世界好美》日文复现｜美しい世界へ](https://www.bilibili.com/video/BV1AnoPYNEiL/) | 2025-04-16 | 04:04 | song / base | 4 高 | 官方详情已核；用于中日声线与语义差异核对 |
-| SRC-B-05 | [香奈美传说时装“心之奏鸣”主题曲｜Cuter Me](https://www.bilibili.com/video/BV1d93p69EKU/) | 2026-07-30 | 03:08 | song / skin | 5 核心 | 官方详情已核；P1 中文、P2 日文，各约 01:34 |
-| SRC-B-06 | [香奈美传说时装·心之奏鸣｜展示 PV](https://www.bilibili.com/video/BV1TwGA6XEhK/) | 2026-08-02 | 02:42 | pv / skin | 4 高 | 官方详情已核；偶像观主题候选，不能覆盖基础人格 |
-| SRC-B-07 | [2026 线下嘉年华精彩回顾](https://www.bilibili.com/video/BV1m7um6BEgB/) | 2026-08-09 | 05:55 | pv / event | 2 条件 | 官方详情已核，但标题、简介和分 P 未证明含香奈美；需观看后决定是否保留 |
+| SRC-B-01 | [香奈美主题曲「你看世界好美」](https://www.bilibili.com/video/BV1W2421L7wT/) | 2024-01-30 | 02:25 | song / base | 5 核心 | `candidate`；页面标题／发布者与元数据已核，未观看、无歌词与时间戳 |
+| SRC-B-02 | [萌萌香香的香奈美](https://www.bilibili.com/video/BV1HZ421g71j/) | 2024-06-10 | 01:22 | pv / dorm | 5 核心 | `candidate`；页面身份已核，未观看、无字幕与时间戳 |
+| SRC-B-03 | [香奈美传说时装·世纪歌姬｜展示 PV](https://www.bilibili.com/video/BV12JDGYLEsT/) | 2024-11-06 | 01:32 | pv / skin | 4 高 | `candidate`；页面身份已核，时装独立且内容未观看 |
+| SRC-B-04 | [《你看世界好美》日文复现｜美しい世界へ](https://www.bilibili.com/video/BV1AnoPYNEiL/) | 2025-04-16 | 04:04 | song / base | 4 高 | `candidate`；日语版本页面已核，未观看，不能比较语义或声线 |
+| SRC-B-05 | [香奈美传说时装“心之奏鸣”主题曲｜Cuter Me](https://www.bilibili.com/video/BV1d93p69EKU/) | 2026-07-30 | 03:08 | song / skin | 5 核心 | `candidate`；2P 元数据已核，内容未观看且时装独立 |
+| SRC-B-06 | [香奈美传说时装·心之奏鸣｜展示 PV](https://www.bilibili.com/video/BV1TwGA6XEhK/) | 2026-08-02 | 02:42 | pv / skin | 4 高 | `candidate`；页面身份已核，内容未观看且不得覆盖基础人格 |
+| SRC-B-07 | [2026 线下嘉年华精彩回顾](https://www.bilibili.com/video/BV1m7um6BEgB/) | 2026-08-09 | 05:55 | pv / event | 2 条件 | `candidate`、`canon_evidence=false`；相关推荐 COS 标题不证明本体含香奈美 |
 
-六条直接相关视频均为 `language=zh-CN/mixed`、`publisher=卡拉彼丘官方账号`、`accessed_at=2026-08-14`。具体字幕状态、台词说话人和时间戳留到 Gate B 前的视频处理阶段核验。
+六条直接相关视频均为 `language=zh-CN/mixed`、`publisher=卡拉彼丘官方账号`、`accessed_at=2026-08-14`。Gate B 只接受其页面身份与平台元数据；未观看内容、字幕、说话人和时间戳均作为后续补证缺口，不从标题反推人格。
 
 ### 已筛查的低优先级官方视频
 
@@ -150,19 +150,21 @@ WIKI 候选统一记为 `publisher=卡拉彼丘WIKI`、`accessed_at=2026-08-14`�
 
 该辅助项不计入正史 source record 数量。
 
-## Gate A 已知缺口与阻断项
+## Gate B 已知缺口
 
-1. WIKI 主页面 JSON 是媒体索引，不是完整 HTML；基础身份、简介、观测语录等正文仍需打开具体页面核对。
+1. WIKI 主页面与语音台词页已实际打开核对；誓约子页被站点拦截，正文研究使用本地结构化快照并保留该限制。
 2. 已展开官方空间 7 个常规系列共 49 条，并完成关键词与详情页复核；但 B 站全投稿接口返回 `-799`、`-352` 或 HTTP 412，无法证明账号投稿绝对全量。该限制已显式保留，不能把“未检出”写成“不存在”。
-3. 剧情行不是结构化对话；需二次解析并人工区分角色本人、旁白和玩家选项。
-4. 语音只能按文件名初步识别语言；146 项未标记，多语言数量也不对称。
+3. S01–S05 已按明确前缀、旁白和分支边界提炼并记录对话对象；原始剧情仍不是完整结构化说话人数据，重复选项不得计为独立证据。
+4. 语音只能按文件名初步识别语言；146 项未标记，145 条文件名与 metadata language 冲突，人工回听为 0。
 5. `res/WIKI/story_wallpapers.json` 有 66 项，而 `local-server/files/WIKI/story_wallpapers.json` 有 95 项，存在镜像漂移。
 6. `local-server/files/WIKI/oath_texts.json` 是空对象；文本候选必须使用 `res/WIKI/oath_texts.json`。
-7. 目录级六轨映射只是候选；Gate B 前仍需逐段区分正史直接证据、合成结论、角色推演和未知。
+7. 六轨已逐段区分 `CANON_DIRECT`、`CANON_SYNTHESIS`、`IN_CHARACTER_INFERENCE` 和 `UNKNOWN`；仍需在 Gate C 只从 `accepted` 与明确候选推演中提取模型。
 
-## Gate A 判定
+## Gate B 研究状态
 
 - 当前结论：`READY_FOR_USER_CONFIRMATION`
-- 当前正史候选：46 条本地 WIKI／游戏材料单元 + 6 条直接相关官方视频。
-- 条件候选：1 条官方嘉年华回顾，需用户决定是否在 Gate B 前观看核实。
+- 记录状态：21 条 `accepted`，32 条 `candidate`，0 条无记录的 raw 核心锚点。
+- 研究相关实开 URL：8 条（M-01、A-01、B-01..06）；另有 B-07 条件页身份核验和 1 条 WIKI 拦截记录。
+- 媒体边界：人工回听 0；6 条核心 B 站视频均未完整观看；这些是披露缺口，不冒充内容证据。
+- 条件候选：B-07 保持 `canon_evidence=false`，不进入正史结论。
 - 平台限制：官方账号的绝对全投稿列表不可完整证明；现有清单以 7 个常规系列、关键词检索与具体详情页核验为边界。

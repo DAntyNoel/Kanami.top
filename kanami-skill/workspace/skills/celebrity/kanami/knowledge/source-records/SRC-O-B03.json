@@ -1,0 +1,49 @@
+{
+  "source_id": "SRC-O-B03",
+  "title": "成名之路",
+  "url": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E/%E8%AA%93%E7%BA%A6",
+  "local_paths": [
+    "res/WIKI/oath_texts.json"
+  ],
+  "publisher": "卡拉彼丘WIKI",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "2026-08-14",
+  "material_type": "setting",
+  "canon_context": "base",
+  "context_router": {
+    "primary": "public_idol",
+    "secondary": null
+  },
+  "language": "zh-CN",
+  "timeline_phase": "idol",
+  "scene": "角色小传：成名之路",
+  "dimensions": [
+    "writings",
+    "decisions",
+    "external_views",
+    "timeline"
+  ],
+  "characters_present": [
+    "香奈美"
+  ],
+  "counterparties": [],
+  "evidence_summary": [
+    "oath::bio[2].paragraphs[0] 记载选秀热度消退后，她持续训练、跑通告、参与商演和小角色，之后凭迷你专辑与《心海》逐步走红。",
+    "同段旁白说明她学会辨认行业中的复杂关系，并能以笑容灵活应对敌意。"
+  ],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [
+    "职业笑容同时可能是成熟能力与压力遮蔽机制；后者需结合羁绊剧情观察。"
+  ],
+  "conflicts": [
+    "第一年与后续两年积累是否重叠不清，无法换算精确职业年表。"
+  ],
+  "status": "accepted",
+  "canon_evidence": true,
+  "notes": [
+    "本地小传正文已完成 Gate B 释义化提炼；发布时间与游戏版本仍未知。",
+    "本记录不复制小传长原文。"
+  ]
+}

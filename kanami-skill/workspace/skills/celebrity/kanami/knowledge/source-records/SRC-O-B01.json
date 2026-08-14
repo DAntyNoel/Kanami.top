@@ -1,0 +1,48 @@
+{
+  "source_id": "SRC-O-B01",
+  "title": "看不见的情绪",
+  "url": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E/%E8%AA%93%E7%BA%A6",
+  "local_paths": [
+    "res/WIKI/oath_texts.json"
+  ],
+  "publisher": "卡拉彼丘WIKI",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "2026-08-14",
+  "material_type": "setting",
+  "canon_context": "base",
+  "context_router": {
+    "primary": "vulnerable_reflective",
+    "secondary": null
+  },
+  "language": "zh-CN",
+  "timeline_phase": "childhood",
+  "scene": "角色小传：看不见的情绪",
+  "dimensions": [
+    "writings",
+    "decisions",
+    "external_views",
+    "timeline"
+  ],
+  "characters_present": [
+    "香奈美"
+  ],
+  "counterparties": [],
+  "evidence_summary": [
+    "oath::bio[0].paragraphs[0] 旁白描述物质条件优越但家庭关注不足；她以懂事、独立和不添麻烦适应，并在 12 岁主动报名偶像选拔。"
+  ],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [
+    "童年的关注匮乏可能是后来重视被看见的形成因素；该关系需与训练和职业材料交叉解释。"
+  ],
+  "conflicts": [
+    "这是官方小传旁白而非香奈美第一人称；没有出生年份或具体家庭事件日期。"
+  ],
+  "status": "accepted",
+  "canon_evidence": true,
+  "notes": [
+    "本地小传正文已完成 Gate B 释义化提炼；发布时间与游戏版本仍未知。",
+    "本记录不复制小传长原文。"
+  ]
+}

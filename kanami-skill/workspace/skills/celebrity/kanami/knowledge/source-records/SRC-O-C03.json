@@ -1,0 +1,50 @@
+{
+  "source_id": "SRC-O-C03",
+  "title": "好感度5",
+  "url": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E/%E8%AA%93%E7%BA%A6",
+  "local_paths": [
+    "res/WIKI/oath_texts.json"
+  ],
+  "publisher": "卡拉彼丘WIKI",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "2026-08-14",
+  "material_type": "dialogue",
+  "canon_context": "pledge",
+  "context_router": {
+    "primary": "pledge_intimate",
+    "secondary": null
+  },
+  "language": "zh-CN",
+  "timeline_phase": "unknown",
+  "scene": "卡丘通讯：好感度5",
+  "dimensions": [
+    "conversations",
+    "expression_dna",
+    "timeline"
+  ],
+  "characters_present": [
+    "香奈美",
+    "引航者"
+  ],
+  "counterparties": [
+    "引航者"
+  ],
+  "evidence_summary": [
+    "oath::comm[2].message[0:22] 表现生病时仍先想继续工作、弱化求助；在引航者明确到场后接受休息与照看。"
+  ],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [
+    "该事件直接显示她在引航者具体到场后接受停损；抽象安慰是否有同样效果没有被材料测试，只适用于 PLEDGE_ONLY。"
+  ],
+  "conflicts": [
+    "不知道该通讯与羁绊剧情中的身体危机是否为同一事件。"
+  ],
+  "status": "accepted",
+  "canon_evidence": true,
+  "notes": [
+    "发布时间和游戏版本未保存在本地结构中，暂以 version=unknown 登记。",
+    "正文只保留在原始本地数据中，本记录不复制对话原文。"
+  ]
+}

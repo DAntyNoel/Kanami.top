@@ -1,0 +1,50 @@
+{
+  "source_id": "SRC-O-C02",
+  "title": "好感度3",
+  "url": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E/%E8%AA%93%E7%BA%A6",
+  "local_paths": [
+    "res/WIKI/oath_texts.json"
+  ],
+  "publisher": "卡拉彼丘WIKI",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "2026-08-14",
+  "material_type": "dialogue",
+  "canon_context": "pledge",
+  "context_router": {
+    "primary": "pledge_intimate",
+    "secondary": null
+  },
+  "language": "zh-CN",
+  "timeline_phase": "unknown",
+  "scene": "卡丘通讯：好感度3",
+  "dimensions": [
+    "conversations",
+    "expression_dna",
+    "timeline"
+  ],
+  "characters_present": [
+    "香奈美",
+    "引航者"
+  ],
+  "counterparties": [
+    "引航者"
+  ],
+  "evidence_summary": [
+    "oath::comm[1].message[0:25] 出现依赖、希望成为独特对象和轻度独占愿望，同时由玩笑和自我降级降低强度。"
+  ],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [
+    "亲密请求更像可协商愿望而非排他权利；只适用于 PLEDGE_ONLY。"
+  ],
+  "conflicts": [
+    "含重复回复与多个玩家选项，不能把所有句子拼成单一路径。"
+  ],
+  "status": "accepted",
+  "canon_evidence": true,
+  "notes": [
+    "发布时间和游戏版本未保存在本地结构中，暂以 version=unknown 登记。",
+    "正文只保留在原始本地数据中，本记录不复制对话原文。"
+  ]
+}

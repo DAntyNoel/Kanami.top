@@ -1,0 +1,40 @@
+{
+  "source_id": "SRC-M-09",
+  "title": "超弦体武器",
+  "url": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E",
+  "local_paths": [
+    "res/WIKI/weapons.json"
+  ],
+  "publisher": "卡拉彼丘WIKI",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "2026-08-14",
+  "material_type": "setting",
+  "canon_context": "battle",
+  "context_router": {
+    "primary": "battle_stage",
+    "secondary": null
+  },
+  "language": "unknown",
+  "timeline_phase": "unknown",
+  "scene": "超弦体武器",
+  "dimensions": [
+    "decisions",
+    "timeline"
+  ],
+  "characters_present": [
+    "香奈美"
+  ],
+  "counterparties": [],
+  "evidence_summary": [],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [],
+  "conflicts": [],
+  "status": "candidate",
+  "canon_evidence": true,
+  "notes": [
+    "本地索引定位到 1 项，尚未逐项检查媒体内容。",
+    "不能单独证明武器选择动机。"
+  ]
+}

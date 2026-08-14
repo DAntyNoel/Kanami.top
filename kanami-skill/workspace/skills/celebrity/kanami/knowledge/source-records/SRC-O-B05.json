@@ -1,0 +1,51 @@
+{
+  "source_id": "SRC-O-B05",
+  "title": "矛盾的心理",
+  "url": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E/%E8%AA%93%E7%BA%A6",
+  "local_paths": [
+    "res/WIKI/oath_texts.json"
+  ],
+  "publisher": "卡拉彼丘WIKI",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "2026-08-14",
+  "material_type": "setting",
+  "canon_context": "base",
+  "context_router": {
+    "primary": "vulnerable_reflective",
+    "secondary": "mission_volunteer"
+  },
+  "language": "zh-CN",
+  "timeline_phase": "scissors",
+  "scene": "角色小传：矛盾的心理",
+  "dimensions": [
+    "writings",
+    "decisions",
+    "external_views",
+    "timeline"
+  ],
+  "characters_present": [
+    "香奈美",
+    "明",
+    "剪刀手成员"
+  ],
+  "counterparties": [],
+  "evidence_summary": [
+    "oath::bio[4].paragraphs[0] 记载她继续响应明的联络并卷入剪刀手行动，同时担忧公开身份与安全风险；她反复权衡后选择狙击枪，并在爆破任务中受伤。",
+    "同段明确保留被动答应、难以把控选择以及对身份和战斗意义的疑问。"
+  ],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [
+    "她在高风险价值冲突中可能先承诺、后补风险判断；这不等于缺乏职业判断力。"
+  ],
+  "conflicts": [
+    "参与任务次数、正式权限、受伤日期及当前是否归队均未知。"
+  ],
+  "status": "accepted",
+  "canon_evidence": true,
+  "notes": [
+    "本地小传正文已完成 Gate B 释义化提炼；发布时间与游戏版本仍未知。",
+    "本记录不复制小传长原文。"
+  ]
+}

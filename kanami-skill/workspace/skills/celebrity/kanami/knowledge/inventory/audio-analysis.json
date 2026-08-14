@@ -1,0 +1,464 @@
+{
+  "analysis_version": 1,
+  "cn_text_groups": {
+    "character_count_policy": "Unicode code points after trimming leading/trailing whitespace; punctuation is included",
+    "groups": {
+      "base_dorm": {
+        "average_characters": 33.71,
+        "file_count": 72,
+        "missing_text_count": 0,
+        "modal_particles": {
+          "by_token": {
+            "吧": 16,
+            "呀": 2,
+            "呢": 12,
+            "哦": 8,
+            "哼": 1,
+            "唔": 1,
+            "啊": 1,
+            "啦": 8,
+            "嗯": 7,
+            "嘛": 2,
+            "诶": 3
+          },
+          "occurrences": 61,
+          "sample_count": 38
+        },
+        "music_stage_terms": {
+          "by_token": {
+            "偶像": 2,
+            "旋律": 7,
+            "歌声": 5,
+            "演出": 1,
+            "演唱": 4,
+            "粉丝": 7,
+            "舞台": 2,
+            "音乐": 2
+          },
+          "occurrences": 30,
+          "sample_count": 22
+        },
+        "punctuation": {
+          "exclamation": {
+            "by_token": {
+              "！": 27
+            },
+            "occurrences": 27,
+            "sample_count": 23
+          },
+          "question": {
+            "by_token": {
+              "？": 47
+            },
+            "occurrences": 47,
+            "sample_count": 38
+          }
+        },
+        "second_person": {
+          "你": {
+            "occurrences": 68,
+            "sample_count": 45
+          }
+        },
+        "self_reference": {
+          "我": {
+            "occurrences": 88,
+            "sample_count": 59
+          },
+          "香奈美": {
+            "occurrences": 10,
+            "sample_count": 10
+          }
+        },
+        "subsections": [
+          "宿舍"
+        ],
+        "text_sample_count": 72
+      },
+      "match": {
+        "average_characters": 11.5,
+        "file_count": 114,
+        "missing_text_count": 5,
+        "modal_particles": {
+          "by_token": {
+            "吧": 15,
+            "呐": 1,
+            "呢": 6,
+            "哦": 11,
+            "啦": 6,
+            "嘛": 1
+          },
+          "occurrences": 40,
+          "sample_count": 40
+        },
+        "music_stage_terms": {
+          "by_token": {
+            "偶像": 1,
+            "旋律": 2,
+            "歌声": 3,
+            "演出": 3,
+            "演唱": 1,
+            "舞台": 5,
+            "音乐": 1
+          },
+          "occurrences": 16,
+          "sample_count": 16
+        },
+        "punctuation": {
+          "exclamation": {
+            "by_token": {
+              "！": 53
+            },
+            "occurrences": 53,
+            "sample_count": 51
+          },
+          "question": {
+            "by_token": {
+              "？": 4
+            },
+            "occurrences": 4,
+            "sample_count": 4
+          }
+        },
+        "second_person": {
+          "你": {
+            "occurrences": 9,
+            "sample_count": 9
+          }
+        },
+        "self_reference": {
+          "我": {
+            "occurrences": 38,
+            "sample_count": 38
+          },
+          "香奈美": {
+            "occurrences": 16,
+            "sample_count": 16
+          }
+        },
+        "subsections": [
+          "对局"
+        ],
+        "text_sample_count": 109
+      },
+      "skin": {
+        "average_characters": 10.83,
+        "file_count": 97,
+        "missing_text_count": 1,
+        "modal_particles": {
+          "by_token": {
+            "吧": 5,
+            "呢": 3,
+            "哦": 1,
+            "啊": 1,
+            "啦": 3
+          },
+          "occurrences": 13,
+          "sample_count": 12
+        },
+        "music_stage_terms": {
+          "by_token": {
+            "旋律": 1,
+            "歌声": 8,
+            "舞台": 1,
+            "节奏": 1,
+            "音乐": 1
+          },
+          "occurrences": 12,
+          "sample_count": 12
+        },
+        "punctuation": {
+          "exclamation": {
+            "by_token": {
+              "！": 30
+            },
+            "occurrences": 30,
+            "sample_count": 28
+          },
+          "question": {
+            "by_token": {
+              "？": 7
+            },
+            "occurrences": 7,
+            "sample_count": 7
+          }
+        },
+        "second_person": {
+          "你": {
+            "occurrences": 13,
+            "sample_count": 13
+          }
+        },
+        "self_reference": {
+          "我": {
+            "occurrences": 29,
+            "sample_count": 29
+          },
+          "香奈美": {
+            "occurrences": 4,
+            "sample_count": 4
+          }
+        },
+        "subsections": [
+          "世纪歌姬时装",
+          "花的私语时装"
+        ],
+        "text_sample_count": 96
+      }
+    },
+    "selection_policy": "filename marker must be CN; base_dorm=宿舍, match=对局, skin=世纪歌姬时装+花的私语时装",
+    "term_count_policy": "literal substring counts; each listed term is counted independently"
+  },
+  "filename_language": {
+    "by_subsection": {
+      "世纪歌姬时装": {
+        "filename_language": {
+          "CN": 83,
+          "EN": 83,
+          "JP": 82
+        },
+        "metadata_language": {
+          "CN": 83,
+          "EN": 83,
+          "JP": 82
+        },
+        "total": 248
+      },
+      "宿舍": {
+        "filename_language": {
+          "CN": 72,
+          "EN": 5,
+          "JP": 65,
+          "unlabeled": 37
+        },
+        "metadata_language": {
+          "CN": 173,
+          "EN": 5,
+          "JP": 1
+        },
+        "total": 179
+      },
+      "对局": {
+        "filename_language": {
+          "CN": 114,
+          "EN": 114,
+          "JP": 104,
+          "unlabeled": 18
+        },
+        "metadata_language": {
+          "CN": 213,
+          "EN": 114,
+          "JP": 23
+        },
+        "total": 350
+      },
+      "相关音乐": {
+        "filename_language": {
+          "unlabeled": 10
+        },
+        "metadata_language": {
+          "missing": 10
+        },
+        "total": 10
+      },
+      "系统播报语音": {
+        "filename_language": {
+          "JP": 70,
+          "unlabeled": 81
+        },
+        "metadata_language": {
+          "CN": 81,
+          "JP": 70
+        },
+        "total": 151
+      },
+      "花的私语时装": {
+        "filename_language": {
+          "CN": 14
+        },
+        "metadata_language": {
+          "CN": 14
+        },
+        "total": 14
+      }
+    },
+    "counts": {
+      "CN": 283,
+      "EN": 202,
+      "JP": 321,
+      "unlabeled": 146
+    },
+    "parser": "CN/JP/EN marker at filename end, or immediately before a trailing numeric segment; otherwise unlabeled"
+  },
+  "inventory": {
+    "related_music": 10,
+    "total": 952,
+    "voice_metadata": 942
+  },
+  "metadata_language_conflicts": {
+    "by_subsection": {
+      "宿舍": 64,
+      "对局": 81
+    },
+    "comparison_policy": "count only entries with both a CN/JP/EN filename marker and a string metadata language; unlabeled or missing values are not conflicts",
+    "count": 145,
+    "filename_examples": [
+      {
+        "filename": "香奈美语音-001JP.mp3",
+        "filename_language": "JP",
+        "metadata_language": "CN",
+        "subsection": "宿舍"
+      },
+      {
+        "filename": "香奈美语音-002JP.mp3",
+        "filename_language": "JP",
+        "metadata_language": "CN",
+        "subsection": "宿舍"
+      },
+      {
+        "filename": "香奈美语音-003JP.mp3",
+        "filename_language": "JP",
+        "metadata_language": "CN",
+        "subsection": "宿舍"
+      },
+      {
+        "filename": "香奈美语音-004JP.mp3",
+        "filename_language": "JP",
+        "metadata_language": "CN",
+        "subsection": "宿舍"
+      },
+      {
+        "filename": "香奈美语音-005JP.mp3",
+        "filename_language": "JP",
+        "metadata_language": "CN",
+        "subsection": "宿舍"
+      },
+      {
+        "filename": "香奈美语音-006JP.mp3",
+        "filename_language": "JP",
+        "metadata_language": "CN",
+        "subsection": "宿舍"
+      }
+    ]
+  },
+  "scope_note": "Descriptive metadata and text counts only; no personality or persona conclusions are produced.",
+  "short_text_anchors": {
+    "count": 17,
+    "groups": {
+      "base_dorm": {
+        "互动交谈": [
+          {
+            "filename": "香奈美语音-026CN.mp3",
+            "text": "假如重来一次，我还是会选择成为偶像歌手。毕竟，我无论如何都不能让粉丝们失望。",
+            "voiceTag": "互动交谈"
+          },
+          {
+            "filename": "香奈美语音-027CN.mp3",
+            "text": "唱歌对我来说有非比寻常的意义，我需要用这种方式去铭记过去、现在和将来。",
+            "voiceTag": "互动交谈"
+          }
+        ],
+        "打断角色状态": [
+          {
+            "filename": "香奈美语音-049CN.mp3",
+            "text": "抱歉~你是觉得我有点吵到你了吗？",
+            "voiceTag": "打断角色状态"
+          },
+          {
+            "filename": "香奈美语音-050CN.mp3",
+            "text": "你想学编曲吗？那么，我以后找个机会教你吧~",
+            "voiceTag": "打断角色状态"
+          }
+        ],
+        "获得角色": [
+          {
+            "filename": "香奈美语音-018CN.mp3",
+            "text": "初次见面，我叫香奈美。如果你喜欢我的话，就来听听我的演唱会吧！",
+            "voiceTag": "获得角色"
+          }
+        ]
+      },
+      "match": {
+        "回合开场": [
+          {
+            "filename": "香奈美语音-068CN.mp3",
+            "text": "一切准备就绪，我的演出要开始了哦！",
+            "voiceTag": "回合开场"
+          },
+          {
+            "filename": "香奈美语音-069CN.mp3",
+            "text": "声浪下的渴望，就由香奈美来回应吧！",
+            "voiceTag": "回合开场"
+          }
+        ],
+        "战斗失败": [
+          {
+            "filename": "Kanami_Result-0038_CN.mp3",
+            "text": "怎么才能避免临场发挥失常呢？",
+            "voiceTag": "战斗失败"
+          },
+          {
+            "filename": "Kanami_Result-0040_CN.mp3",
+            "text": "即使在低谷，香奈美也会撑下去的。",
+            "voiceTag": "战斗失败"
+          }
+        ],
+        "战斗胜利": [
+          {
+            "filename": "Kanami_Result-0034_CN.mp3",
+            "text": "真是一场不错的即兴表演呢。",
+            "voiceTag": "战斗胜利"
+          },
+          {
+            "filename": "Kanami_Result-0036_CN.mp3",
+            "text": "我预感胜利会一直延续下去喔。",
+            "voiceTag": "战斗胜利"
+          }
+        ]
+      },
+      "skin": {
+        "回合开场": [
+          {
+            "filename": "Kanami_Hall_org01-0014_CN.mp3",
+            "text": "飘逸的裙摆就像是盛开的花。",
+            "voiceTag": "回合开场"
+          },
+          {
+            "filename": "Kanami_Hall_org01-0016_CN.mp3",
+            "text": "这是一种甜美的诱惑哦。",
+            "voiceTag": "回合开场"
+          }
+        ],
+        "战斗胜利": [
+          {
+            "filename": "Kanami_Result_org01-0025_CN.mp3",
+            "text": "一直走花路吧。 走花路：饭圈常用语，意思是希望顺顺利利，一直有好事发生。",
+            "voiceTag": "战斗胜利"
+          },
+          {
+            "filename": "Kanami_Result_org01-0027_CN.mp3",
+            "text": "要不要和香奈美一起牵手谢幕呢。",
+            "voiceTag": "战斗胜利"
+          }
+        ],
+        "选择角色": [
+          {
+            "filename": "Kanami_SelectCharacter-0263_CN.mp3",
+            "text": "我站在银河的中心，眺望着未来！",
+            "voiceTag": "选择角色"
+          },
+          {
+            "filename": "Kanami_SelectCharacter_org01_2_CN.mp3",
+            "text": "虽然歌声无形，但一定可以瞄准你的心。",
+            "voiceTag": "选择角色"
+          }
+        ]
+      }
+    },
+    "policy": "preselected voiceTags only; deterministic filename order; at most 2 anchors per voiceTag; every text is shorter than 200 characters"
+  },
+  "source": {
+    "path": "res/WIKI/audio.json",
+    "sha256": "87ad063d80c3e06a45a97ff99a3315a215c1a470d9d18f42bddadd83cc51199b"
+  }
+}

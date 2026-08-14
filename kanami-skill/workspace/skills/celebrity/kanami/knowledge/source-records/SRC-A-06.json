@@ -1,0 +1,42 @@
+{
+  "source_id": "SRC-A-06",
+  "title": "相关音乐",
+  "url": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E",
+  "local_paths": [
+    "res/WIKI/audio.json",
+    "kanami-skill/workspace/skills/celebrity/kanami/knowledge/inventory/audio-analysis.json"
+  ],
+  "publisher": "卡拉彼丘WIKI",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "2026-08-14",
+  "material_type": "song",
+  "canon_context": "mixed",
+  "context_router": {
+    "primary": "public_idol",
+    "secondary": null
+  },
+  "language": "mixed",
+  "timeline_phase": "unknown",
+  "scene": "相关音乐",
+  "dimensions": [
+    "writings",
+    "expression_dna"
+  ],
+  "characters_present": [
+    "香奈美"
+  ],
+  "counterparties": [],
+  "evidence_summary": [],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [],
+  "conflicts": [],
+  "status": "candidate",
+  "canon_evidence": true,
+  "notes": [
+    "本地索引定位到 10 项，尚未逐项检查媒体内容。",
+    "该索引混合角色曲、BGM 与伴奏，正式研究前仍需按实际类型拆分；未完成回听、转写和时间戳核验，故保持 candidate。",
+    "音频索引的可复现语言与文本统计见 audio-analysis.json。"
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "observed_at": "2026-08-14",
+  "timezone": "Asia/Shanghai",
+  "method": "Codex in-app browser visible DOM inspection",
+  "successful_page_checks": 9,
+  "blocked_page_checks": 1,
+  "observations": [
+    {
+      "source_id": "SRC-M-01",
+      "url": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E",
+      "status": "live-content-verified",
+      "page_title": "香奈美",
+      "publisher_signal": "卡拉彼丘 WIKI 页面",
+      "evidence_summary": [
+        "页面设定栏显示香奈美为 19 岁的灵魂歌姬、先锋，并归属剪刀手。",
+        "页面简介同时呈现高人气偶像歌手与剪刀手地下志愿者身份，并说明她为帮助受轮回计划和崩溃症影响的粉丝而行动。",
+        "页面观测语录区分公开活动中的优等生形象与私下逗弄熟人的小恶魔面。"
+      ]
+    },
+    {
+      "source_id": "SRC-B-01",
+      "url": "https://www.bilibili.com/video/BV1W2421L7wT/",
+      "status": "page-identity-verified",
+      "page_title": "《卡拉彼丘》香奈美主题曲「你看世界好美」| 2月1日正式公测",
+      "publisher_signal": "页面可见发布者卡拉彼丘",
+      "content_reviewed": false
+    },
+    {
+      "source_id": "SRC-B-02",
+      "url": "https://www.bilibili.com/video/BV1HZ421g71j/",
+      "status": "page-identity-verified",
+      "page_title": "萌萌香香的香奈美",
+      "publisher_signal": "页面可见发布者卡拉彼丘",
+      "content_reviewed": false
+    },
+    {
+      "source_id": "SRC-B-03",
+      "url": "https://www.bilibili.com/video/BV12JDGYLEsT/",
+      "status": "page-identity-verified",
+      "page_title": "《卡拉彼丘》香奈美传说时装·「世纪歌姬」| 展示PV",
+      "publisher_signal": "页面可见发布者卡拉彼丘",
+      "content_reviewed": false
+    },
+    {
+      "source_id": "SRC-B-04",
+      "url": "https://www.bilibili.com/video/BV1AnoPYNEiL/",
+      "status": "page-identity-verified",
+      "page_title": "《你看世界好美》日文复现丨美しい世界へ",
+      "publisher_signal": "页面可见发布者卡拉彼丘",
+      "content_reviewed": false
+    },
+    {
+      "source_id": "SRC-B-05",
+      "url": "https://www.bilibili.com/video/BV1d93p69EKU/",
+      "status": "page-identity-verified",
+      "page_title": "《卡拉彼丘》香奈美传说时装「心之奏鸣」主题曲 | Cuter Me",
+      "publisher_signal": "页面可见发布者卡拉彼丘",
+      "content_reviewed": false
+    },
+    {
+      "source_id": "SRC-B-06",
+      "url": "https://www.bilibili.com/video/BV1TwGA6XEhK/",
+      "status": "page-identity-verified",
+      "page_title": "《卡拉彼丘》香奈美传说时装·「心之奏鸣」| 展示PV",
+      "publisher_signal": "页面可见发布者卡拉彼丘",
+      "content_reviewed": false
+    },
+    {
+      "source_id": "SRC-B-07",
+      "url": "https://www.bilibili.com/video/BV1m7um6BEgB/",
+      "status": "conditional-page-identity-verified",
+      "page_title": "《卡拉彼丘》2026线下嘉年华精彩回顾",
+      "publisher_signal": "页面可见发布者卡拉彼丘",
+      "content_reviewed": false,
+      "notes": [
+        "页面正文检索到的香奈美字样位于相关推荐的 COS 投稿标题，而不是官方视频内容说明。",
+        "页面未出现回归演唱会字样，故继续保持条件候选，不进入基础人格证据。"
+      ]
+    },
+    {
+      "source_id": "SRC-A-01",
+      "url": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E/%E8%AF%AD%E9%9F%B3%E5%8F%B0%E8%AF%8D",
+      "status": "live-content-verified",
+      "page_title": "香奈美/语音台词 - 卡拉彼丘WIKI",
+      "publisher_signal": "卡拉彼丘 WIKI 页面",
+      "content_reviewed": true,
+      "audio_playback_reviewed": false,
+      "evidence_summary": [
+        "页面可见宿舍、对局、花的私语、世纪歌姬、心之奏鸣和系统播报语音分区，并展示中文、日文、英文候选文本。",
+        "页面明确说明角色台词由千问 ASR 与 Whisper ASR 听写并配合人工后期校对，因此页面文本只能作为转写候选，关键措辞仍需回听音频。",
+        "页面标题与更新日期 2026-07-24 已在可见 DOM 中核对；本次没有播放任何音频。"
+      ]
+    },
+    {
+      "source_id": null,
+      "url": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E/%E8%AA%93%E7%BA%A6",
+      "status": "blocked-by-site",
+      "page_title": "请求已被拦截",
+      "publisher_signal": null,
+      "content_reviewed": false
+    }
+  ],
+  "limitations": [
+    "B 站核验仅确认具体页面标题与可见发布者；尚未完整观看、提取字幕或建立内容时间戳。",
+    "WIKI 主页面成功加载后，誓约子页触发站点级请求拦截；子页语义研究改用本地结构化快照并保留该限制。",
+    "WIKI 语音台词页已成功加载并核对可见表格与 ASR 说明，但没有播放音频；不得把页面核验计作人工回听。",
+    "网页页面中的相关推荐和评论不能作为视频本体证据。"
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "source_id": "SRC-A-05",
+  "title": "花的私语时装语音",
+  "url": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E/%E8%AF%AD%E9%9F%B3%E5%8F%B0%E8%AF%8D",
+  "local_paths": [
+    "res/WIKI/audio.json",
+    "kanami-skill/workspace/skills/celebrity/kanami/knowledge/inventory/audio-analysis.json"
+  ],
+  "publisher": "卡拉彼丘WIKI",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "2026-08-14",
+  "material_type": "voice",
+  "canon_context": "skin",
+  "context_router": {
+    "primary": "public_idol",
+    "secondary": null
+  },
+  "language": "zh-CN",
+  "timeline_phase": "alternate-skin",
+  "scene": "花的私语时装语音",
+  "dimensions": [
+    "conversations",
+    "expression_dna"
+  ],
+  "characters_present": [
+    "香奈美"
+  ],
+  "counterparties": [],
+  "evidence_summary": [],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [],
+  "conflicts": [],
+  "status": "candidate",
+  "canon_evidence": true,
+  "notes": [
+    "本地索引定位到 14 项，尚未逐项检查媒体内容。",
+    "索引含 WIKI text 候选，但未完成回听、说话对象和时间戳核验；文件名语言与 metadata language 还存在冲突，故保持 candidate。",
+    "音频索引的可复现语言与文本统计见 audio-analysis.json。"
+  ]
+}

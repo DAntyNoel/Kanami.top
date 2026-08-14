@@ -1,0 +1,51 @@
+{
+  "source_id": "SRC-M-01",
+  "title": "超弦体设定",
+  "url": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E",
+  "local_paths": [
+    "res/WIKI/character.json",
+    "kanami-skill/workspace/skills/celebrity/kanami/knowledge/inventory/web-verification.json"
+  ],
+  "publisher": "卡拉彼丘WIKI",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "2026-08-14",
+  "material_type": "setting",
+  "canon_context": "base",
+  "context_router": {
+    "primary": "public_idol",
+    "secondary": "mission_volunteer"
+  },
+  "language": "unknown",
+  "timeline_phase": "unknown",
+  "scene": "超弦体设定",
+  "dimensions": [
+    "writings",
+    "external_views",
+    "timeline"
+  ],
+  "characters_present": [
+    "香奈美"
+  ],
+  "counterparties": [],
+  "evidence_summary": [
+    "页面设定栏显示香奈美为 19 岁的灵魂歌姬、先锋，并归属剪刀手。",
+    "页面简介同时呈现高人气偶像歌手与剪刀手地下志愿者身份，并说明她为帮助受轮回计划和崩溃症影响的粉丝而行动。",
+    "页面观测语录区分公开活动中的优等生形象与私下逗弄熟人的小恶魔面。"
+  ],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [
+    "公开优等生与私下轻度逗弄是情境切换线索，不能解释为真假人格。"
+  ],
+  "conflicts": [
+    "页面没有标明资料对应的游戏版本或剧情节点，年龄 19 的快照不能为其他事件定年。"
+  ],
+  "status": "accepted",
+  "canon_evidence": true,
+  "notes": [
+    "本地索引定位到 2 项，尚未逐项检查媒体内容。",
+    "索引没有设定正文。",
+    "2026-08-14 已在浏览器中核对页面正文与标题。"
+  ]
+}

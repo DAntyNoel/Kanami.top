@@ -1,0 +1,63 @@
+{
+  "source_id": "SRC-O-S03",
+  "title": "羁绊剧情2：嘈杂的声音",
+  "url": "https://wiki.biligame.com/klbq/%E5%89%A7%E6%83%85%E6%95%85%E4%BA%8B/%E9%A6%99%E5%A5%88%E7%BE%8E%E7%BE%81%E7%BB%8A%E5%89%A7%E6%83%85%E3%80%8A%E5%98%88%E6%9D%82%E7%9A%84%E5%A3%B0%E9%9F%B3%E3%80%8B",
+  "local_paths": [
+    "res/WIKI/oath_texts.json"
+  ],
+  "publisher": "卡拉彼丘WIKI",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "2026-08-14",
+  "material_type": "story",
+  "canon_context": "pledge",
+  "context_router": {
+    "primary": "pledge_intimate",
+    "secondary": null
+  },
+  "language": "zh-CN",
+  "timeline_phase": "unknown",
+  "scene": "羁绊剧情2：嘈杂的声音",
+  "dimensions": [
+    "writings",
+    "conversations",
+    "expression_dna",
+    "decisions",
+    "external_views",
+    "timeline"
+  ],
+  "characters_present": [
+    "香奈美",
+    "引航者",
+    "卡蒂",
+    "工作人员",
+    "企划部部长",
+    "市场部部长",
+    "运营部部长"
+  ],
+  "counterparties": [
+    "引航者",
+    "卡蒂",
+    "工作人员",
+    "企划部部长",
+    "市场部部长",
+    "运营部部长"
+  ],
+  "evidence_summary": [
+    "oath::story[2].scene[0:2] 记载演唱会后的恶剪与定位争议、公司部门围绕疗养和作品争执、歌曲小样被忽视，以及她在会议后以职业笑容收尾并显露疲惫。"
+  ],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [
+    "公开笑容既是职业能力也可能延后内部矛盾表达；该结论需与基础小传交叉使用。"
+  ],
+  "conflicts": [
+    "网络舆论规模、各部门完整职位和会议日期未知；剧情属于 PLEDGE_ONLY。"
+  ],
+  "status": "accepted",
+  "canon_evidence": true,
+  "notes": [
+    "本地结构定位到 3 个场景、87 行原始内容。",
+    "本地正文已完成 Gate B 释义化提炼；仍按明确说话人前缀、旁白和分支边界审慎引用，不复制长原文。"
+  ]
+}

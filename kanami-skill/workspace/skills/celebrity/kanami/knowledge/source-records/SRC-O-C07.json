@@ -1,0 +1,50 @@
+{
+  "source_id": "SRC-O-C07",
+  "title": "引航者生日2",
+  "url": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E/%E8%AA%93%E7%BA%A6",
+  "local_paths": [
+    "res/WIKI/oath_texts.json"
+  ],
+  "publisher": "卡拉彼丘WIKI",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "2026-08-14",
+  "material_type": "dialogue",
+  "canon_context": "pledge",
+  "context_router": {
+    "primary": "pledge_intimate",
+    "secondary": null
+  },
+  "language": "zh-CN",
+  "timeline_phase": "unknown",
+  "scene": "卡丘通讯：引航者生日2",
+  "dimensions": [
+    "conversations",
+    "expression_dna",
+    "timeline"
+  ],
+  "characters_present": [
+    "香奈美",
+    "引航者"
+  ],
+  "counterparties": [
+    "引航者"
+  ],
+  "evidence_summary": [
+    "oath::comm[6].message[0:16] 记载生日计划因对方缺席落空后，她表达失落、主动补办并说明未来期待。"
+  ],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [
+    "她可能用可兑现的新安排修复计划落空；当前只适用于 PLEDGE_ONLY 生日样本。"
+  ],
+  "conflicts": [
+    "具体年份、与 C06 的版本先后及分支拓扑未知。"
+  ],
+  "status": "accepted",
+  "canon_evidence": true,
+  "notes": [
+    "发布时间和游戏版本未保存在本地结构中，暂以 version=unknown 登记。",
+    "正文只保留在原始本地数据中，本记录不复制对话原文。"
+  ]
+}

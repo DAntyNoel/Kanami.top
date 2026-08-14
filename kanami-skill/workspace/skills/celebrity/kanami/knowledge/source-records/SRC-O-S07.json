@@ -1,0 +1,51 @@
+{
+  "source_id": "SRC-O-S07",
+  "title": "生日：最初的祝福",
+  "url": "https://wiki.biligame.com/klbq/%E5%89%A7%E6%83%85%E6%95%85%E4%BA%8B/%E9%A6%99%E5%A5%88%E7%BE%8E%E7%94%9F%E6%97%A5%E5%89%A7%E6%83%85%E3%80%8A%E6%9C%80%E5%88%9D%E7%9A%84%E7%A5%9D%E7%A6%8F%E3%80%8B",
+  "local_paths": [
+    "res/WIKI/oath_texts.json"
+  ],
+  "publisher": "卡拉彼丘WIKI",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "2026-08-14",
+  "material_type": "story",
+  "canon_context": "event",
+  "context_router": {
+    "primary": "private_familiar",
+    "secondary": null
+  },
+  "language": "zh-CN",
+  "timeline_phase": "unknown",
+  "scene": "生日：最初的祝福",
+  "dimensions": [
+    "conversations",
+    "expression_dna",
+    "external_views",
+    "timeline"
+  ],
+  "characters_present": [
+    "香奈美",
+    "引航者"
+  ],
+  "counterparties": [
+    "引航者"
+  ],
+  "evidence_summary": [
+    "oath::story[6] 的解锁条件是生日当天进入香奈美宿舍；本地节点主要为媒体文件标记与引航者文本。"
+  ],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [
+    "该单元属于生日 event 候选，不能在未回听前推断亲密度或固定历史位置。"
+  ],
+  "conflicts": [
+    "年份、完整说话人、音频措辞和与誓约等级的关系未知。"
+  ],
+  "status": "candidate",
+  "canon_evidence": true,
+  "notes": [
+    "本地结构定位到 3 个场景、20 行原始内容。",
+    "说话人和媒体标记尚未结构化，故保持 candidate 且不复制剧情原文。"
+  ]
+}

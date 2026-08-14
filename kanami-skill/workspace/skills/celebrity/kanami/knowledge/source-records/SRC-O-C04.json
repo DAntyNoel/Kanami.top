@@ -1,0 +1,50 @@
+{
+  "source_id": "SRC-O-C04",
+  "title": "好感度7",
+  "url": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E/%E8%AA%93%E7%BA%A6",
+  "local_paths": [
+    "res/WIKI/oath_texts.json"
+  ],
+  "publisher": "卡拉彼丘WIKI",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "2026-08-14",
+  "material_type": "dialogue",
+  "canon_context": "pledge",
+  "context_router": {
+    "primary": "pledge_intimate",
+    "secondary": null
+  },
+  "language": "zh-CN",
+  "timeline_phase": "unknown",
+  "scene": "卡丘通讯：好感度7",
+  "dimensions": [
+    "conversations",
+    "expression_dna",
+    "timeline"
+  ],
+  "characters_present": [
+    "香奈美",
+    "引航者"
+  ],
+  "counterparties": [
+    "引航者"
+  ],
+  "evidence_summary": [
+    "oath::comm[3].message[0:26] 包含见面安排未成及短暂失落，随后仍给对方回应空间。"
+  ],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [
+    "她可能更接受解释与新安排而非模糊安慰；当前只是一组 PLEDGE_ONLY 样本。"
+  ],
+  "conflicts": [
+    "扁平分支无法确定每个选项分别触发哪条回复。"
+  ],
+  "status": "accepted",
+  "canon_evidence": true,
+  "notes": [
+    "发布时间和游戏版本未保存在本地结构中，暂以 version=unknown 登记。",
+    "正文只保留在原始本地数据中，本记录不复制对话原文。"
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "source_id": "SRC-O-L01",
+  "title": "回归信",
+  "url": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E/%E8%AA%93%E7%BA%A6",
+  "local_paths": [
+    "res/WIKI/oath_texts.json"
+  ],
+  "publisher": "卡拉彼丘WIKI",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "2026-08-14",
+  "material_type": "letter",
+  "canon_context": "pledge",
+  "context_router": {
+    "primary": "pledge_intimate",
+    "secondary": null
+  },
+  "language": "zh-CN",
+  "timeline_phase": "unknown",
+  "scene": "誓约角色回归信",
+  "dimensions": [
+    "writings",
+    "conversations",
+    "expression_dna",
+    "timeline"
+  ],
+  "characters_present": [
+    "香奈美"
+  ],
+  "counterparties": [
+    "引航者"
+  ],
+  "evidence_summary": [
+    "oath::returnLetters[0].paragraphs[0] 表达已签订誓约且长期失联后的强烈想念、慌张与依赖。"
+  ],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [
+    "长期缺席可能触发更直接的依恋表达；只适用于 PLEDGE_ONLY。"
+  ],
+  "conflicts": [
+    "触发字段把两个条件连在同一字符串中，不能还原唯一运行时触发逻辑。"
+  ],
+  "status": "accepted",
+  "canon_evidence": true,
+  "notes": [
+    "本地回归信已完成 Gate B 释义化提炼；触发条件格式仍作为 conflicts 保留。",
+    "本记录不复制信件长原文。"
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "source_id": "SRC-O-C06",
+  "title": "引航者生日",
+  "url": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E/%E8%AA%93%E7%BA%A6",
+  "local_paths": [
+    "res/WIKI/oath_texts.json"
+  ],
+  "publisher": "卡拉彼丘WIKI",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "2026-08-14",
+  "material_type": "dialogue",
+  "canon_context": "pledge",
+  "context_router": {
+    "primary": "pledge_intimate",
+    "secondary": null
+  },
+  "language": "zh-CN",
+  "timeline_phase": "unknown",
+  "scene": "卡丘通讯：引航者生日",
+  "dimensions": [
+    "conversations",
+    "expression_dna",
+    "timeline"
+  ],
+  "characters_present": [
+    "香奈美",
+    "引航者"
+  ],
+  "counterparties": [
+    "引航者"
+  ],
+  "evidence_summary": [
+    "oath::comm[5].message[0:12] 记载她为引航者生日留出专属时间，并把重视落实为共同安排。"
+  ],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [
+    "在高羁绊关系中，她可能用调整日程表达重视；不得进入默认关系。"
+  ],
+  "conflicts": [
+    "具体年份与该生日通讯在版本中的先后未知。"
+  ],
+  "status": "accepted",
+  "canon_evidence": true,
+  "notes": [
+    "发布时间和游戏版本未保存在本地结构中，暂以 version=unknown 登记。",
+    "正文只保留在原始本地数据中，本记录不复制对话原文。"
+  ]
+}

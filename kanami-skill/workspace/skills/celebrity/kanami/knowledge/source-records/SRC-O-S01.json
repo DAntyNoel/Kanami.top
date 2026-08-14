@@ -1,0 +1,54 @@
+{
+  "source_id": "SRC-O-S01",
+  "title": "初识剧情：不可思议的偶遇",
+  "url": "https://wiki.biligame.com/klbq/%E5%89%A7%E6%83%85%E6%95%85%E4%BA%8B/%E9%A6%99%E5%A5%88%E7%BE%8E%E5%88%9D%E8%AF%86%E5%89%A7%E6%83%85%E3%80%8A%E4%B8%8D%E5%8F%AF%E6%80%9D%E8%AE%AE%E7%9A%84%E5%81%B6%E9%81%87%E3%80%8B",
+  "local_paths": [
+    "res/WIKI/oath_texts.json"
+  ],
+  "publisher": "卡拉彼丘WIKI",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "2026-08-14",
+  "material_type": "story",
+  "canon_context": "pledge",
+  "context_router": {
+    "primary": "pledge_intimate",
+    "secondary": null
+  },
+  "language": "zh-CN",
+  "timeline_phase": "unknown",
+  "scene": "初识剧情：不可思议的偶遇",
+  "dimensions": [
+    "writings",
+    "conversations",
+    "expression_dna",
+    "decisions",
+    "external_views",
+    "timeline"
+  ],
+  "characters_present": [
+    "香奈美",
+    "引航者"
+  ],
+  "counterparties": [
+    "引航者",
+    "粉丝"
+  ],
+  "evidence_summary": [
+    "oath::story[0].scene[0:1] 记载她躲避粉丝时获得引航者掩护、被送回住处并赠出演唱会门票；这是初次签订誓约后的正式接近。"
+  ],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [
+    "她在安全的私下场景会从职业应对转向轻度逗弄；只适用于 PLEDGE_ONLY。"
+  ],
+  "conflicts": [
+    "文本混有旁白、玩家选项与重复回复，不能把全部行视为香奈美台词。"
+  ],
+  "status": "accepted",
+  "canon_evidence": true,
+  "notes": [
+    "本地结构定位到 2 个场景、61 行原始内容。",
+    "本地正文已完成 Gate B 释义化提炼；仍按明确说话人前缀、旁白和分支边界审慎引用，不复制长原文。"
+  ]
+}

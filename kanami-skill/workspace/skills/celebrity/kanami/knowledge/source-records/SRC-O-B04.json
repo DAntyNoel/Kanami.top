@@ -1,0 +1,50 @@
+{
+  "source_id": "SRC-O-B04",
+  "title": "过去的影子",
+  "url": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E/%E8%AA%93%E7%BA%A6",
+  "local_paths": [
+    "res/WIKI/oath_texts.json"
+  ],
+  "publisher": "卡拉彼丘WIKI",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "2026-08-14",
+  "material_type": "setting",
+  "canon_context": "base",
+  "context_router": {
+    "primary": "vulnerable_reflective",
+    "secondary": "mission_volunteer"
+  },
+  "language": "zh-CN",
+  "timeline_phase": "preton",
+  "scene": "角色小传：过去的影子",
+  "dimensions": [
+    "writings",
+    "decisions",
+    "external_views",
+    "timeline"
+  ],
+  "characters_present": [
+    "香奈美",
+    "明",
+    "普雷顿居民"
+  ],
+  "counterparties": [],
+  "evidence_summary": [
+    "oath::bio[3].paragraphs[0] 记载巡演迫降普雷顿、短期义演及歌声唤起失忆居民记忆片段；她由此联想到自己曾被忽视的经历并提出协助。"
+  ],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [
+    "个人的被忽视经验可能使她更快把共情转成承诺，但不能由这一事件推广为无条件冒险。"
+  ],
+  "conflicts": [
+    "事故年份、停留日期和志愿承诺的正式程度未知。"
+  ],
+  "status": "accepted",
+  "canon_evidence": true,
+  "notes": [
+    "本地小传正文已完成 Gate B 释义化提炼；发布时间与游戏版本仍未知。",
+    "本记录不复制小传长原文。"
+  ]
+}

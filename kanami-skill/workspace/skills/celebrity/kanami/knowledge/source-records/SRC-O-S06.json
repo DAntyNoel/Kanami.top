@@ -1,0 +1,53 @@
+{
+  "source_id": "SRC-O-S06",
+  "title": "羁绊剧情5：全新的主打歌",
+  "url": "https://wiki.biligame.com/klbq/%E5%89%A7%E6%83%85%E6%95%85%E4%BA%8B/%E9%A6%99%E5%A5%88%E7%BE%8E%E7%BE%81%E7%BB%8A%E5%89%A7%E6%83%85%E3%80%8A%E5%85%A8%E6%96%B0%E7%9A%84%E4%B8%BB%E6%89%93%E6%AD%8C%E3%80%8B",
+  "local_paths": [
+    "res/WIKI/oath_texts.json"
+  ],
+  "publisher": "卡拉彼丘WIKI",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "2026-08-14",
+  "material_type": "story",
+  "canon_context": "pledge",
+  "context_router": {
+    "primary": "pledge_intimate",
+    "secondary": null
+  },
+  "language": "zh-CN",
+  "timeline_phase": "unknown",
+  "scene": "羁绊剧情5：全新的主打歌",
+  "dimensions": [
+    "writings",
+    "conversations",
+    "expression_dna",
+    "decisions",
+    "external_views",
+    "timeline"
+  ],
+  "characters_present": [
+    "香奈美",
+    "引航者"
+  ],
+  "counterparties": [
+    "引航者"
+  ],
+  "evidence_summary": [
+    "oath::story[5].scene[0].line[0:14] 只保存 14 个媒体文件标记与一条引航者文本；解锁条件指向誓约等级 10。"
+  ],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [
+    "标题暗示新歌单元，但未回听前不能确认香奈美说了什么或创作是否完成。"
+  ],
+  "conflicts": [
+    "场景索引直接为 3，缺少 1、2；音频无转写、说话人和时间戳。"
+  ],
+  "status": "candidate",
+  "canon_evidence": true,
+  "notes": [
+    "本地结构定位到 1 个场景、15 行原始内容。",
+    "说话人和媒体标记尚未结构化，故保持 candidate 且不复制剧情原文。"
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "source_id": "SRC-A-03",
+  "title": "宿舍语音",
+  "url": "https://wiki.biligame.com/klbq/%E9%A6%99%E5%A5%88%E7%BE%8E/%E8%AF%AD%E9%9F%B3%E5%8F%B0%E8%AF%8D",
+  "local_paths": [
+    "res/WIKI/audio.json",
+    "kanami-skill/workspace/skills/celebrity/kanami/knowledge/inventory/audio-analysis.json"
+  ],
+  "publisher": "卡拉彼丘WIKI",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "2026-08-14",
+  "material_type": "voice",
+  "canon_context": "dorm",
+  "context_router": {
+    "primary": "private_familiar",
+    "secondary": null
+  },
+  "language": "mixed",
+  "timeline_phase": "unknown",
+  "scene": "宿舍语音",
+  "dimensions": [
+    "writings",
+    "conversations",
+    "expression_dna"
+  ],
+  "characters_present": [
+    "香奈美"
+  ],
+  "counterparties": [],
+  "evidence_summary": [
+    "audio-analysis.json 记录宿舍索引 179 项；按文件名识别出 CN 72、JP 65、EN 5、未标 37。",
+    "72 条 CN 候选均有 WIKI text，平均 33.71 字符；38 条含问号、45 条含第二人称“你”。这些是描述性文本统计，不是回听结果。"
+  ],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [
+    "宿舍候选比对局候选更长且更常提问，可作为 private_familiar 的节奏假设；需音频回听验证。"
+  ],
+  "conflicts": [
+    "宿舍有 64 条文件名语言与 metadata language 冲突；WIKI 文本来自 ASR 与人工校对，关键措辞未回听。"
+  ],
+  "status": "candidate",
+  "canon_evidence": true,
+  "notes": [
+    "本地索引定位到 179 项，尚未逐项检查媒体内容。",
+    "索引含 WIKI text 候选，但未完成回听、说话对象和时间戳核验；文件名语言与 metadata language 还存在冲突，故保持 candidate。",
+    "音频索引的可复现语言与文本统计见 audio-analysis.json。"
+  ]
+}

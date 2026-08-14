@@ -1,0 +1,47 @@
+{
+  "source_id": "SRC-B-06",
+  "title": "《卡拉彼丘》香奈美传说时装·「心之奏鸣」| 展示PV",
+  "url": "https://www.bilibili.com/video/BV1TwGA6XEhK/",
+  "local_paths": [
+    "kanami-skill/workspace/skills/celebrity/kanami/knowledge/inventory/bilibili-evidence.json",
+    "kanami-skill/workspace/skills/celebrity/kanami/knowledge/inventory/web-verification.json"
+  ],
+  "publisher": "卡拉彼丘官方账号",
+  "published_at": "2026-08-02",
+  "version": null,
+  "accessed_at": "2026-08-14",
+  "material_type": "pv",
+  "canon_context": "skin",
+  "context_router": {
+    "primary": "public_idol",
+    "secondary": null
+  },
+  "language": "zh-CN",
+  "timeline_phase": "alternate-skin",
+  "scene": "《卡拉彼丘》香奈美传说时装·「心之奏鸣」| 展示PV",
+  "dimensions": [
+    "expression_dna",
+    "external_views"
+  ],
+  "characters_present": [
+    "香奈美"
+  ],
+  "counterparties": [],
+  "evidence_summary": [
+    "平台元数据确认 bvid=BV1TwGA6XEhK、owner.mid=660091334、发布日期 2026-08-02、时长 162 秒和分 P 数 1。",
+    "2026-08-14 已在具体 BV 页面核对标题与可见发布者；尚未完整观看视频内容。"
+  ],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [],
+  "conflicts": [
+    "没有字幕、角色说话人或内容时间戳，平台标题与元数据不能替代视频内容证据。"
+  ],
+  "status": "candidate",
+  "canon_evidence": true,
+  "notes": [
+    "平台元数据已核对：owner.mid=660091334，时长 162 秒，分 P 数 1，目录状态 core-skin。",
+    "尚未完成观看、字幕／说话人和内容时间戳核验，故保持 candidate。",
+    "2026-08-14 已在浏览器中核对页面标题与可见发布者；未完整观看内容，仍保持 candidate。"
+  ]
+}
