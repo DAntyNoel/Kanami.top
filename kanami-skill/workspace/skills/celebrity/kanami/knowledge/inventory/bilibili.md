@@ -13,7 +13,7 @@
 | SRC-B-01 | BV1W2421L7wT | 香奈美主题曲“你看世界好美” | 2024-01-30 | 02:25 | song / base | 5 |
 | SRC-B-02 | BV1HZ421g71j | 萌萌香香的香奈美 | 2024-06-10 | 01:22 | pv / dorm | 5 |
 | SRC-B-03 | BV12JDGYLEsT | 世纪歌姬展示 PV | 2024-11-06 | 01:32 | pv / skin | 4 |
-| SRC-B-04 | BV1AnoPYNEiL | 你看世界好美日文复现 | 2025-04-16 | 04:04 | song / base-language-variant | 4 |
+| SRC-B-04 | BV1AnoPYNEiL | 你看世界好美日文复现 | 2025-04-16 | 04:04 | song / base | 4 |
 | SRC-B-05 | BV1d93p69EKU | Cuter Me | 2026-07-30 | 03:08 | song / skin | 5 |
 | SRC-B-06 | BV1TwGA6XEhK | 心之奏鸣展示 PV | 2026-08-02 | 02:42 | pv / skin | 4 |
 

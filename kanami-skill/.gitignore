@@ -3,3 +3,7 @@
 /downloads/
 /transcripts/
 /workspace/skills/celebrity/kanami/tmp/
+
+# The repository root ignores test*, but these validator tests are deliverables.
+!/workspace/tests/
+!/workspace/tests/*.py

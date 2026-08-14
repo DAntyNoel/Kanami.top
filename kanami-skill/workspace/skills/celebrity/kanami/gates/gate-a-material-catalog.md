@@ -61,13 +61,23 @@
 6. `Be Shining` 当前只找到非官方 UID 的投稿，不能列为官方 B 站证据；本地 WIKI 音频仍可作为待核线索。
 7. KanamiBot 媒体索引含群号、QQ 等标识，不得进入 Skill 或 Git。
 
+## 自动一致性检查
+
+在仓库根目录运行：
+
+    python kanami-skill/workspace/scripts/validate_gate_a.py kanami-skill/workspace/skills/celebrity/kanami
+
+逐条 source record 使用 JSON 模板 `kanami-skill/workspace/templates/source-record.template.json`，并与 `kanami-skill/workspace/schemas/source-record.schema.json` 保持一致。
+
+当前结果：PASS（39/39 checks）。检查覆盖精确来源 ID 集合、材料／情境枚举、52 条核心候选计数、B 站 owner／分类／来源行绑定、本地 WIKI／音频／剧情／媒体数量、壁纸标题覆盖、相对路径、source record 模板与 schema 对齐、敏感标识扫描，以及 Gate A 前不存在六轨研究文件。
+
 ## Gate A 需要用户确认
 
 默认建议：`通过当前目录 + 誓约材料独立隔离 + 暂不纳入 2026 嘉年华条件项 + 若有遗漏再在 Gate B 前追加`。
 
 用户确认后才执行：
 
-1. 为正史候选建立逐条 source record。
+1. 复制 `kanami-skill/workspace/templates/source-record.template.json`，为正史候选建立逐条 `.json` source record。
 2. 实际打开并核验至少 8 个具体页面／视频。
 3. 创建并填写 `01_writings.md` 至 `06_timeline.md` 六轨研究文件。
 4. 生成覆盖摘要并进入 Gate B；此阶段仍不生成正式 Persona。

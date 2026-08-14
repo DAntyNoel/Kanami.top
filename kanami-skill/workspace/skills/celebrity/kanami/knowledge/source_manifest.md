@@ -17,7 +17,7 @@
 
 ## 登记规则
 
-每条正式 source record 后续必须补齐：具体 URL、标题、发布者、发布时间或版本、访问日期、材料类型、正史情境、语言、时间线阶段、对话对象、六轨映射、释义化证据、必要短引文、时间戳、推论和冲突。
+每条正式 source record 后续必须补齐：具体 URL、标题、发布者、发布时间或版本、访问日期、材料类型、正史情境、语言、时间线阶段、对话对象、六轨映射、释义化证据、必要短引文、时间戳、推论和冲突。`local_paths` 统一使用仓库根相对路径，不得写绝对路径或 `..` 路径穿越。
 
 本清单的六轨缩写：
 
@@ -80,9 +80,9 @@ WIKI 候选统一记为 `publisher=卡拉彼丘WIKI`、`accessed_at=2026-08-14`�
 | SRC-A-01 | 对局语音 | V | voice / battle | mixed | T2,T3,T4 | 350：zh 114、ja 104、en 114、未标 18 | 无转写、场景；语言版本不齐 |
 | SRC-A-02 | 世纪歌姬时装语音 | V | voice / skin | mixed | T2,T3 | 248：zh 83、ja 82、en 83 | 日语少 1；不得覆盖基础人格 |
 | SRC-A-03 | 宿舍语音 | V | voice / dorm | mixed | T1,T2,T3 | 179：zh 72、ja 65、en 5、未标 37 | 语言分布不齐；无说话对象 |
-| SRC-A-04 | 系统播报语音 | V | voice / system（待核） | mixed | T3,T4 | 151：ja 70、未标 81 | 需判断是否应再拆 system/battle |
+| SRC-A-04 | 系统播报语音 | V | voice / system | mixed | T3,T4 | 151：ja 70、未标 81 | 需判断是否应再拆 system/battle |
 | SRC-A-05 | 花的私语时装语音 | V | voice / skin | zh-CN | T2,T3 | 14：均带 CN 标记 | 缺其他语言；时装限定 |
-| SRC-A-06 | 相关音乐 | M | song / mixed（待拆） | mixed/unknown | T1,T3 | 10 个角色曲、BGM、伴奏 | 非全为歌曲；无歌词、字幕、日期 |
+| SRC-A-06 | 相关音乐 | M | song / mixed | mixed/unknown | T1,T3 | 10 个角色曲、BGM、伴奏 | 非全为歌曲；正式记录时仍需按类型拆分；无歌词、字幕、日期 |
 
 语言数量只来自文件名标记，不代表完成回听：明确 zh-CN 283、ja-JP 321、en 202、未标记 146。全部 952 个 MP3 均有本地镜像，但当前没有可靠的转写、时间戳、版本、对话对象或统一语言字段。
 
@@ -91,22 +91,22 @@ WIKI 候选统一记为 `publisher=卡拉彼丘WIKI`、`accessed_at=2026-08-14`�
 | source_id | 材料单元 | URL | material_type / canon_context | 轨道 | 数量 | 使用限制 |
 |---|---|---|---|---|---:|---|
 | SRC-M-01 | 超弦体设定 | M | setting / base | T1,T5,T6 | 2 图 | 没有设定正文 |
-| SRC-M-02 | 游戏表情 | M | visual / base | T3 | 17 | 只作非语言参考 |
-| SRC-M-03 | 香奈美 B 站装扮表情 | M | visual / event | T3,T5 | 15 | 宣传情境 |
-| SRC-M-04 | 官方表情 | M | visual / base | T3 | 9 | 不可单独推导人格 |
+| SRC-M-02 | 游戏表情 | M | setting / base | T3 | 17 | 只作非语言参考 |
+| SRC-M-03 | 香奈美 B 站装扮表情 | M | setting / event | T3,T5 | 15 | 宣传情境 |
+| SRC-M-04 | 官方表情 | M | setting / base | T3 | 9 | 不可单独推导人格 |
 | SRC-M-05 | 角色技能 | M | setting / battle | T4,T6 | 4 图 | 没有技能正文；数值不作人格证据 |
-| SRC-M-06 | 超弦体时装 | M | visual / skin | T3,T5,T6 | 75 | 多时装混合；不得覆盖基础人格 |
-| SRC-M-07 | 印迹 | M | visual / base | T1,T5,T6 | 13 | 图像索引 |
+| SRC-M-06 | 超弦体时装 | M | setting / skin | T3,T5,T6 | 75 | 多时装混合；不得覆盖基础人格 |
+| SRC-M-07 | 印迹 | M | setting / base | T1,T5,T6 | 13 | 图像索引 |
 | SRC-M-08 | 弦能增幅网络 | M | setting / battle | T4,T6 | 9 | 图像索引 |
 | SRC-M-09 | 超弦体武器 | M | setting / battle | T4,T6 | 1 | 不能单独证明武器选择动机 |
 | SRC-M-10 | 更新改动历史 | M | setting / event | T6 | 41 图 | 无结构化版本文本 |
 | SRC-M-11 | 相关剧情壁纸 | M | story / event | T5,T6 | 2 | 仅定位《金树的乐章》《甜梦游乐园》 |
-| SRC-G-01 | 时装官宣图 | G | visual / skin | T3,T5,T6 | 32 | 视觉／宣传证据 |
-| SRC-G-02 | 壁纸 | G | visual / base | T3,T5 | 18 | 情境混合 |
-| SRC-G-03 | 节日贺图 | G | visual / event | T3,T5,T6 | 6 | 日期未结构化 |
-| SRC-G-04 | 角色官宣图与设定图 | G | visual / base | T1,T5,T6 | 3 | 图片文字未抽取 |
-| SRC-G-05 | 日历 | G | visual / event | T3,T5,T6 | 2 | 年份需从图片核对 |
-| SRC-G-06 | 移动端壁纸 | G | visual / base | T3,T5 | 2 | 纯视觉 |
+| SRC-G-01 | 时装官宣图 | G | setting / skin | T3,T5,T6 | 32 | 视觉／宣传证据 |
+| SRC-G-02 | 壁纸 | G | setting / base | T3,T5 | 18 | 情境混合 |
+| SRC-G-03 | 节日贺图 | G | setting / event | T3,T5,T6 | 6 | 日期未结构化 |
+| SRC-G-04 | 角色官宣图与设定图 | G | setting / base | T1,T5,T6 | 3 | 图片文字未抽取 |
+| SRC-G-05 | 日历 | G | setting / event | T3,T5,T6 | 2 | 年份需从图片核对 |
+| SRC-G-06 | 移动端壁纸 | G | setting / base | T3,T5 | 2 | 纯视觉 |
 | SRC-G-07 | 剧情 CG | G | story / event | T2,T5,T6 | 1 | 无对应剧情正文 |
 
 以上 WIKI 部分共 46 条候选材料单元，覆盖 11 个具体 `sourcePage` URL。
@@ -120,10 +120,10 @@ WIKI 候选统一记为 `publisher=卡拉彼丘WIKI`、`accessed_at=2026-08-14`�
 | SRC-B-01 | [香奈美主题曲「你看世界好美」](https://www.bilibili.com/video/BV1W2421L7wT/) | 2024-01-30 | 02:25 | song / base | 5 核心 | 官方详情已核；主题、声线、价值意象候选，歌词不整段保存 |
 | SRC-B-02 | [萌萌香香的香奈美](https://www.bilibili.com/video/BV1HZ421g71j/) | 2024-06-10 | 01:22 | pv / dorm | 5 核心 | 官方详情已核；宿舍日常与引航者互动候选 |
 | SRC-B-03 | [香奈美传说时装·世纪歌姬｜展示 PV](https://www.bilibili.com/video/BV12JDGYLEsT/) | 2024-11-06 | 01:32 | pv / skin | 4 高 | 官方详情已核；时装世界线单独分轨 |
-| SRC-B-04 | [《你看世界好美》日文复现｜美しい世界へ](https://www.bilibili.com/video/BV1AnoPYNEiL/) | 2025-04-16 | 04:04 | song / base-language-variant | 4 高 | 官方详情已核；用于中日声线与语义差异核对 |
+| SRC-B-04 | [《你看世界好美》日文复现｜美しい世界へ](https://www.bilibili.com/video/BV1AnoPYNEiL/) | 2025-04-16 | 04:04 | song / base | 4 高 | 官方详情已核；用于中日声线与语义差异核对 |
 | SRC-B-05 | [香奈美传说时装“心之奏鸣”主题曲｜Cuter Me](https://www.bilibili.com/video/BV1d93p69EKU/) | 2026-07-30 | 03:08 | song / skin | 5 核心 | 官方详情已核；P1 中文、P2 日文，各约 01:34 |
 | SRC-B-06 | [香奈美传说时装·心之奏鸣｜展示 PV](https://www.bilibili.com/video/BV1TwGA6XEhK/) | 2026-08-02 | 02:42 | pv / skin | 4 高 | 官方详情已核；偶像观主题候选，不能覆盖基础人格 |
-| SRC-B-07 | [2026 线下嘉年华精彩回顾](https://www.bilibili.com/video/BV1m7um6BEgB/) | 2026-08-09 | 05:55 | event / public_idol（待核） | 2 条件 | 官方详情已核，但标题、简介和分 P 未证明含香奈美；需观看后决定是否保留 |
+| SRC-B-07 | [2026 线下嘉年华精彩回顾](https://www.bilibili.com/video/BV1m7um6BEgB/) | 2026-08-09 | 05:55 | pv / event | 2 条件 | 官方详情已核，但标题、简介和分 P 未证明含香奈美；需观看后决定是否保留 |
 
 六条直接相关视频均为 `language=zh-CN/mixed`、`publisher=卡拉彼丘官方账号`、`accessed_at=2026-08-14`。具体字幕状态、台词说话人和时间戳留到 Gate B 前的视频处理阶段核验。
 

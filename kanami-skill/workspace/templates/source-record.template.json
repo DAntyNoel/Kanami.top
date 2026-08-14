@@ -1,0 +1,36 @@
+{
+  "source_id": "REPLACE-SOURCE-ID",
+  "title": "REPLACE_WITH_MATERIAL_TITLE",
+  "url": "REPLACE_WITH_HTTPS_URL",
+  "local_paths": [],
+  "publisher": "REPLACE_WITH_PUBLISHER",
+  "published_at": null,
+  "version": "unknown",
+  "accessed_at": "REPLACE_WITH_ACCESS_DATE",
+  "material_type": "setting",
+  "canon_context": "base",
+  "context_router": {
+    "primary": "public_idol",
+    "secondary": null
+  },
+  "language": "zh-CN",
+  "timeline_phase": "unknown",
+  "scene": "unknown",
+  "dimensions": [
+    "writings"
+  ],
+  "characters_present": [
+    "香奈美"
+  ],
+  "counterparties": [],
+  "evidence_summary": [],
+  "short_quote": [],
+  "timestamp": [],
+  "inference": [],
+  "conflicts": [],
+  "status": "candidate",
+  "canon_evidence": true,
+  "notes": [
+    "Gate A 通过后复制本模板；替换全部 REPLACE 占位符，并始终分开证据与推论。"
+  ]
+}
