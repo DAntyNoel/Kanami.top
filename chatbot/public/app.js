@@ -5,7 +5,7 @@ const sendButton = document.querySelector("#send-button");
 const clearButton = document.querySelector("#clear-chat");
 const statusEl = document.querySelector("#status");
 
-const storageKey = "kanami-chat-history";
+const storageKey = "kanami-chat-history-celebrity-v1";
 let history = loadHistory();
 let busy = false;
 
@@ -38,7 +38,7 @@ function addMessage(role, content, extraClass = "") {
 function renderHistory() {
   messagesEl.innerHTML = "";
   if (!history.length) {
-    addMessage("assistant", "引航者来啦。香奈美刚刚还在想，今天第一句话会是什么呢~");
+    addMessage("assistant", "引航者来啦。我刚刚还在想，今天第一句话会是什么呢。");
     return;
   }
 
@@ -55,11 +55,10 @@ function resizeInput() {
 async function checkHealth() {
   try {
     const response = await fetch("/api/config", { cache: "no-store" });
-    const payload = await response.json();
-    const providerLabel = payload.provider === "local-cliproxy" ? "本地代理" : "BASE URL";
-    setStatus(`${providerLabel}已待命 · ${payload.model}`);
+    if (!response.ok) throw new Error("OFFLINE");
+    setStatus("我已经准备好听你说话");
   } catch {
-    setStatus("后台暂时离线");
+    setStatus("我暂时离线");
   }
 }
 
@@ -85,7 +84,7 @@ async function sendMessage(content) {
   if (busy) return;
   busy = true;
   sendButton.disabled = true;
-  setStatus("香奈美正在听");
+  setStatus("我正在听");
 
   history.push({ role: "user", content });
   saveHistory();
@@ -108,7 +107,7 @@ async function sendMessage(content) {
 
     if (!response.ok || !response.body) {
       const payload = await response.json().catch(() => ({}));
-      throw new Error(payload.message || "香奈美暂时没能接通。");
+      throw new Error(payload.message || "我暂时没能接通。");
     }
 
     const reader = response.body.getReader();
@@ -126,26 +125,26 @@ async function sendMessage(content) {
           messagesEl.scrollTop = messagesEl.scrollHeight;
         }
         if (event === "error") {
-          throw new Error(payload.message || "香奈美暂时没能接通。");
+          throw new Error(payload.message || "我暂时没能接通。");
         }
       });
     }
 
     if (!assistantContent.trim()) {
-      throw new Error("香奈美刚才没有发出声音，再试一次好吗？");
+      throw new Error("我刚才没有发出声音，再试一次好吗？");
     }
 
     history.push({ role: "assistant", content: assistantContent });
     saveHistory();
-    setStatus("后台已连接");
+    setStatus("我在这里");
   } catch (error) {
     assistantMessage.classList.add("error");
-    assistantMessage.textContent = error.message || "香奈美这边断线了，稍后再试一次吧。";
+    assistantMessage.textContent = error.message || "我这边断线了，稍后再试一次吧。";
     if (history.at(-1)?.role === "user") {
       history.pop();
     }
     saveHistory();
-    setStatus("后台暂时离线");
+    setStatus("我暂时离线");
   } finally {
     busy = false;
     sendButton.disabled = false;

@@ -201,7 +201,12 @@ async function waitForServer(pid, url) {
 async function main() {
   const startTunnel = !falsy(envValue("START_TUNNEL", "true"));
   const tunnelToken = envValue("TUNNEL_TOKEN", "");
+  const tunnelProtocol = envValue("TUNNEL_PROTOCOL", "http2").trim().toLowerCase();
   const shouldStartTunnel = startTunnel && tunnelToken.trim().length > 0;
+
+  if (!new Set(["auto", "quic", "http2"]).has(tunnelProtocol)) {
+    throw new Error("TUNNEL_PROTOCOL must be auto, quic, or http2.");
+  }
 
   if (shouldStartTunnel && !commandExists("cloudflared")) {
     throw new Error("TUNNEL_TOKEN is set, but cloudflared was not found in PATH.");
@@ -229,7 +234,7 @@ async function main() {
     const tunnelPid = startDetached({
       label: "Cloudflare Tunnel connector",
       command: "cloudflared",
-      args: ["tunnel", "--no-autoupdate", "run", "--token", tunnelToken],
+      args: ["tunnel", "--no-autoupdate", "--protocol", tunnelProtocol, "run", "--token", tunnelToken],
       stdoutFile: path.join(RUN_DIR, "chatbot-cloudflared.log"),
       stderrFile: path.join(RUN_DIR, "chatbot-cloudflared.err.log"),
       pidFile: TUNNEL_PID_FILE
@@ -240,7 +245,7 @@ async function main() {
       throw new Error("Cloudflare Tunnel connector exited immediately. Check chatbot/.run logs.");
     }
 
-    console.log("Cloudflare Tunnel connector restarted.");
+    console.log(`Cloudflare Tunnel connector restarted with ${tunnelProtocol}.`);
   } else if (startTunnel) {
     console.log("Cloudflare Tunnel not started because TUNNEL_TOKEN is empty.");
   } else {

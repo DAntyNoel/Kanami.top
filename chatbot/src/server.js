@@ -152,15 +152,13 @@ async function fetchProviderChat(provider, messages, stream, signal) {
   });
 }
 
-async function streamCompleteFallback(res, provider, messages, signal, upstreamDetail = "") {
+async function streamCompleteFallback(res, provider, messages, signal) {
   const response = await fetchProviderChat(provider, messages, false, signal);
 
   if (!response.ok) {
-    const errorText = await response.text().catch(() => "");
     sseEvent(res, "error", {
-      message: "香奈美这边的麦克风暂时没接好，等一下再喊我可以吗？",
-      status: response.status,
-      detail: (errorText || upstreamDetail).slice(0, 500)
+      message: "我的麦克风暂时没接好，等一下再喊我可以吗？",
+      status: response.status
     });
     return false;
   }
@@ -177,7 +175,7 @@ async function streamChat(req, res, messages) {
   if (isApiKeyRequired(provider)) {
     json(res, 500, {
       error: "MISSING_API_KEY",
-      message: "后台还没有配置 API_KEY，香奈美现在还不能开麦。"
+      message: "后台还没有配置好，我现在还不能开麦。"
     });
     return;
   }
@@ -187,14 +185,13 @@ async function streamChat(req, res, messages) {
   req.on("close", () => controller.abort());
 
   sseHeaders(res);
-  sseEvent(res, "meta", { model: config.model, provider: provider.source });
+  sseEvent(res, "meta", { ok: true });
 
   try {
     const response = await fetchProviderChat(provider, messages, true, controller.signal);
 
     if (!response.ok || !response.body) {
-      const errorText = await response.text().catch(() => "");
-      await streamCompleteFallback(res, provider, messages, controller.signal, errorText);
+      await streamCompleteFallback(res, provider, messages, controller.signal);
       return;
     }
 
@@ -225,8 +222,8 @@ async function streamChat(req, res, messages) {
   } catch (error) {
     sseEvent(res, "error", {
       message: error.name === "AbortError"
-        ? "香奈美这次等太久啦，先把这句话收起来，稍后再继续好吗？"
-        : "香奈美刚才没能连上后台的声音通道。"
+        ? "我这次等得太久了，先把这句话收起来，稍后再继续好吗？"
+        : "我刚才没能连上后台的声音通道。"
     });
   } finally {
     clearTimeout(timeout);
@@ -239,7 +236,7 @@ async function completeChat(res, messages) {
   if (isApiKeyRequired(provider)) {
     json(res, 500, {
       error: "MISSING_API_KEY",
-      message: "后台还没有配置 API_KEY，香奈美现在还不能开麦。"
+      message: "后台还没有配置好，我现在还不能开麦。"
     });
     return;
   }
@@ -251,25 +248,21 @@ async function completeChat(res, messages) {
     const response = await fetchProviderChat(provider, messages, false, controller.signal);
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => "");
       json(res, response.status, {
         error: "UPSTREAM_ERROR",
-        message: "香奈美这边的麦克风暂时没接好，等一下再喊我可以吗？",
-        detail: errorText.slice(0, 500)
+        message: "我的麦克风暂时没接好，等一下再喊我可以吗？"
       });
       return;
     }
 
     const payload = await response.json();
     json(res, 200, {
-      message: payload.choices?.[0]?.message?.content ?? "",
-      model: payload.model ?? config.model,
-      provider: provider.source
+      message: payload.choices?.[0]?.message?.content ?? ""
     });
   } catch (error) {
     json(res, 504, {
       error: error.name === "AbortError" ? "TIMEOUT" : "NETWORK_ERROR",
-      message: "香奈美刚才没能连上后台的声音通道。"
+      message: "我刚才没能连上后台的声音通道。"
     });
   } finally {
     clearTimeout(timeout);
@@ -280,7 +273,7 @@ async function handleChat(req, res) {
   if (!checkRateLimit(req)) {
     json(res, 429, {
       error: "RATE_LIMITED",
-      message: "香奈美有点喘不过气啦，稍等一下再和我说话吧。"
+      message: "我有点喘不过气了，稍等一下再和我说话吧。"
     });
     return;
   }
@@ -296,7 +289,7 @@ async function handleChat(req, res) {
   } catch (error) {
     json(res, error.message === "REQUEST_TOO_LARGE" ? 413 : 400, {
       error: "BAD_REQUEST",
-      message: "这次的消息格式香奈美没看懂，可以重新发一次吗？"
+      message: "这次的消息格式我没看懂，可以重新发一次吗？"
     });
   }
 }
@@ -325,7 +318,7 @@ const server = http.createServer(async (req, res) => {
     if (!config.publicHealthDetails && !hasAdminAccess(req, url)) {
       json(res, 403, {
         error: "ADMIN_ACCESS_REQUIRED",
-        message: "香奈美把后台细节收进管理入口啦。"
+        message: "我把后台细节收进管理入口了。"
       });
       return;
     }
@@ -334,7 +327,7 @@ const server = http.createServer(async (req, res) => {
       ok: true,
       status: "online",
       model: config.model,
-      prompt: "kanami-prompt.md",
+      prompt: "celebrity-kanami/persona-only",
       apiConfigured: Boolean(config.apiKey) || provider.source === "local-cliproxy",
       provider: provider.source,
       localCliProxy: {
@@ -348,12 +341,10 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === "GET" && url.pathname === "/api/config") {
-    const provider = await resolveProvider();
     json(res, 200, {
-      model: config.model,
+      ok: true,
       maxMessageChars: config.maxMessageChars,
-      stream: true,
-      provider: provider.source
+      stream: true
     });
     return;
   }
@@ -369,10 +360,11 @@ const server = http.createServer(async (req, res) => {
 
   json(res, 404, {
     error: "NOT_FOUND",
-    message: "香奈美找不到这个入口。"
+    message: "我找不到这个入口。"
   });
 });
 
+getKanamiPrompt();
 server.listen(config.port, config.host, () => {
   console.log(`Kanami chatbot listening at http://${config.host}:${config.port}/start`);
 });

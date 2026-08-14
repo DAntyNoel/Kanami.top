@@ -2,6 +2,8 @@
 
 这是 `chat.kanami.top/start` 使用的本地 AI 对话后端。整体结构参考了成熟聊天项目常用的模式：后端持有人设提示词和 API 密钥，前端只负责会话 UI，模型回复通过 SSE 流式返回；Cloudflare Worker 只做转发和离线兜底。
 
+角色系统提示词位于 `kanami-prompt.md`，由 `celebrity-kanami` Skill 的 `SKILL.md`、`persona.md`、`persona-only.md` 与 `canon-evidence.md` 编译而成，并保存在仓库内，线上运行不依赖开发机的 Skill 安装路径。网页入口只启用纯对话契约：回复由“我”直接说出，不添加第三人称旁白；默认关系、显式誓约、正史证据与未知边界沿用 Skill 规则。
+
 ## 本地运行
 
 1. 准备配置文件：
@@ -20,6 +22,7 @@ MODEL=gpt-4o-mini
 PORT=12703
 HOST=127.0.0.1
 TUNNEL_TOKEN=replace-with-cloudflare-tunnel-token
+TUNNEL_PROTOCOL=http2
 START_TUNNEL=true
 ```
 
@@ -43,7 +46,7 @@ npm start
 npm run restart
 ```
 
-脚本会读取 `chatbot/env` 或 `chatbot/.env`，先停止上次由脚本启动的进程，再启动 Node 后端；当 `TUNNEL_TOKEN` 存在且 `START_TUNNEL` 不为 `false` 时，会同时启动 `cloudflared tunnel run --token ...`。运行日志和 pid 文件保存在 `chatbot/.run/`。
+脚本会读取 `chatbot/env` 或 `chatbot/.env`，先停止上次由脚本启动的进程，再启动 Node 后端；当 `TUNNEL_TOKEN` 存在且 `START_TUNNEL` 不为 `false` 时，会同时启动 `cloudflared tunnel run --token ...`。`TUNNEL_PROTOCOL` 默认使用 `http2`，避免本机网络无法稳定建立 QUIC/UDP 连接时让公网入口持续离线；如需恢复自动协商可设为 `auto`。运行日志和 pid 文件保存在 `chatbot/.run/`。
 
 关闭后台：
 
@@ -58,6 +61,7 @@ npm run stop
 - `GET /start`：聊天页面。
 - `GET /health`：公网安全的健康检查，只返回在线状态。
 - `GET /health/detail`：本机或带 `ADMIN_TOKEN` 的详细健康检查，会返回模型、provider 和本地代理状态。
+- `GET /api/config`：返回前端需要的最小公开配置，不暴露模型或 provider。
 - `POST /api/chat`：OpenAI-compatible Chat Completions 转发，默认 SSE 流式返回。
 
 请求示例：
