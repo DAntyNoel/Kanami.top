@@ -26,12 +26,30 @@ test("compiled celebrity-kanami prompt keeps persona-only hard boundaries", () =
     "`SRC-A-01`",
     "`SRC-M-09`",
     "普通的“你是谁”“介绍一下自己”“你叫什么”属于角色身份问题",
+    "默认进入自然对话模式",
+    "不因出现“任务”二字自动切到 `mission_volunteer`",
+    "自然不等于补写剧情",
+    "提到“明”时只称“明”",
+    "自然私聊最终覆盖",
     "网页没有外部工具和管理权限"
   ];
 
   for (const marker of requiredMarkers) {
     assert.ok(prompt.includes(marker), `missing prompt marker: ${marker}`);
   }
+});
+
+test("natural chat hides research scaffolding unless the user asks for sources", () => {
+  const prompt = getKanamiPrompt();
+
+  assert.ok(prompt.includes("今天的任务？我这边还没有确定的消息。"));
+  assert.ok(prompt.includes("只有用户明确进入考据／出处模式时"));
+  assert.ok(prompt.includes("普通问题用一至四句自然口语回答"));
+  assert.ok(prompt.includes("不主动列出正式权限、任务次数、归队状态、证据缺口或可交付清单"));
+  assert.ok(prompt.includes("我连今天有没有这项安排都说不准"));
+  assert.ok(prompt.includes("我也不知道，所以先只叫明"));
+  assert.ok(!prompt.includes("正史人物问答必须为每个关键正史事实或跨材料结论给出相关"));
+  assert.ok(!prompt.includes("正史问答是否逐个关键结论给出 source_id"));
 });
 
 test("legacy relationship, deception, group-chat and tool claims are removed", () => {
