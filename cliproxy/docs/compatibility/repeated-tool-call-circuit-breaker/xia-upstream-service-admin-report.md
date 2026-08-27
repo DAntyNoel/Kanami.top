@@ -143,7 +143,39 @@ codex:
 - 工具循环：每轮新增相同 `function_call + function_call_output`；
 - 认证重试：输入不变且没有新增 pair，仅重复返回 `auth_unavailable`。
 
-## 八、请求 Xia 排查的具体位置
+## 八、2026-08-28 本地代理 profile 跟进观察（非原事故正向复现）
+
+我们又检查了一次使用本地 `cliproxyapi -> CPA -> Xia` profile 的 Codex session，并与当前直连 Xia 的正常 session 做了只读对照。该跟进 session 与原事故有表面相似点，但**不满足本文定义的严格重复工具循环**，不应作为原事故的正向复现样本。
+
+截至 `2026-08-28 00:45:52`（`Asia/Shanghai`）的本地快照：
+
+| 项目 | 跟进 session 结果 |
+| --- | --- |
+| `collaboration/list_agents` 调用 | 13 次，13 个不同 `call_id` |
+| 参数 | 仅 1 种，均为 `{"path_prefix":"/root"}` |
+| 工具结果 | 全部正常返回，但随子 Agent 运行/完成状态形成 4 种不同结果 |
+| 最长严格连续相同 call/output 序列 | 1 轮 |
+| 其他实际工具 | 已生成 15 次 `functions.exec`，并穿插 `wait_agent`、`send_message`、`interrupt_agent` 等调用 |
+| 子 Agent | 确有多个子 Agent 处于运行或完成状态 |
+| 本站熔断命中 | 0 次 |
+
+因此，这里的 `list_agents` 是有实际协作对象的状态查询，而且相邻查询之间存在其他工具调用或状态变化；它不符合“无子 Agent、正常等价结果后立即再次选择完全相同工具、原执行工具始终未生成”的原事故条件。查询频率可以进一步优化，但不能仅凭次数判定为动作选择死循环。
+
+profile 对照确认：跟进 session 的 `model_provider=cliproxyapi`，本机入口为 `127.0.0.1`；正常对照 session 的 `model_provider=xia`，直接访问 Xia。两者均使用 Responses、`gpt-5.6-sol` 和 `ultra` reasoning。与此同时，session 元数据还记录了 Codex TUI/Desktop、CLI 版本、history mode 和工作目录差异，因此这不是严格控制变量的 A/B，不能仅凭一次对照把差异归因于 CPA 或 Xia。
+
+同一时间窗 `2026-08-28 00:28:00..00:42:59` 的 CPA 文件日志还记录到：
+
+- Responses WebSocket client connected 17 次；
+- `/v1/responses` 结束并记为 HTTP 200 共 8 次；
+- 向下游写入时出现 7 次 `broken pipe`，涉及 `response.completed`、`response.output_item.done`、文本 delta 和 reasoning delta/part done；
+- `/v1/alpha/search` 返回 503 共 10 次；
+- 重复工具熔断命中 0 次。
+
+该时间窗包含主 Agent 和多个子 Agent，CPA 日志没有可公开的一对一 session 关联 ID；此外，`broken pipe` 的直接含义是 CPA 写入时下游连接已经关闭，不能单凭方向证明 CPA 主动截断了响应。部分连接可能与 Agent 中断、取消或切换轮次有关。上述现象应作为**独立的本地代理兼容性信号**排查，而不是替代原事故的动作选择证据。
+
+建议 Xia 与 CPA 共同做一次严格 A/B：固定同一 Codex build、originator、history mode、工作目录、prompt、tools 和 transcript，仅切换 `model_provider=xia` 与 `model_provider=cliproxyapi`，同时保留脱敏的原始 Responses 帧序列、结束事件和连接关闭方。只有本地代理路径单独丢失、重排或提前结束事件时，才能将修复优先级明确落到 CPA；若进入 CPA 前的 Xia 原始动作已经重复，则仍需 Xia 检查模型/编排器。
+
+## 九、请求 Xia 排查的具体位置
 
 请优先保留并比较以下三个阶段的脱敏记录：
 
@@ -162,7 +194,7 @@ codex:
 
 日志与指标应只使用工具名、次数、低基数路由字段和参数/结果哈希；请勿在普通工单中回传真实 Authorization、完整用户对话或工具结果正文。
 
-## 九、建议的上游解决方案
+## 十、建议的上游解决方案
 
 ### 方案 A：Xia 编排器加入无进展熔断（建议优先）
 
@@ -218,7 +250,7 @@ CPA 当前公开 `v7.2.142` 没有该能力。建议将本站熔断抽象为默�
 
 客户端规避只能降低触发概率，不应作为长期唯一方案。
 
-## 十、建议的上游复现方法
+## 十一、建议的上游复现方法
 
 请使用隔离账号与合成数据，不执行真实工具：
 
@@ -234,7 +266,7 @@ CPA 当前公开 `v7.2.142` 没有该能力。建议将本站熔断抽象为默�
 
 完整的无密钥夹具与 CPA 验收步骤见 [GitHub 上的 reproduction.md](https://github.com/DAntyNoel/Kanami.top/blob/main/cliproxy/docs/compatibility/repeated-tool-call-circuit-breaker/reproduction.md)。
 
-## 十一、希望 Xia 管理员反馈的信息
+## 十二、希望 Xia 管理员反馈的信息
 
 请在回复中至少包含：
 
@@ -246,7 +278,7 @@ CPA 当前公开 `v7.2.142` 没有该能力。建议将本站熔断抽象为默�
 6. 计划采用模型修复、编排器熔断还是两者结合；
 7. 可供本站回归验证的修复版本、灰度时间和回滚条件。
 
-## 十二、附件与隐私说明
+## 十三、附件与隐私说明
 
 - [兼容性报告](https://github.com/DAntyNoel/Kanami.top/blob/main/cliproxy/docs/compatibility/repeated-tool-call-circuit-breaker/README.md)
 - [最小复现与验收](https://github.com/DAntyNoel/Kanami.top/blob/main/cliproxy/docs/compatibility/repeated-tool-call-circuit-breaker/reproduction.md)
