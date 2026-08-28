@@ -175,6 +175,21 @@ profile 对照确认：跟进 session 的 `model_provider=cliproxyapi`，本机�
 
 建议 Xia 与 CPA 共同做一次严格 A/B：固定同一 Codex build、originator、history mode、工作目录、prompt、tools 和 transcript，仅切换 `model_provider=xia` 与 `model_provider=cliproxyapi`，同时保留脱敏的原始 Responses 帧序列、结束事件和连接关闭方。只有本地代理路径单独丢失、重排或提前结束事件时，才能将修复优先级明确落到 CPA；若进入 CPA 前的 Xia 原始动作已经重复，则仍需 Xia 检查模型/编排器。
 
+### 公网 CPA provider 单轮验证
+
+`2026-08-28 18:52`（`Asia/Shanghai`）又使用 Codex CLI `0.150.1` 做了一次隔离的公网入口验证。该次调用保持 `gpt-5.6-sol`、`ultra`、只读 sandbox 和现有 `cliproxyapi` 鉴权不变，仅在单进程内把 provider `base_url` 临时覆盖为 `https://cliproxy.kanami.top/v1`，没有修改用户默认配置。
+
+验证任务要求运行一次 PowerShell `Write-Output PUBLIC_PROVIDER_OK` 并复述实际输出。可见事件顺序为：
+
+1. Agent 说明即将执行最小只读探针；
+2. 生成本地 `command_execution`，没有生成 `collaboration/list_agents`；
+3. 命令输出 `PUBLIC_PROVIDER_OK`，退出码为 0；
+4. Agent 正常复述结果并产生 `turn.completed`。
+
+CPA 文件日志同时记录到来自公网入口的两次 `/v1/models?client_version=0.150.1` HTTP 200，以及一个 Responses WebSocket client connected 事件，证明该测试实际经过公网入口而非本机 `127.0.0.1` 回落。测试使用 `--ephemeral --json`，没有留下持久 Codex session 文件。
+
+该结果确认公网 provider 在这一轮最小“模型选择命令工具 -> 本地工具成功 -> 模型结束回复”流程中可用，且没有出现目标循环。但单轮成功不能排除概率性或长上下文相关故障；公网和本机入口仍落到同一 CPA/Xia 后端，因此也不能仅凭该结果区分 CPA 转换与 Xia 动作策略。
+
 ## 九、请求 Xia 排查的具体位置
 
 请优先保留并比较以下三个阶段的脱敏记录：
