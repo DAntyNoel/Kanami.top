@@ -34,6 +34,8 @@ services:
     command:
       - tunnel
       - --no-autoupdate
+      - --protocol
+      - http2
       - run
       - --token
       - ${KEEPER_TUNNEL_TOKEN:-}

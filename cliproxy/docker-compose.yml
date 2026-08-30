@@ -95,7 +95,7 @@ services:
   cloudflared:
     image: ${CLOUDFLARED_IMAGE:-cloudflare/cloudflared:latest}
     container_name: kanami-cliproxy-cloudflared
-    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN:?Set TUNNEL_TOKEN in cliproxy/.env}
+    command: tunnel --no-autoupdate --protocol http2 run --token ${TUNNEL_TOKEN:?Set TUNNEL_TOKEN in cliproxy/.env}
     depends_on:
       - cli-proxy-api
     restart: unless-stopped
