@@ -3,6 +3,7 @@ site/** text eol=lf
 scripts/** text eol=lf
 package.json text eol=lf
 README.md text eol=lf
+index.html -text
 
 # Preserve the downloaded release hashes and ready-to-serve artifact bytes.
 upstream/** -text

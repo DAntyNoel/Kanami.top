@@ -1,6 +1,6 @@
 # 香奈美的小小演奏台
 
-将 <https://calabiyau-piano.122999.xyz/> 的浏览器玩具独立部署到 <https://piano.kanami.top/>。保留十六音垫、钢琴卷帘编曲、节拍录制、播放和 JSON 工程导入导出，加入本站统一页眉、香奈美口吻、触屏与键盘音垫操作，以及音色加载失败提示。
+将 <https://calabiyau-piano.122999.xyz/> 的浏览器玩具部署到 GitHub Pages 的 <https://kanami.top/piano/>。保留十六音垫、钢琴卷帘编曲、节拍录制、播放和 JSON 工程导入导出，加入本站统一页眉、香奈美口吻、触屏与键盘音垫操作，以及音色加载失败提示。
 
 ## 资源来源
 
@@ -25,15 +25,17 @@ npm run verify -- http://127.0.0.1:12705
 
 ## GitHub 交付与发布目录
 
-`dist/` 是已经构建好的静态成品，随代码一起提交到 GitHub。服务器拉取后，将 `piano.kanami.top` 的站点根目录指向仓库内的 `piano/dist/`，即可直接提供页面和音色，无需在服务器安装 Node.js 或 npm 依赖。域名和 HTTPS 沿用服务器已有的管理方式。
+沿用主站现有的 GitHub Pages 分支发布方式（`main` 分支根目录）及 `kanami.top` 域名，无需新增子域名或独立站点。构建生成 `piano/index.html` 作为 `/piano/` 入口，脚本、样式和音色从 `piano/dist/` 加载。音色路径相对于脚本文件解析，可用于子目录部署。
 
-修改源文件后重新构建，并将 `dist/` 一起提交。发布后可验证：
+仓库根目录的 `_config.yml` 排除演奏台的 `scripts/`、`site/`、`upstream/`、`package.json` 和本说明文件，仅发布入口及静态成品。`dist/` 仍可作为独立静态站点进行本地预览。
+
+修改源文件后重新构建，将 `index.html` 与 `dist/` 一起提交并推送到 `main`。等待 GitHub 的 `pages build and deployment` 成功后验证：
 
 ```powershell
 npm run build
-npm run verify -- https://piano.kanami.top
+npm run verify -- https://kanami.top/piano/
 ```
 
-仅公开 `dist/`，不要把整个仓库或 `piano/` 源码目录作为该子域名的站点根目录。静态服务器需将 JS/CSS/Ogg 分别以 JavaScript、CSS、`audio/ogg` MIME 类型返回，缺失资源返回 404。`assets/` 的文件名包含内容哈希，可长期缓存，HTML 应重新验证缓存。资源已完整本地化，运行时无需请求原站。
+验证会检查入口、4 个脚本/样式、16 个音色、内容哈希和被排除的源码路径。静态服务器需将 JS/CSS/Ogg 分别以 JavaScript、CSS、`audio/ogg` MIME 类型返回，缺失资源返回 404。`assets/` 的文件名包含内容哈希。资源已完整本地化，运行时无需请求原站。
 
 编曲数据只在浏览器内处理，录制捕获音垫点击而非麦克风，导出是本地 JSON 下载。未实现登录、服务端存储或遥测。

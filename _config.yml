@@ -1,0 +1,7 @@
+# Keep piano build inputs out of the branch-based GitHub Pages site.
+exclude:
+  - piano/scripts
+  - piano/site
+  - piano/upstream
+  - piano/package.json
+  - piano/README.md

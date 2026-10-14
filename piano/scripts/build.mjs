@@ -37,7 +37,7 @@ replaceOnce("onClick:n,className:`rounded p-1", "onClick:n,\"aria-label\":a?`结
 replaceOnce("onClick:()=>s({type:`SET_TOOL`,tool:`draw`}),className:", "onClick:()=>s({type:`SET_TOOL`,tool:`draw`}),\"aria-label\":`写下音符`,className:");
 replaceOnce("onClick:()=>s({type:`SET_TOOL`,tool:`erase`}),className:", "onClick:()=>s({type:`SET_TOOL`,tool:`erase`}),\"aria-label\":`擦去音符`,className:");
 replaceOnce("onMouseDown:()=>t(e),disabled:!n", "onPointerDown:()=>t(e),onKeyDown:r=>{if(!r.repeat&&(r.key===`Enter`||r.key===` `)){r.preventDefault();t(e)}},\"data-piano-pad\":e,\"aria-label\":`和我弹奏音垫 ${e}`,disabled:!n");
-replaceOnce("fetch(`/ogg/${i}.ogg`).then(e=>e.arrayBuffer())", "fetch(`/ogg/${i}.ogg`).then(e=>{if(!e.ok)throw Error(`音色加载失败`);return e.arrayBuffer()})");
+replaceOnce("fetch(`/ogg/${i}.ogg`).then(e=>e.arrayBuffer())", "fetch(new URL(`../ogg/${i}.ogg`,import.meta.url)).then(e=>{if(!e.ok)throw Error(`音色加载失败`);return e.arrayBuffer()})");
 replaceOnce(".then(()=>a(!0)),()=>{n.close()}", ".then(()=>a(!0)).catch(()=>window.dispatchEvent(new Event(`piano-audio-error`))),()=>{n.close()}");
 
 await mkdir(path.join(dist, "assets"), { recursive: true });
@@ -50,7 +50,7 @@ const assets = {};
 async function asset(key, name, content, ext) {
   const filename = `${name}-${digest(content).slice(0, 12)}.${ext}`;
   await writeFile(path.join(dist, "assets", filename), content);
-  assets[key] = `/assets/${filename}`;
+  assets[key] = `./assets/${filename}`;
 }
 await asset("PIANO_SCRIPT", "piano", app, "js");
 await asset("PIANO_STYLE", "piano", await readFile(path.join(upstream, "assets/index-B1FUi-qB.css")), "css");
@@ -68,6 +68,11 @@ for (const name of ["index.html", "404.html"]) {
   for (const [key, value] of Object.entries(assets)) html = html.replaceAll(`{{${key}}}`, value);
   if (/\{\{/.test(html)) throw new Error("页面包含尚未替换的资源路径");
   await writeFile(path.join(dist, name), html);
+  // Branch-based GitHub Pages serves /piano/ from this entry while the
+  // self-contained build stays in dist/. Both use the same hashed assets.
+  if (name === "index.html") {
+    await writeFile(path.join(root, name), html.replaceAll('"./assets/', '"./dist/assets/').replaceAll('"./favicon.png"', '"./dist/favicon.png"'));
+  }
 }
 await cp(path.join(upstream, "ogg"), path.join(dist, "ogg"), { recursive: true });
 await cp(path.join(repo, "res/images/favicon.png"), path.join(dist, "favicon.png"));

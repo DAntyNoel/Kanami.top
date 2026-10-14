@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "piano.kanami.top 的独立静态音垫与编曲玩具",
+  "description": "kanami.top/piano/ 的静态音垫与编曲玩具",
   "scripts": {
     "build": "node scripts/build.mjs",
     "dev": "npm run build && node scripts/preview.mjs",

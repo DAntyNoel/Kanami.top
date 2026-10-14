@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="点亮十六个音垫，和香奈美一起录下节拍、编写旋律，把喜欢的片段留在小小演奏台。" />
+    <title>和我一起弹奏吧 · 香奈美的小小演奏台</title>
+    <link rel="icon" type="image/png" href="./dist/favicon.png" />
+    <link rel="stylesheet" href="./dist/assets/piano-dedbae0c9043.css" />
+    <link rel="stylesheet" href="./dist/assets/kanami-c0b5ff32e3b4.css" />
+    <script defer src="./dist/assets/kanami-82ac53dd763b.js"></script>
+    <script type="module" src="./dist/assets/piano-07ac231742bd.js"></script>
+  </head>
+  <body>
+    <header class="game-header" aria-label="我的小小演奏台页眉">
+      <a href="https://kanami.top/" class="game-logo" aria-label="回到我的应援舞台">
+        <img src="./dist/favicon.png" alt="香奈美" />
+        <span>kanami.top</span>
+      </a>
+      <div class="game-header-copy">
+        <h1>我的小小演奏台</h1>
+      </div>
+      <nav class="game-header-actions" aria-label="我的舞台入口">
+        <details class="kanami-header-menu">
+          <summary aria-label="展开我的舞台入口"><span></span><span></span><span></span></summary>
+          <div class="kanami-header-menu-panel">
+            <a href="https://kanami.top/resource/">星光收藏室</a>
+            <a href="https://chat.kanami.top/start">和我聊天</a>
+            <a href="https://kanami.top/#games">我的小游戏</a>
+            <a href="#piano-help">我的演奏提示</a>
+          </div>
+        </details>
+      </nav>
+    </header>
+    <main>
+      <section class="piano-intro" aria-label="我的演奏提示">
+        <h2>点亮音垫，我陪你编一段旋律。</h2>
+        <p id="piano-status" role="status" aria-live="polite">我正在准备音色，马上就能一起弹奏啦……</p>
+        <button id="piano-retry" type="button" hidden>让我重新准备音色</button>
+      </section>
+      <div id="root" class="piano-app"></div>
+      <noscript><p class="piano-intro">打开浏览器的 JavaScript，我才能陪你弹奏哦。</p></noscript>
+    </main>
+    <footer id="piano-help" class="piano-footer">
+      <p>打开编曲窗，我就能陪你写下音符、录下节拍；也可以把旋律导出，下次再一起弹。</p>
+      <p>这个小玩具来自 <a href="https://calabiyau-piano.122999.xyz/" target="_blank" rel="noopener noreferrer">Calabiyau Piano 原站</a>，我把它带到应援舞台啦。</p>
+    </footer>
+  </body>
+</html>
