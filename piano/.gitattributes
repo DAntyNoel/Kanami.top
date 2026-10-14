@@ -1,0 +1,10 @@
+.gitattributes text eol=lf
+site/** text eol=lf
+scripts/** text eol=lf
+package.json text eol=lf
+README.md text eol=lf
+
+# Preserve the downloaded release hashes and ready-to-serve artifact bytes.
+upstream/** -text
+dist/** -text
+upstream/manifest.json text eol=lf

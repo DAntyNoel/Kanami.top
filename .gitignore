@@ -28,3 +28,6 @@ cliproxy/cloudflare/secrets/*
 !cliproxy/cloudflare/secrets/.gitkeep
 cliproxy/secrets/*
 !cliproxy/secrets/.gitkeep
+
+# Piano static deployment
+piano/.wrangler/

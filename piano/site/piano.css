@@ -1,0 +1,57 @@
+body {
+  min-width: 320px;
+  margin: 0;
+  color: #ece5f2;
+  background: #3a3540;
+  font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+
+.game-header { z-index: 80; }
+.game-header h1 { font-weight: 800; }
+.game-header-actions { min-width: 0; }
+
+.piano-intro,
+.piano-footer {
+  width: calc(100% - clamp(20px, 6vw, 72px));
+  margin: 0 auto;
+  text-align: center;
+}
+
+.piano-intro { padding: 26px 12px 0; }
+.piano-intro h2 { font-size: clamp(1.05rem, 3vw, 1.4rem); font-weight: 700; }
+.piano-intro p { margin-top: 8px; color: #d0c3da; font-size: 0.9rem; }
+.piano-intro button {
+  margin-top: 10px;
+  padding: 8px 14px;
+  border: 1px solid #b9a2ce;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.piano-app > div,
+.piano-app > div > .min-h-screen {
+  width: 100%;
+  min-height: max(460px, calc(100svh - 235px));
+}
+
+/* Keep the upstream editor toggle below the shared site header. */
+.piano-app > div > button { position: absolute; top: 18px; left: clamp(16px, 4vw, 48px); }
+.piano-app > div > .min-h-screen { padding-top: 74px; padding-bottom: 28px; }
+.piano-app button { touch-action: manipulation; }
+.piano-app [data-piano-pad] span { color: #ead9e4; }
+.piano-app button:focus-visible,
+.game-header a:focus-visible { outline: 3px solid #c5b5fa; outline-offset: 3px; }
+.piano-footer { padding: 12px 10px 22px; color: #d0c3da; font-size: 0.8rem; }
+.piano-footer p + p { margin-top: 7px; color: #bcaac8; }
+.piano-footer a { text-decoration: underline; text-underline-offset: 3px; }
+
+@media (max-width: 620px) {
+  .piano-intro { padding-top: 22px; }
+  .piano-app > div,
+  .piano-app > div > .min-h-screen { min-height: 460px; }
+  .piano-app > div > button { left: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-header-overflow-line="true"] { animation: none; }
+}
