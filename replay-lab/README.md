@@ -68,7 +68,7 @@ JSONL 每行一条 JSON，适合逐行分析，避免一次加载数百 MB。`Cu
 - 按容器长度、帧、Packet、Bunch、partial Bunch、NetGUID、Actor 和 RepLayout 层级解析。匹配组件实例名时标记 `component_name_alias`；优先使用完整 outer 路径，避免不同目录中同名角色/召唤物混淆。
 - 角色 `ReplicatedMovement` 按位置 ×100、8 位旋转、整数速度解码，初始坐标与独立生成信息相符。坐标单位是 Unreal 厘米，X/Y 为平面、Z 向上。播放器保留原始采样，短间隔插值，跨角色、长间隔和超过 450 cm 的跳变不插值。
 - 身体朝向来自 `ReplicatedMovement`；独立瞄准来自 `CompressedControllerRotation`，样本验证为低 16 位有符号偏航、高 16 位有符号俯仰，均为十分之一度。163,525 条记录可无损回编码；66,137 组同帧非零 `RemoteViewPitch` 对照的最大角差为 1.4059°，符合旧协议的字节量化误差。网络版本 14 的 `RemoteViewPitch` 使用 `byte × 360 / 255`。零值重置帧单列，未作为关联证据。原整数保留在 `aim.csv` 中。
-- `playback.json` 的 `aim_samples` 独立于移动采样，列顺序见 `aim_columns`。只纳入玩家角色有效出场区间，排除拥有者关联的召唤物；网页用浅色长线显示最近一次已收到的瞄准方向，无数据时不补造方向。短线保留身体朝向。
+- `playback.json` 的 `aim_samples` 独立于移动采样，列顺序见 `aim_columns`。只纳入玩家角色有效出场区间，排除拥有者关联的召唤物。网页仅用视野扇形显示方向，优先使用最近收到的控制器瞄准方向，缺失时回退为身体朝向；扇形角度和距离仅为显示示意，不表示实际可见范围。身体朝向、瞄准长线和开火方向闪线均不绘制，原始方向数据仍保留在导出和状态详情中。
 - 技能激活由 `MulticastNotifyAbilityActivated.Handle` 联结同玩家的 `ActivatableAbilities`，再通过 NetGUID 得到真实能力路径。共享动作、角色 Q/X/被动都保留原名称。激活不代表持续状态已确认结束。
 - `ActiveGameplayEffects` 保留完整增删及效果字段。武器弹药、移动模式编号、觉醒等级、击杀/死亡/助攻、累计伤害和原始状态机数据可按时间查看。生命、生命上限、护甲、护甲上限通过 UE CompatibleChecksum 精确匹配父属性名和类型后识别，八个 BaseValue/CurrentValue 字段均与样本导出值一致；其他属性仍保留编号。名册与画布显示血条，状态详情显示当前数值与累计伤害。没有收到数据时显示未知，不补造数值。
 - 伤害调用包含受作用对象、InstigatedActor、DamageCauser、DamageTypeCDO 和原始 EventData。累计伤害增量单列，可能合并多次命中；不是逐发精确伤害。自定义 EventData 仍待恢复。

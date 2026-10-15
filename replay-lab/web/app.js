@@ -301,7 +301,7 @@ function install(d) {
   $("description").textContent =
     `${d.players.length} 名玩家 · ${d.rounds.length} 个回合 · ${d.counts.movement_records.toLocaleString()} 条位置记录`;
   $("evidence").textContent =
-    `原文件：${d.source.file}\nSHA-256：${d.source.sha256}\n地图路径：${d.map}\n坐标：Unreal 厘米；X/Y 为水平面，Z 为高度。\n恢复：${d.counts.movement_records.toLocaleString()} 条角色移动，${d.counts.state_updates.toLocaleString()} 条状态变化，${d.counts.timeline.toLocaleString()} 条时间线记录。\n身体朝向来自位置复制；浅色长线独立显示控制器瞄准方向。每次事件都保留原始参数与位偏移供核对。`;
+    `原文件：${d.source.file}\nSHA-256：${d.source.sha256}\n地图路径：${d.map}\n坐标：Unreal 厘米；X/Y 为水平面，Z 为高度。\n恢复：${d.counts.movement_records.toLocaleString()} 条角色移动，${d.counts.state_updates.toLocaleString()} 条状态变化，${d.counts.timeline.toLocaleString()} 条时间线记录。\n视野扇形优先使用控制器瞄准方向，无记录时使用身体朝向；角度和距离仅为示意。每次事件都保留原始参数与位偏移供核对。`;
   resize();
   const bounds = {
     minX: Infinity,
@@ -629,7 +629,7 @@ function draw() {
       ctx.arc(0, 0, 18, 0, Math.PI * 2);
       ctx.stroke();
     }
-    const theta = (-pos.yaw * Math.PI) / 180;
+    const theta = (-(pos.aimYaw ?? pos.yaw) * Math.PI) / 180;
     ctx.save();
     ctx.rotate(theta);
     ctx.fillStyle = color + "15";
@@ -638,22 +638,7 @@ function draw() {
     ctx.arc(0, 0, 65, -0.42, 0.42);
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(4, 0);
-    ctx.lineTo(23, 0);
-    ctx.stroke();
     ctx.restore();
-    if (pos.aimYaw !== null) {
-      const angle = (-pos.aimYaw * Math.PI) / 180;
-      ctx.strokeStyle = "#f9efd9";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(Math.cos(angle) * 12, Math.sin(angle) * 12);
-      ctx.lineTo(Math.cos(angle) * 52, Math.sin(angle) * 52);
-      ctx.stroke();
-    }
     ctx.fillStyle = "#151d2d";
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
@@ -699,14 +684,6 @@ function draw() {
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(x, y, 14 + age * 0.04, 0, Math.PI * 2);
-      ctx.stroke();
-    } else if (/^MulticastAttack/.test(e.name || "")) {
-      ctx.strokeStyle = "#ffe4ad";
-      ctx.lineWidth = 2;
-      const theta = (-(pos.aimYaw ?? pos.yaw) * Math.PI) / 180;
-      ctx.beginPath();
-      ctx.moveTo(x + Math.cos(theta) * 13, y + Math.sin(theta) * 13);
-      ctx.lineTo(x + Math.cos(theta) * 45, y + Math.sin(theta) * 45);
       ctx.stroke();
     }
   }

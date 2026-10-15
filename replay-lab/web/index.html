@@ -38,7 +38,7 @@
           <canvas id="arena" aria-label="玩家位置、朝向、移动轨迹与事件的二维重建"></canvas>
           <div class="map-heading"><strong id="round">赛前准备</strong><span id="selection"></span></div>
           <div id="message" role="status" aria-live="polite"></div>
-          <div id="canvas-note">底图：全场走位密度 · 短线：身体朝向 · 浅色长线：瞄准</div>
+          <div id="canvas-note">底图：全场走位密度 · 扇形：视野方向示意</div>
           <div class="map-tools" aria-label="地图视图">
             <button id="zoom-out" aria-label="缩小">−</button>
             <button id="fit">整图</button>
@@ -70,7 +70,7 @@
         <section id="panel-evidence" class="inspector-view evidence" role="tabpanel" aria-labelledby="tab-evidence" hidden>
           <h2>录像信息</h2><p id="source">等待回放数据</p><div id="evidence"></div>
           <h2>恢复范围</h2>
-          <p>根据角色位置、身体朝向和瞄准方向重建二维战术回放。底图为全场走位密度，不代表地图墙体或碰撞几何。地图模型、人物模型和动画资源未包含在当前数据中。</p>
+          <p>根据角色位置和瞄准方向重建二维战术回放。扇形表示视野朝向，角度和距离为示意。底图为全场走位密度，不代表地图墙体或碰撞几何。地图模型、人物模型和动画资源未包含在当前数据中。</p>
           <p>生命、生命上限、护甲与护甲上限通过录像导出的字段校验值识别。绿色为生命，蓝色为护甲；数值取该时刻最近收到的属性同步，尚无数据时显示“—”。</p>
           <p>伤害记录列出攻击者、目标与武器 / 技能类型。单次命中数值尚未解析；随后 200 ms 内的属性变化仅供对照，可能合并其他命中、治疗或效果。累计伤害增量也可能包含多次命中。</p>
           <h2>本地导入</h2>
