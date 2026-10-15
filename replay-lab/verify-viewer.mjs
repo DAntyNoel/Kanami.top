@@ -229,6 +229,8 @@ api.install({ ...playback, players: [formPlayer], timeline: [
   ability(2300, "Default__GA_Shared_Fly_C"),
   ability(2850, "Default__GA_Shared_Wall_C"),
   ability(3100, "Default__GA_Character_Q_C"),
+  ability(5000, "Default__GA_Shared_Fly_C"), // exit: 2D mode becomes 3D at the same time
+  ability(5300, "Default__GA_Character_FlyStrike_C"), // unrelated name must keep its ripple
   { time_ms: 3800, kind: "event", group: "PlayerDeath", fields: [p.name, p.uid] },
   { time_ms: 4001, kind: "event", group: "PlayerRespawn", fields: [p.name, p.uid] },
 ] });
@@ -245,15 +247,16 @@ function renderedForm(t, ellipse, ripple) {
 renderedForm(1050, false, false); // activation alone does not imply a state
 renderedForm(1100, true, false);
 renderedForm(2100, true, false); // persists past ripple lifetime; ignores summon
-renderedForm(2300, true, true); // flying keeps its ripple and 2D shape
-renderedForm(2850, true, true); // wall skill keeps its ripple
+renderedForm(2300, true, false); // flying changes the persistent shape without a ripple
+renderedForm(2850, true, false); // wall stringification has no ripple
 renderedForm(3100, true, true); // unrelated skills keep their ripple
 renderedForm(3300, false, true); // 3D update ends the ellipse immediately
 renderedForm(3600, true, true);
 renderedForm(3800, false, false); // death clears the form
 renderedForm(4001, false, false); // new actor has no movement mode yet
 renderedForm(4700, true, false);
-renderedForm(5000, false, false);
+renderedForm(5000, false, false); // returning to 3D also has no ripple
+renderedForm(5300, false, true); // unrelated skills are not excluded by a partial name match
 renderedForm(6100, false, false); // no state leak across appearance intervals
 renderedForm(2100, true, false); // backward seek reconstructs the state
 console.log(
@@ -279,7 +282,7 @@ console.log(
         "independent controller aim and missing/other-actor fallback",
         "vital lookup and unknown/missing-data handling; damage caveats when present",
         "persistent vertical stringification, release, backward seek, death and actor isolation",
-        "side ripple removed; flying, wall and other ability ripples preserved",
+        "side, flying, wall and stringification exit have no ripple; unrelated ability ripples preserved",
         "round preparation, inferred active phase and victory; backward seek and next round reset",
         "phase markers seek/pause and show provenance; winner reset calls excluded from round filter",
         "all three marker types align to recorded time and jump to the exact event",

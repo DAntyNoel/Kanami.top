@@ -168,6 +168,7 @@ function stateAt(p, t) {
 }
 // Sample-verified against State.Shape.2D.* target tags; see PROTOCOL_NOTES.md.
 const stringifiedModes = new Set([19, 20, 21]);
+const stringificationAbilities = new Set(["GA_Shared_Side", "GA_Shared_Fly", "GA_Shared_Wall"]);
 function isStringified(p, t, actor) {
   if (statusAt(p, t) === "dead") return false;
   const appearance = p.appearances.find(
@@ -793,7 +794,7 @@ function draw() {
       ctx.textAlign = "center";
       ctx.fillText(`+${e.amount}`, x, y - 30 - age * 0.025);
     } else if (e.name === "MulticastNotifyAbilityActivated" &&
-        shortPath(e.ability?.path) !== "GA_Shared_Side") {
+        !stringificationAbilities.has(shortPath(e.ability?.path))) {
       ctx.strokeStyle = "#40c5b8";
       ctx.lineWidth = 2;
       ctx.beginPath();
