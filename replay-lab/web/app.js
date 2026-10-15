@@ -31,6 +31,9 @@ const vitalLabels = { Health: "生命", HealthMax: "生命上限", Armor: "护�
 function number(value) {
   return Number.isFinite(value) ? String(Number(value.toFixed(2))) : "—";
 }
+function integer(value) {
+  return Number.isFinite(value) ? String(Math.round(value)) : "—";
+}
 function vitalsAt(p, t) {
   const values = {};
   for (const [key, entries] of p.vitalIndex || []) {
@@ -111,7 +114,7 @@ const stateLabels = {
 const eventLabels = {
   PlayerRespawn: "角色出生",
   PlayerDeath: "被击败",
-  PlayerInjured: "受伤 / 倒地事件",
+  PlayerInjured: "击倒",
   BombRound: "准备开始",
   WatchStart: "录像开始",
 };
@@ -238,7 +241,7 @@ function label(e) {
       return `${e.fields[0]} ← ${e.fields[2] || "未知"} · 被击败`;
     if (e.group === "PlayerRespawn") return `${e.fields[0]} · 角色出生`;
     if (e.group === "PlayerInjured")
-      return `${e.fields[0]} ← ${e.fields[2] || "未知"} · 受伤事件`;
+      return `${e.fields[0]} ← ${e.fields[2] || "未知"} · 击倒`;
     return `${eventLabels[e.group] || e.group} ${e.metadata || ""}`;
   }
   if (e.kind === "damage_total_delta")
@@ -621,7 +624,7 @@ function updatePanels(force = false) {
     const vitals = vitalsAt(p, time);
     for (const attribute of ["Health", "Armor"]) {
       const current = vitals[attribute], maximum = vitals[attribute + "Max"], ui = p.vitalUi[attribute];
-      ui.text.textContent = `${vitalLabels[attribute]} ${number(current)} / ${number(maximum)}`;
+      ui.text.textContent = `${vitalLabels[attribute]} ${integer(current)} / ${integer(maximum)}`;
       ui.meter.max = maximum > 0 ? maximum : 1;
       ui.meter.value = Number.isFinite(current) ? current : 0;
       ui.meter.hidden = !Number.isFinite(current) || !(maximum > 0);
