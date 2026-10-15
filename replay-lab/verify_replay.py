@@ -77,12 +77,17 @@ def verify(source, directory, url=None):
     winner_group=next(g for g in groups if g['path'].endswith('BP_PMGameState_BombMatch.BP_PMGameState_BombMatch_C'))
     winner_child=max(int(h) for h,f in winner_group['fields'].items() if f['name']=='WinnerTeams')
     replicated_winners={r['time_ms']:winner_array(r,winner_child) for r in round_source if r.get('name')=='WinnerTeams'}
+    round_score=[0,0]
     for index,(round_,active,end) in enumerate(zip(playback['rounds'],active_events,end_events)):
         next_time=playback['rounds'][index+1]['time_ms'] if index+1<len(playback['rounds']) else playback['duration_ms']
         check('round_phase_order_and_boundaries',round_['time_ms']<round_['active_ms']==active['time_ms']<round_['ended_ms']==end['time_ms']<=next_time)
         check('active_phase_uses_original_sync_record',active['evidence']['raw']==original_active[active['time_ms'],active['actor']]['raw'] and active['round_phase']['confidence']=='inferred')
         check('round_end_has_original_winner_parameters',any(p.get('raw')==original_winners[end['time_ms']]['raw'] for p in end['parameters'] if p['name']=='InWinnerTeams'))
         check('winner_matches_independent_replicated_property',round_['winner_teams']==end['round_phase']['winner_teams']==replicated_winners[end['time_ms']])
+        check('round_score_before_matches_previous_wins',round_['score_before']==active['round_phase']['score_before']==end['round_phase']['score_before']==round_score)
+        check('single_confirmed_winner_per_round',len(replicated_winners[end['time_ms']])==1)
+        round_score[replicated_winners[end['time_ms']][0]]+=1
+        check('round_score_after_matches_independent_winner_history',round_['score_after']==end['round_phase']['score_after']==round_score)
         check('round_phase_events_are_global',active['uid'] is None and end['uid'] is None and end['round_phase']['confidence']=='confirmed')
     check('winner_resets_are_not_round_ends',all('round_phase' not in e for e in playback['timeline']
         if e.get('name')=='MulticastWinnerTeam' and not e.get('parameters')))
@@ -186,6 +191,7 @@ def verify(source, directory, url=None):
         controller_rotation_records=controller_count,controller_aim_samples=sum(len(p['aim_samples']) for p in playback['players']),
         vital_updates=sum(len(p['vitals']) for p in playback['players']),damage_calls=len(damage_calls),
         active_phase_candidates=len(active_events),confirmed_round_ends=len(end_events),round_source_bit_checks=len(round_source),
+        final_round_score_blue_gold=round_score,
         independent_pitch_pairs=len(pitch_errors),max_pitch_difference_degrees=max(pitch_errors),zero_pitch_pairs_excluded=zero_pairs,
         notes=['Browser visual verification is recorded separately; this audit does not claim to verify rendering.',
                'Unknown protocol content remains explicitly preserved in raw records.'])

@@ -52,9 +52,16 @@ function damageAttacker(combat) {
 function winnerText(teams = []) {
   return teams.length ? teams.map((team) => team === 1 ? "金方" : "蓝方").join("、") + "胜利" : "胜方未解析";
 }
-function phaseLabel(event) {
+function validScore(score) {
+  return Array.isArray(score) && score.length === 2 &&
+    score.every((value) => Number.isInteger(value) && value >= 0);
+}
+function scoreText(score) {
+  return validScore(score) ? `比分 蓝方 ${score[0]} : ${score[1]} 金方` : "比分未知";
+}
+function phaseLabel(event, includeScore = true) {
   const phase = event.round_phase;
-  return `第 ${phase.round_number} 回合 · ${phase.phase === "active" ? "正式开始（推定）" : `胜利判定 · ${winnerText(phase.winner_teams)}`}`;
+  return `第 ${phase.round_number} 回合 · ${phase.phase === "active" ? "正式开始（推定）" : `胜利判定 · ${winnerText(phase.winner_teams)}${includeScore ? ` · ${scoreText(phase.score_after)}` : ""}`}`;
 }
 function eventDetails(event) {
   let summary = "";
@@ -63,6 +70,9 @@ function eventDetails(event) {
     summary = phaseLabel(event) + "\n" + (phase.phase === "active"
       ? "来自录像中的全局阶段切换；正式开始的含义为阶段推定，解除屏障尚未独立确认。时间取实际记录，未按固定准备时长计算。\n"
       : `来自带胜方参数的胜利通知。结束原因编号：${phase.reason_code ?? "未知"}（具体含义未映射）。\n`);
+    summary += phase.phase === "ended"
+      ? `判定前：${scoreText(phase.score_before)}\n判定后：${scoreText(phase.score_after)}\n比分按已确认的逐回合胜利累计，每回合仅记一次；缺少前序结果时显示未知。\n`
+      : `本回合开始时：${scoreText(phase.score_before)}\n`;
   } else if (event.combat) {
     const combat = event.combat;
     summary = `攻击者：${damageAttacker(combat)}\n受击目标：${damageTarget(combat)}\n武器 / 技能类型：${damageType(combat.damage_type)}\n单次命中伤害：未解析\n`;
@@ -216,7 +226,7 @@ function label(e) {
     return `${name(e.uid)} · ${{ effect_added: "效果获得", effect_updated: "效果更新", effect_removed: "效果移除" }[e.kind]} ${shortPath(e.effect || "未命名效果")}`;
   if (e.kind === "event") {
     if (e.group === "BombRound")
-      return `第 ${e.round_number ?? upper(data.rounds, e.time_ms)} 回合 · 准备开始`;
+      return `第 ${e.round_number ?? upper(data.rounds, e.time_ms)} 回合 · 回合开始（准备）`;
     if (e.group === "PlayerDeath")
       return `${e.fields[0]} ← ${e.fields[2] || "未知"} · 被击败`;
     if (e.group === "PlayerRespawn") return `${e.fields[0]} · 角色出生`;
@@ -258,6 +268,9 @@ function validate(d) {
     if (round.winner_teams !== undefined && (!Array.isArray(round.winner_teams) ||
         round.winner_teams.some((team) => team !== 0 && team !== 1)))
       throw Error("回合胜方数据格式无效。");
+    for (const key of ["score_before", "score_after"])
+      if (round[key] != null && !validScore(round[key]))
+        throw Error("回合比分格式无效。");
   }
   for (const p of d.players) {
     if (
@@ -309,6 +322,9 @@ function validate(d) {
         (e.round_phase.winner_teams !== undefined && (!Array.isArray(e.round_phase.winner_teams) ||
           e.round_phase.winner_teams.some((team) => team !== 0 && team !== 1)))))
       throw Error("回合阶段事件格式无效。");
+    for (const key of ["score_before", "score_after"])
+      if (e.round_phase?.[key] != null && !validScore(e.round_phase[key]))
+        throw Error("事件比分格式无效。");
   }
 }
 function install(d) {
@@ -417,16 +433,23 @@ function install(d) {
     o.value = r.time_ms;
     $("round-select").append(o);
     const b = node("button", String(i + 1));
-    b.title = `第 ${i + 1} 回合 · 准备开始 · ${clock(r.time_ms, true)}`;
+    b.title = `第 ${i + 1} 回合 · 回合开始（准备） · ${clock(r.time_ms, true)}`;
+    b.setAttribute("aria-label", b.title);
     b.style.left = `${r.time_ms / d.duration_ms * 100}%`;
-    b.addEventListener("click", () => seek(r.time_ms));
+    b.dataset.time = r.time_ms;
+    b.addEventListener("click", () => {
+      const event = timeline.find((e) => e.group === "BombRound" && e.time_ms === r.time_ms);
+      if (event) selectEvent(event);
+      else { selectedEvent = null; seek(r.time_ms); }
+    });
     $("round-markers").append(b);
   });
   for (const event of timeline.filter((e) => e.round_phase)) {
-    const marker = node("button", undefined, `phase-marker phase-${event.round_phase.phase}`);
+    const marker = node("button", String(event.round_phase.round_number), `phase-marker phase-${event.round_phase.phase}`);
     marker.title = `${phaseLabel(event)} · ${clock(event.time_ms, true)}`;
     marker.setAttribute("aria-label", marker.title);
     marker.style.left = `${event.time_ms / d.duration_ms * 100}%`;
+    marker.dataset.time = event.time_ms;
     marker.addEventListener("click", () => selectEvent(event));
     $("phase-markers").append(marker);
   }
@@ -514,7 +537,10 @@ function renderEvents(force = false) {
           (e.time_ms > time ? " future" : "") +
           (e === selectedEvent ? " selected" : ""),
       );
-    b.append(node("small", clock(e.time_ms, true)), node("span", label(e)));
+    b.append(node("small", clock(e.time_ms, true)));
+    if (e.round_phase?.phase === "ended")
+      b.append(node("span", phaseLabel(e, false)), node("span", scoreText(e.round_phase.score_after), "event-score"));
+    else b.append(node("span", label(e)));
     b.addEventListener("click", () => selectEvent(e));
     list.append(b);
   }
@@ -538,7 +564,8 @@ function updatePanels(force = false) {
       origin = round.ended_ms;
       phase = `已结束 · ${winnerText(round.winner_teams)}`;
     }
-    roundText = `第 ${roundIndex + 1} 回合 · ${phase} · ${clock(time - origin)}`;
+    const score = round.ended_ms != null && time >= round.ended_ms ? round.score_after : round.score_before;
+    roundText = `第 ${roundIndex + 1} 回合 · ${phase} · ${clock(time - origin)}\n${scoreText(score)}`;
   }
   $("round").textContent = roundText;
   for (const p of data.players) {

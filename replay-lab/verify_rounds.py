@@ -2,7 +2,7 @@
 import copy
 import unittest
 
-from rounds import MACHINE_GROUP, WINNER_GROUP, enrich_rounds, winner_array
+from rounds import MACHINE_GROUP, WINNER_GROUP, enrich_rounds, winner_array, add_round_scores
 
 
 GROUPS = [dict(path=WINNER_GROUP, fields={
@@ -73,6 +73,30 @@ class RoundTests(unittest.TestCase):
                        [machine(8, 9), machine(7777, 10)]):
             rounds, _ = enrich_rounds([dict(time_ms=1000)], [], copy.deepcopy(states), {2}, GROUPS, 20000)
             self.assertIsNone(rounds[0]['active_ms'])
+
+    def test_scores_count_one_win_and_do_not_reset(self):
+        events = [winner(9000), winner(9100), winner(19000, 0), winner(29000),
+            dict(time_ms=10000, kind='rpc', actor=2, name='MulticastWinnerTeam',
+                 parameters=[], raw='0000', bits=9)]
+        markers = [dict(time_ms=1000 + i * 10000, id=f'replay_{i + 1}') for i in range(3)]
+        rounds, counts = enrich_rounds(markers, events, [], {2}, GROUPS, 30000)
+        self.assertEqual([r['score_before'] for r in rounds], [[0, 0], [0, 1], [1, 1]])
+        self.assertEqual([r['score_after'] for r in rounds], [[0, 1], [1, 1], [1, 2]])
+        self.assertEqual(counts['scored_round_ends'], 3)
+        self.assertEqual(counts['duplicate_winner_notifications'], 1)
+        self.assertEqual(counts['winner_resets'], 1)
+
+    def test_missing_previous_result_or_round_number_leaves_score_unknown(self):
+        rounds = [dict(id='replay_1', ended_ms=None, winner_teams=[]),
+                  dict(id='replay_2', ended_ms=20000, winner_teams=[0])]
+        add_round_scores(rounds, [])
+        self.assertEqual(rounds[0]['score_before'], [0, 0])
+        self.assertIsNone(rounds[1]['score_before'])
+        self.assertIsNone(rounds[1]['score_after'])
+        for identifiers in [['replay_5'], ['replay_1', 'replay_3']]:
+            partial = [dict(id=identifier, ended_ms=9000, winner_teams=[1]) for identifier in identifiers]
+            add_round_scores(partial, [])
+            self.assertIsNone(partial[-1]['score_after'])
 
 
 if __name__ == '__main__':

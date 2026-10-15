@@ -359,6 +359,7 @@ def build(directory):
         aim_columns=['time_ms','yaw','pitch','actor'],
         timeline=timeline,rounds=rounds,attribute_semantics=attribute_semantics,
         round_semantics=dict(active_confidence='inferred', end_confidence='confirmed',
+            score_method='One point per confirmed round winner, ordered [team 0 blue, team 1 gold]. Missing round history leaves later totals unknown.',
             note='Active phase follows observed global state transitions; barrier release remains inferred. Empty winner notifications reset state and are not round ends.'),
         limitations=['Map collision/geometry and character models are not embedded in this export.',
             'Body yaw comes from ReplicatedMovement. Separate controller aim uses sample-validated signed 16-bit tenths of a degree; raw packed values remain in aim.csv.',

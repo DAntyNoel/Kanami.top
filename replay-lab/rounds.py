@@ -56,6 +56,33 @@ def winner_array(row, child_handle):
         return None
 
 
+def add_round_scores(rounds, timeline):
+    """Count one confirmed winner per round; missing history makes totals unknown."""
+    score = [0, 0]
+    for index, round_ in enumerate(rounds, 1):
+        suffix = round_.get('id', '').rsplit('_', 1)[-1]
+        if suffix != str(index):
+            score = None
+        round_['score_before'] = score.copy() if score is not None else None
+        teams = round_['winner_teams']
+        if round_['ended_ms'] is None or len(teams) != 1:
+            score = None
+            round_['score_after'] = None
+        else:
+            if score is not None:
+                score[teams[0]] += 1
+            round_['score_after'] = score.copy() if score is not None else None
+    for event in timeline:
+        phase = event.get('round_phase')
+        if phase:
+            round_ = rounds[phase['round_number'] - 1]
+            phase['score_before'] = round_['score_before']
+            if phase['phase'] == 'ended':
+                phase['score_after'] = round_['score_after']
+        elif event.get('group') == 'BombRound' and event.get('round_number'):
+            event['score_before'] = rounds[event['round_number'] - 1]['score_before']
+
+
 def enrich_rounds(markers, timeline, machine_rows, game_states, groups, duration):
     rounds = [dict(marker, round_number=i + 1, active_ms=None,
                    active_confidence=None, ended_ms=None, winner_teams=[])
@@ -131,5 +158,7 @@ def enrich_rounds(markers, timeline, machine_rows, game_states, groups, duration
         assert round_['time_ms'] <= duration
         if round_['active_ms'] is not None and round_['ended_ms'] is not None:
             assert round_['active_ms'] <= round_['ended_ms']
+    add_round_scores(rounds, timeline)
+    counts['scored_round_ends'] = sum(r['score_after'] is not None for r in rounds)
     timeline.sort(key=lambda event: event['time_ms'])
     return rounds, dict(counts)

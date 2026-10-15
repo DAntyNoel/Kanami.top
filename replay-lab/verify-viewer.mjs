@@ -91,6 +91,10 @@ for (const kind of ["important", "round", "skill", "effect", "damage", "shot", "
 if (playback.rounds[0].active_ms != null) {
   const first = playback.rounds[0], second = playback.rounds[1];
   assert.equal($("phase-markers").children.length, playback.rounds.length * 2);
+  for (const marker of [...$("round-markers").children, ...$("phase-markers").children]) {
+    assert(Math.abs(parseFloat(marker.style.left) - Number(marker.dataset.time) / playback.duration_ms * 100) < 1e-9);
+    assert(marker.getAttribute("aria-label"));
+  }
   api.seek(first.time_ms);
   assert($("round").textContent.includes("准备中"));
   api.seek(first.active_ms - 1);
@@ -111,7 +115,7 @@ if (playback.rounds[0].active_ms != null) {
   assert($("event-list").textContent.includes("正式开始（推定）"));
   $("event-filter").value = "round";
   $("event-filter").dispatchEvent(new w.Event("change"));
-  assert($("event-list").textContent.includes("准备开始"));
+  assert($("event-list").textContent.includes("回合开始（准备）"));
   assert(!$("event-list").textContent.includes("MulticastWinnerTeam"));
   const marker = [...$("phase-markers").children].find((b) => b.classList.contains("phase-active"));
   $("play").click();
@@ -124,6 +128,25 @@ if (playback.rounds[0].active_ms != null) {
   endMarker.click();
   assert.equal(api.timeNow(), first.ended_ms);
   assert($("detail-body").textContent.includes("带胜方参数"));
+  if (first.score_after) {
+    assert($("detail-body").textContent.includes("判定后：比分 蓝方 0 : 1 金方"));
+    assert($("picked-name").textContent.includes("金方胜利 · 比分 蓝方 0 : 1 金方"));
+    api.seek(first.ended_ms - 1);
+    assert($("round").textContent.includes("比分 蓝方 0 : 0 金方"));
+    api.seek(first.ended_ms);
+    assert($("round").textContent.includes("比分 蓝方 0 : 1 金方"));
+    api.seek(second.time_ms);
+    assert($("round").textContent.includes("比分 蓝方 0 : 1 金方"));
+    api.seek(playback.duration_ms);
+    const finalScore = playback.rounds.at(-1).score_after;
+    assert($("round").textContent.includes(`比分 蓝方 ${finalScore[0]} : ${finalScore[1]} 金方`));
+    api.seek(first.time_ms);
+    assert($("round").textContent.includes("比分 蓝方 0 : 0 金方"));
+  }
+  $("round-markers").firstElementChild.click();
+  assert.equal(api.timeNow(), first.time_ms);
+  assert.equal(api.isPlaying(), false);
+  assert($("picked-name").textContent.includes("回合开始（准备）"));
   assert.throws(() => api.install({ ...playback, rounds: [{ ...first, active_ms: NaN }] }));
   assert.throws(() => api.install({ ...playback, timeline: [{ time_ms: 10,
     round_phase: { phase: "active", round_number: -1 } }] }));
@@ -259,6 +282,8 @@ console.log(
         "side ripple removed; flying, wall and other ability ripples preserved",
         "round preparation, inferred active phase and victory; backward seek and next round reset",
         "phase markers seek/pause and show provenance; winner reset calls excluded from round filter",
+        "all three marker types align to recorded time and jump to the exact event",
+        "winner and score shown at settlement; scores persist across rounds and reconstruct on backward seek",
       ],
       limitation:
         "jsdom with canvas stub; not a browser screenshot or visual layout check",

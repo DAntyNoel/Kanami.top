@@ -97,8 +97,8 @@ h2 { margin: 0; font-size: 12px; font-weight: 500; color: var(--muted); }
 .canvas-wrap { position: relative; width: 100%; height: 100%; overflow: hidden; }
 canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; }
 canvas:active { cursor: grabbing; }
-.map-heading { position: absolute; top: 16px; left: 20px; display: grid; gap: 8px; pointer-events: none; text-shadow: 0 1px 4px #000; }
-#round { font-size: 12px; font-weight: 400; }
+.map-heading { position: absolute; top: 16px; left: 20px; right: 20px; display: grid; gap: 8px; pointer-events: none; text-shadow: 0 1px 4px #000; }
+#round { font-size: 12px; font-weight: 400; line-height: 1.7; white-space: pre-line; }
 #selection { color: var(--muted); font-size: 10px; white-space: pre-line; line-height: 1.7; }
 #canvas-note { position: absolute; left: 14px; right: 150px; bottom: 14px; color: var(--muted); font-size: 10px; line-height: 1.6; pointer-events: none; }
 .map-tools { position: absolute; right: 12px; bottom: 12px; display: flex; gap: 6px; }
@@ -115,6 +115,7 @@ canvas:active { cursor: grabbing; }
 #event-list { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 .event { display: block; width: 100%; padding: 11px 15px; border: 0; border-bottom: 1px solid #ffffff08; border-radius: 0; background: transparent; text-align: left; font-size: 11px; line-height: 1.8; overflow-wrap: anywhere; }
 .event small { display: block; color: var(--accent); font-size: 10px; font-variant-numeric: tabular-nums; }
+.event-score { display: block; margin-top: 3px; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .event.future { opacity: .5; }
 .event.selected { background: #40c5b810; }
 .details, .evidence { overflow: auto; padding: 4px 16px 16px; scrollbar-width: thin; }
@@ -127,18 +128,23 @@ canvas:active { cursor: grabbing; }
 #source { color: var(--ink); }
 #evidence { white-space: pre-line; }
 .transport { z-index: 90; background: var(--panel); border-top: 1px solid var(--line); padding: 8px 16px 10px; }
-.timeline-row { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+.timeline-row { --timeline-label-width: 70px; --timeline-gap: 12px; --marker-inset: 10px; display: grid; grid-template-columns: var(--timeline-label-width) minmax(0, 1fr) var(--timeline-label-width); align-items: start; gap: var(--timeline-gap); min-width: 0; }
 #clock, #endclock { padding-top: 2px; color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
 #clock { color: var(--ink); }
+#endclock { text-align: right; }
 .timeline-track { flex: 1; min-width: 0; }
 #seek { display: block; width: 100%; margin: 2px 0 0; height: 14px; accent-color: var(--accent); cursor: ew-resize; }
-#round-markers { position: relative; height: 18px; margin: 0 8px; }
-#round-markers button { position: absolute; transform: translateX(-50%); font-size: 8px; padding: 1px 2px; border: 0; background: transparent; color: var(--muted); }
-#phase-markers { position: relative; height: 10px; margin: 0 8px; }
-.phase-marker { position: absolute; transform: translateX(-50%); width: 8px; min-height: 10px; height: 10px; padding: 0; border: 0; border-radius: 0; background: transparent; }
-.phase-marker::after { content: ""; position: absolute; inset: 0 3px; background: var(--accent); }
-.phase-ended::after { background: var(--gold); }
-.phase-marker:hover, .phase-marker:focus-visible { outline: 1px solid var(--ink); background: #ffffff20; }
+#round-markers { position: relative; height: 24px; margin: 0 var(--marker-inset); background: linear-gradient(var(--line),var(--line)) center / 100% 1px no-repeat; }
+#round-markers::before, #phase-markers::before, #phase-markers::after { position: absolute; right: calc(100% + var(--timeline-gap) + var(--marker-inset)); width: var(--timeline-label-width); font-size: 10px; line-height: 20px; white-space: nowrap; }
+#round-markers::before { content: "回合开始"; top: 2px; color: var(--ink); }
+#phase-markers { position: relative; height: 48px; margin: 0 var(--marker-inset); background: repeating-linear-gradient(to bottom,transparent 0,transparent 11px,var(--line) 11px,var(--line) 12px,transparent 12px,transparent 24px); }
+#phase-markers::before { content: "正式开始"; top: 2px; color: var(--accent); }
+#phase-markers::after { content: "胜利判定"; top: 26px; color: var(--gold); }
+#round-markers button, .phase-marker { position: absolute; transform: translateX(-50%); width: 20px; height: 20px; padding: 0; border: 1px solid #64737d; border-radius: 4px; background: #15242d; color: var(--ink); font-size: 9px; font-variant-numeric: tabular-nums; line-height: 18px; }
+#round-markers button { top: 2px; }
+.phase-active { top: 2px; color: var(--accent); border-color: #40c5b877; background: #15312f; }
+.phase-ended { top: 26px; color: var(--gold); border-color: #cda96388; background: #332b20; }
+#round-markers button:hover, #round-markers button:focus-visible, .phase-marker:hover, .phase-marker:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; filter: brightness(1.3); z-index: 1; }
 #phase-legend { color: var(--muted); font-size: 9px; line-height: 1.6; margin: 0 0 5px; }
 .active-key { color: var(--accent); }
 .ended-key { color: var(--gold); }
@@ -179,7 +185,9 @@ canvas:active { cursor: grabbing; }
   .map-heading { left: 14px; top: 14px; }
   #canvas-note { right: 135px; font-size: 9px; }
   .transport { position: sticky; bottom: 0; padding: 7px 10px 10px; }
-  .timeline-row { gap: 8px; }
+  .timeline-row { --timeline-label-width: 56px; --timeline-gap: 8px; --marker-inset: 6px; }
+  #round-markers button, .phase-marker { width: 12px; font-size: 8px; }
+  #round-markers::before, #phase-markers::before, #phase-markers::after { font-size: 9px; }
   #clock, #endclock { font-size: 9px; }
   .transport-buttons { flex-wrap: wrap; gap: 8px; justify-content: space-between; }
   .playback-actions { gap: 4px; }
