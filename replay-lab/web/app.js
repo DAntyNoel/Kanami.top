@@ -140,7 +140,7 @@ const stateLabels = {
 };
 const eventLabels = {
   PlayerRespawn: "角色出生",
-  PlayerDeath: "被击败",
+  PlayerDeath: "淘汰",
   PlayerInjured: "击倒",
   BombRound: "准备开始",
   WatchStart: "录像开始",
@@ -265,7 +265,7 @@ function label(e) {
     if (e.group === "BombRound")
       return `第 ${e.round_number ?? upper(data.rounds, e.time_ms)} 回合 · 回合开始（准备）`;
     if (e.group === "PlayerDeath")
-      return `${e.fields[0]} ← ${e.fields[2] || "未知"} · 被击败`;
+      return `${e.fields[0]} ← ${e.fields[2] || "未知"} · 淘汰`;
     if (e.group === "PlayerRespawn") return `${e.fields[0]} · 角色出生`;
     if (e.group === "PlayerInjured")
       return `${e.fields[0]} ← ${e.fields[2] || "未知"} · 击倒`;
@@ -650,7 +650,7 @@ function updatePanels(force = false) {
       role = characterAt(p, pos, time);
     p.button.className = `player team${team === 1 ? 1 : 0}${picked === p ? " active" : ""}${life === "dead" ? " dead" : ""}`;
     p.button.querySelector("small").textContent = pos
-      ? `${characterName(pos.character)} · ${life === "dead" ? "已被击败" : life === "alive" ? "在场" : "状态未知"}`
+      ? `${characterName(pos.character)} · ${life === "dead" ? "淘汰" : life === "alive" ? "在场" : "状态未知"}`
       : role ? `${role.name} · 等待上场` : "等待上场";
     p.button.querySelector("small").title = role ? `${role.name} · ${role.english} · 内部名 ${role.internal} · ID ${role.id}` : "";
     const roleKey = String(role?.id ?? "");
