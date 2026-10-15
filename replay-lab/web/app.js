@@ -144,6 +144,19 @@ function stateAt(p, t) {
   }
   return result;
 }
+// Sample-verified against State.Shape.2D.* target tags; see PROTOCOL_NOTES.md.
+const stringifiedModes = new Set([19, 20, 21]);
+function isStringified(p, t, actor) {
+  if (statusAt(p, t) === "dead") return false;
+  const appearance = p.appearances.find(
+    (a) => a.actor === actor && a.from_ms <= t && t <= a.to_ms,
+  );
+  if (!appearance) return false;
+  const entries = p.movementModeIndex?.get(actor) || [];
+  const sample = entries[upper(entries, t) - 1];
+  return !!sample && sample.time_ms >= appearance.from_ms &&
+    stringifiedModes.has(sample.value);
+}
 function position(p, t) {
   const i = upper(p.samples, t, (s) => s[0]) - 1;
   if (i < 0) return null;
@@ -274,9 +287,14 @@ function install(d) {
       p.vitalIndex.get(sample.attribute).push(sample);
     }
     p.stateIndex = new Map();
+    p.movementModeIndex = new Map();
     for (const s of p.states) {
       if (!p.stateIndex.has(s.name)) p.stateIndex.set(s.name, []);
       p.stateIndex.get(s.name).push(s);
+      if (s.name === "ReplicatedMovementMode") {
+        if (!p.movementModeIndex.has(s.actor)) p.movementModeIndex.set(s.actor, []);
+        p.movementModeIndex.get(s.actor).push(s);
+      }
     }
     p.life = [];
     for (const e of timeline) {
@@ -292,6 +310,8 @@ function install(d) {
     }
     p.states.sort((a, b) => a.time_ms - b.time_ms);
     for (const entries of p.stateIndex.values())
+      entries.sort((a, b) => a.time_ms - b.time_ms);
+    for (const entries of p.movementModeIndex.values())
       entries.sort((a, b) => a.time_ms - b.time_ms);
   }
   $("source").textContent = d.source.file;
@@ -643,7 +663,9 @@ function draw() {
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(0, 0, 10, 0, Math.PI * 2);
+    if (isStringified(p, time, pos.actor))
+      ctx.ellipse(0, 0, 6, 12, 0, 0, Math.PI * 2);
+    else ctx.arc(0, 0, 10, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
     ctx.fillStyle = color;
@@ -679,7 +701,8 @@ function draw() {
       ctx.font = "bold 12px sans-serif";
       ctx.textAlign = "center";
       ctx.fillText(`+${e.amount}`, x, y - 30 - age * 0.025);
-    } else if (e.name === "MulticastNotifyAbilityActivated") {
+    } else if (e.name === "MulticastNotifyAbilityActivated" &&
+        shortPath(e.ability?.path) !== "GA_Shared_Side") {
       ctx.strokeStyle = "#40c5b8";
       ctx.lineWidth = 2;
       ctx.beginPath();

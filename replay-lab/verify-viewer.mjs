@@ -15,8 +15,9 @@ const dom = new JSDOM(html, {
   pretendToBeVisual: true,
 });
 const w = dom.window;
+const canvasCalls = [];
 const fakeContext = new Proxy(
-  {},
+  Object.fromEntries(["arc", "ellipse"].map((method) => [method, (...args) => canvasCalls.push({ method, args })])),
   {
     get: (target, key) => target[key] ?? (() => {}),
     set: (target, key, value) => {
@@ -49,7 +50,7 @@ w.fetch = async () => ({ ok: true, json: async () => playback });
 const wrapped =
   "(async()=>{" +
   code +
-  "\nreturn {clock,position,install,seek,draw,stateAt,statusAt,vitalsAt,eventDetails,decodeData:()=>data,timeNow:()=>time,isPlaying:()=>playing};})()";
+  "\nreturn {clock,position,install,seek,draw,stateAt,statusAt,vitalsAt,eventDetails,isStringified,decodeData:()=>data,timeNow:()=>time,isPlaying:()=>playing};})()";
 const api = await w.eval(wrapped);
 const $ = (id) => w.document.getElementById(id);
 assert.equal($("players").children.length, playback.players.length);
@@ -125,6 +126,73 @@ if (p.vitals?.length) {
   assert.equal(p.vitalUi.Health.meter.hidden, true);
   assert.equal(p.vitalUi.Armor.meter.hidden, true);
 }
+let realPersistentForm = false;
+for (const player of playback.players) {
+  for (const [actor, entries] of player.movementModeIndex) {
+    const index = entries.findIndex((sample, i) => sample.value === 19 &&
+      entries[i + 1]?.time_ms - sample.time_ms > 650 &&
+      ![19, 20, 21].includes(entries[i + 1].value) &&
+      api.position(player, sample.time_ms + 650)?.actor === actor &&
+      api.statusAt(player, sample.time_ms + 650) !== "dead");
+    if (index < 0) continue;
+    const start = entries[index], end = entries[index + 1];
+    assert(api.isStringified(player, start.time_ms + 650, actor));
+    assert(!api.isStringified(player, end.time_ms, actor));
+    realPersistentForm = true;
+    break;
+  }
+}
+assert(realPersistentForm, "real replay has a sustained side state and a recorded exit");
+// Exercise state boundaries independently of ability activation, elapsed time,
+// owned summons, playback direction, death and character replacement.
+const formPlayer = {
+  ...p,
+  samples: [[1000, 0, 0, 0, 0, 0, 101], [4000, 0, 0, 0, 0, 0, 101],
+    [4001, 0, 0, 0, 0, 0, 102], [6000, 0, 0, 0, 0, 0, 102],
+    [6001, 0, 0, 0, 0, 0, 101], [6500, 0, 0, 0, 0, 0, 101]],
+  aim_samples: [], vitals: [],
+  appearances: [{ actor: 101, from_ms: 1000, to_ms: 4000, character: "test" },
+    { actor: 102, from_ms: 4001, to_ms: 6000, character: "test" },
+    { actor: 101, from_ms: 6001, to_ms: 6500, character: "test" }],
+  states: [[1000, 101, 1], [1100, 101, 19], [1600, 999, 1],
+    [2200, 101, 20], [2800, 101, 21], [3300, 101, 3], [3600, 101, 19],
+    [4700, 102, 19], [5000, 102, 1]].map(([time_ms, actor, value]) =>
+    ({ time_ms, actor, value, name: "ReplicatedMovementMode" })),
+};
+const ability = (time_ms, path) => ({ time_ms, uid: p.uid, kind: "rpc",
+  name: "MulticastNotifyAbilityActivated", ability: { path } });
+api.install({ ...playback, players: [formPlayer], timeline: [
+  ability(1050, "Default__GA_Shared_Side_C"),
+  ability(2300, "Default__GA_Shared_Fly_C"),
+  ability(2850, "Default__GA_Shared_Wall_C"),
+  ability(3100, "Default__GA_Character_Q_C"),
+  { time_ms: 3800, kind: "event", group: "PlayerDeath", fields: [p.name, p.uid] },
+  { time_ms: 4001, kind: "event", group: "PlayerRespawn", fields: [p.name, p.uid] },
+] });
+function renderedForm(t, ellipse, ripple) {
+  canvasCalls.length = 0;
+  api.seek(t);
+  api.draw();
+  assert.equal(canvasCalls.some((c) => c.method === "ellipse"), ellipse, `ellipse at ${t}`);
+  assert.equal(canvasCalls.some((c) => c.method === "arc" && c.args[2] >= 14 && c.args[2] < 40), ripple, `ripple at ${t}`);
+  if (!ellipse) assert(canvasCalls.some((c) => c.method === "arc" && c.args[2] === 10), `circle at ${t}`);
+  for (const call of canvasCalls.filter((c) => c.method === "ellipse"))
+    assert.deepEqual(call.args.slice(2, 5), [6, 12, 0], "ellipse stays vertical on screen");
+}
+renderedForm(1050, false, false); // activation alone does not imply a state
+renderedForm(1100, true, false);
+renderedForm(2100, true, false); // persists past ripple lifetime; ignores summon
+renderedForm(2300, true, true); // flying keeps its ripple and 2D shape
+renderedForm(2850, true, true); // wall skill keeps its ripple
+renderedForm(3100, true, true); // unrelated skills keep their ripple
+renderedForm(3300, false, true); // 3D update ends the ellipse immediately
+renderedForm(3600, true, true);
+renderedForm(3800, false, false); // death clears the form
+renderedForm(4001, false, false); // new actor has no movement mode yet
+renderedForm(4700, true, false);
+renderedForm(5000, false, false);
+renderedForm(6100, false, false); // no state leak across appearance intervals
+renderedForm(2100, true, false); // backward seek reconstructs the state
 console.log(
   JSON.stringify(
     {
@@ -147,6 +215,8 @@ console.log(
         "exact sample positioning",
         "independent controller aim and missing/other-actor fallback",
         "vital lookup and unknown/missing-data handling; damage caveats when present",
+        "persistent vertical stringification, release, backward seek, death and actor isolation",
+        "side ripple removed; flying, wall and other ability ripples preserved",
       ],
       limitation:
         "jsdom with canvas stub; not a browser screenshot or visual layout check",

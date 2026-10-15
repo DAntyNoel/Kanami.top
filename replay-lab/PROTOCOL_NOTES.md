@@ -38,8 +38,27 @@ UE 的 CompatibleChecksum 逐层纳入父属性名、C++ 类型、结构成员�
 
 这仍不足以证明通用编解码：不同技能存在更短的前缀，可选分项会改变长度；剩余位段的含义、过量伤害和部分属性合并同步尚未确定。因此没有把该偏移写成生产解码规则，也没有把候选量标为逐发真实伤害。当前导出仍提供对象参数、原始位串、累积统计和独立属性更新，以便继续验证。
 
+## 弦化持续状态：通过命名目标标签交叉验证
+
+录像的 `NetworkGameplayTagNodeIndex` 导出组含明确的 `State.Shape.2D.Side`、`State.Shape.2D.Flying`、`State.Shape.2D.Wall` 和 `State.Shape.3D`。按 UE 回放分支读取标签容器：1 位空标记、非空时 6 位数量、逐项 `SerializeIntPacked` 导出索引；不能将每项当作固定 uint16。3,226 个源/目标标签容器均精确消耗完整位数，五个无效索引为引擎的 65535 哨兵。
+
+只将目标标签与同一玩家当前角色本体的最近移动模式对照；源标签可能描述另一来源对象或效果施加时的快照，不能据此改写目标状态。
+
+| 命名目标标签 | 对应移动模式 | 同步对照 |
+| --- | --- | --- |
+| `State.Shape.2D.Side` | 19 | 151 / 156 |
+| `State.Shape.2D.Flying` | 20 | 111 / 112 |
+| `State.Shape.2D.Wall` | 21 | 30 / 31 |
+| `State.Shape.3D` | 0 / 1 / 3 | 1,223 / 1,226 |
+
+两路同步存在少量不一致，因此标签用于确认模式含义，不将标签快照时间当作精确形态切换时间。网页按角色本体的 `ReplicatedMovementMode` 同步时间维持形态：19/20/21 显示竖椭圆，其余或未知显示圆形；死亡、出场结束和新角色均隔离旧状态。进入、持续和退出不依赖技能波纹的 650 ms 时限或激活次数。侧身不绘制激活波纹，飘飞、贴墙和其他能力仍可显示波纹。
+
+这些映射仅基于当前游戏版本样本。`python replay-lab/verify_shape.py <decoded目录>` 可重跑命名标签对照；网页检查覆盖持续、退出、倒退、死亡、召唤物和角色出场隔离。
+
+序列化依据：[Epic 的 GameplayTagContainer 实现镜像](https://github.com/folgerwang/UnrealEngine/blob/release/Engine/Source/Runtime/GameplayTags/Private/GameplayTagContainer.cpp#L908)，包括 `FGameplayTag::NetSerialize_Packed` 的 InternalAck 回放分支。
+
 ## 暂不能建立的语义
 
 - 除已通过校验值识别的四项外，重复 `CurrentValue/BaseValue` 仍按组、对象和 handle 标识。属性曲线的形态不能替代属性名元数据。
-- 能力激活、效果获得和移除可以还原；共享侧身、贴墙、飘飞等状态的精确结束语义，不能仅从技能名推定。
+- 自定义 `SyncStateData/SyncSwitchData` 的字段结构仍未完全确定；能力激活本身也不能用来推定持续状态的结束。弦化显示仅使用上文已交叉验证的角色移动模式。
 - 未映射块和跨包区间全部保留。后续应从 NetGUID outer、导出组和真实对象生命周期继续定位，避免用近似同名组强行读取。
