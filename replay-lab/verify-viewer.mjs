@@ -79,7 +79,7 @@ assert.equal($("tab-details").getAttribute("aria-selected"), "true");
 $("tab-evidence").click();
 assert.equal($("panel-evidence").hidden, false);
 assert.equal($("panel-details").hidden, true);
-for (const kind of ["important", "skill", "effect", "damage", "shot", "all"]) {
+for (const kind of ["important", "round", "skill", "effect", "damage", "shot", "all"]) {
   $("tab-events").click();
   $("event-filter").value = kind;
   $("event-filter").dispatchEvent(new w.Event("change"));
@@ -88,6 +88,46 @@ for (const kind of ["important", "skill", "effect", "damage", "shot", "all"]) {
   assert($("detail-body").textContent.includes("time_ms"));
   assert.equal($("panel-details").hidden, false);
 }
+if (playback.rounds[0].active_ms != null) {
+  const first = playback.rounds[0], second = playback.rounds[1];
+  assert.equal($("phase-markers").children.length, playback.rounds.length * 2);
+  api.seek(first.time_ms);
+  assert($("round").textContent.includes("准备中"));
+  api.seek(first.active_ms - 1);
+  assert($("round").textContent.includes("准备中"));
+  api.seek(first.active_ms);
+  assert($("round").textContent.includes("交战中（推定） · 00:00"));
+  api.seek(first.ended_ms);
+  assert($("round").textContent.includes("已结束"));
+  assert($("round").textContent.includes("胜利"));
+  api.seek(second.time_ms);
+  assert($("round").textContent.includes("第 2 回合 · 准备中"));
+  api.seek(first.active_ms - 1);
+  assert($("round").textContent.includes("第 1 回合 · 准备中"));
+  $("event-filter").value = "important";
+  $("event-filter").dispatchEvent(new w.Event("change"));
+  api.seek(first.ended_ms);
+  assert($("event-list").textContent.includes("胜利判定"));
+  assert($("event-list").textContent.includes("正式开始（推定）"));
+  $("event-filter").value = "round";
+  $("event-filter").dispatchEvent(new w.Event("change"));
+  assert($("event-list").textContent.includes("准备开始"));
+  assert(!$("event-list").textContent.includes("MulticastWinnerTeam"));
+  const marker = [...$("phase-markers").children].find((b) => b.classList.contains("phase-active"));
+  $("play").click();
+  marker.click();
+  assert.equal(api.isPlaying(), false);
+  assert.equal(api.timeNow(), first.active_ms);
+  assert.equal($("panel-details").hidden, false);
+  assert($("detail-body").textContent.includes("解除屏障尚未独立确认"));
+  const endMarker = [...$("phase-markers").children].find((b) => b.classList.contains("phase-ended"));
+  endMarker.click();
+  assert.equal(api.timeNow(), first.ended_ms);
+  assert($("detail-body").textContent.includes("带胜方参数"));
+  assert.throws(() => api.install({ ...playback, rounds: [{ ...first, active_ms: NaN }] }));
+  assert.throws(() => api.install({ ...playback, timeline: [{ time_ms: 10,
+    round_phase: { phase: "active", round_number: -1 } }] }));
+} else assert.equal($("phase-markers").children.length, 0);
 for (const t of [0, 60000, 114254, 500000, 960000, 1500000, 1900441]) {
   api.seek(t);
   api.draw();
@@ -207,7 +247,7 @@ console.log(
         "previous/next round controls",
         "follow player",
         "event, detail and data panel navigation",
-        "all 6 event filters",
+        "all 7 event filters",
         "event details",
         "7 timeline render points",
         "restart at end",
@@ -217,6 +257,8 @@ console.log(
         "vital lookup and unknown/missing-data handling; damage caveats when present",
         "persistent vertical stringification, release, backward seek, death and actor isolation",
         "side ripple removed; flying, wall and other ability ripples preserved",
+        "round preparation, inferred active phase and victory; backward seek and next round reset",
+        "phase markers seek/pause and show provenance; winner reset calls excluded from round filter",
       ],
       limitation:
         "jsdom with canvas stub; not a browser screenshot or visual layout check",

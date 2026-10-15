@@ -49,9 +49,21 @@ function damageTarget(combat) {
 function damageAttacker(combat) {
   return combat.attacker_uid ? name(combat.attacker_uid) : "未知攻击者";
 }
+function winnerText(teams = []) {
+  return teams.length ? teams.map((team) => team === 1 ? "金方" : "蓝方").join("、") + "胜利" : "胜方未解析";
+}
+function phaseLabel(event) {
+  const phase = event.round_phase;
+  return `第 ${phase.round_number} 回合 · ${phase.phase === "active" ? "正式开始（推定）" : `胜利判定 · ${winnerText(phase.winner_teams)}`}`;
+}
 function eventDetails(event) {
   let summary = "";
-  if (event.combat) {
+  if (event.round_phase) {
+    const phase = event.round_phase;
+    summary = phaseLabel(event) + "\n" + (phase.phase === "active"
+      ? "来自录像中的全局阶段切换；正式开始的含义为阶段推定，解除屏障尚未独立确认。时间取实际记录，未按固定准备时长计算。\n"
+      : `来自带胜方参数的胜利通知。结束原因编号：${phase.reason_code ?? "未知"}（具体含义未映射）。\n`);
+  } else if (event.combat) {
     const combat = event.combat;
     summary = `攻击者：${damageAttacker(combat)}\n受击目标：${damageTarget(combat)}\n武器 / 技能类型：${damageType(combat.damage_type)}\n单次命中伤害：未解析\n`;
     if (combat.nearby_vital_syncs.length) {
@@ -84,7 +96,7 @@ const eventLabels = {
   PlayerRespawn: "角色出生",
   PlayerDeath: "被击败",
   PlayerInjured: "受伤 / 倒地事件",
-  BombRound: "回合开始",
+  BombRound: "准备开始",
   WatchStart: "录像开始",
 };
 const rpcLabels = {
@@ -195,11 +207,16 @@ function position(p, t) {
   };
 }
 function label(e) {
+  if (e.round_phase) return phaseLabel(e);
+  if (e.name === "MulticastWinnerTeam")
+    return e.parameters?.length ? "胜方通知（原始记录）" : "胜方状态清空";
   if (e.kind === "vital_change") return `${name(e.uid)} · ${vitalChangeText(e)}`;
   if (e.combat) return `${damageAttacker(e.combat)} → ${damageTarget(e.combat)} · ${damageType(e.combat.damage_type)}（数值未解析）`;
   if (e.kind.startsWith("effect_"))
     return `${name(e.uid)} · ${{ effect_added: "效果获得", effect_updated: "效果更新", effect_removed: "效果移除" }[e.kind]} ${shortPath(e.effect || "未命名效果")}`;
   if (e.kind === "event") {
+    if (e.group === "BombRound")
+      return `第 ${e.round_number ?? upper(data.rounds, e.time_ms)} 回合 · 准备开始`;
     if (e.group === "PlayerDeath")
       return `${e.fields[0]} ← ${e.fields[2] || "未知"} · 被击败`;
     if (e.group === "PlayerRespawn") return `${e.fields[0]} · 角色出生`;
@@ -226,6 +243,22 @@ function validate(d) {
     throw Error("回放格式无效。请选择配套解析器生成的 playback.json。");
   if (!d.players.some((p) => p.samples?.length))
     throw Error("数据中还没有可播放的位置。");
+  let previousRound = -1;
+  for (const round of d.rounds) {
+    if (!Number.isFinite(round.time_ms) || round.time_ms < previousRound ||
+        round.time_ms < 0 || round.time_ms > d.duration_ms)
+      throw Error("回合起点存在无效时间。");
+    previousRound = round.time_ms;
+    for (const key of ["active_ms", "ended_ms"])
+      if (round[key] != null && (!Number.isFinite(round[key]) ||
+          round[key] < round.time_ms || round[key] > d.duration_ms))
+        throw Error("回合阶段时间无效。");
+    if (round.active_ms != null && round.ended_ms != null && round.active_ms > round.ended_ms)
+      throw Error("回合阶段时间顺序无效。");
+    if (round.winner_teams !== undefined && (!Array.isArray(round.winner_teams) ||
+        round.winner_teams.some((team) => team !== 0 && team !== 1)))
+      throw Error("回合胜方数据格式无效。");
+  }
   for (const p of d.players) {
     if (
       !Array.isArray(p.samples) ||
@@ -263,13 +296,20 @@ function validate(d) {
       previous = s.time_ms;
     }
   }
-  for (const e of d.timeline)
+  for (const e of d.timeline) {
     if (
       !Number.isFinite(e.time_ms) ||
       e.time_ms < 0 ||
       e.time_ms > d.duration_ms
     )
       throw Error("事件时间超出了录像范围。");
+    if (e.round_phase && (!Number.isInteger(e.round_phase.round_number) ||
+        e.round_phase.round_number < 1 || e.round_phase.round_number > d.rounds.length ||
+        !["active", "ended"].includes(e.round_phase.phase) ||
+        (e.round_phase.winner_teams !== undefined && (!Array.isArray(e.round_phase.winner_teams) ||
+          e.round_phase.winner_teams.some((team) => team !== 0 && team !== 1)))))
+      throw Error("回合阶段事件格式无效。");
+  }
 }
 function install(d) {
   validate(d);
@@ -371,16 +411,27 @@ function install(d) {
   $("round-select").replaceChildren(node("option", "选择回合"));
   $("round-select").firstChild.value = "";
   $("round-markers").replaceChildren();
+  $("phase-markers").replaceChildren();
   d.rounds.forEach((r, i) => {
     const o = node("option", `第 ${i + 1} 回合`);
     o.value = r.time_ms;
     $("round-select").append(o);
     const b = node("button", String(i + 1));
-    b.title = `第 ${i + 1} 回合 · ${clock(r.time_ms)}`;
+    b.title = `第 ${i + 1} 回合 · 准备开始 · ${clock(r.time_ms, true)}`;
     b.style.left = `${r.time_ms / d.duration_ms * 100}%`;
     b.addEventListener("click", () => seek(r.time_ms));
     $("round-markers").append(b);
   });
+  for (const event of timeline.filter((e) => e.round_phase)) {
+    const marker = node("button", undefined, `phase-marker phase-${event.round_phase.phase}`);
+    marker.title = `${phaseLabel(event)} · ${clock(event.time_ms, true)}`;
+    marker.setAttribute("aria-label", marker.title);
+    marker.style.left = `${event.time_ms / d.duration_ms * 100}%`;
+    marker.addEventListener("click", () => selectEvent(event));
+    $("phase-markers").append(marker);
+  }
+  $("phase-markers").hidden = !$("phase-markers").children.length;
+  $("phase-legend").hidden = $("phase-markers").hidden;
   filterEvents();
   const first = d.players.map((p) => p.samples[0]?.[0]).filter(Number.isFinite);
   seek(first.length ? Math.max(...first) : 0);
@@ -417,13 +468,22 @@ function toggle() {
   playing = !playing;
   $("play").textContent = playing ? "暂停" : "播放";
 }
+function selectEvent(event) {
+  playing = false;
+  $("play").textContent = "播放";
+  selectedEvent = event;
+  seek(event.time_ms);
+  renderEvents(true);
+  showPanel("details");
+}
 function filterEvents() {
   const type = $("event-filter").value;
   filtered = timeline.filter(
     (e) =>
       type === "all" ||
+      (type === "round" && (e.round_phase || e.group === "BombRound")) ||
       (type === "important" &&
-        ((e.kind === "event" && e.group !== "PlayerRespawn") ||
+        (e.round_phase || (e.kind === "event" && e.group !== "PlayerRespawn") ||
           ["MulticastNotifySuccessRescue", "MulticastBombEvent"].includes(
             e.name,
           ))) ||
@@ -455,14 +515,7 @@ function renderEvents(force = false) {
           (e === selectedEvent ? " selected" : ""),
       );
     b.append(node("small", clock(e.time_ms, true)), node("span", label(e)));
-    b.addEventListener("click", () => {
-      playing = false;
-      $("play").textContent = "播放";
-      selectedEvent = e;
-      seek(e.time_ms);
-      renderEvents(true);
-      showPanel("details");
-    });
+    b.addEventListener("click", () => selectEvent(e));
     list.append(b);
   }
   if (!filtered.length)
@@ -473,10 +526,21 @@ function updatePanels(force = false) {
   $("clock").textContent = clock(time, true);
   $("seek").value = time;
   const roundIndex = upper(data.rounds, time) - 1;
-  $("round").textContent =
-    roundIndex >= 0
-      ? `第 ${roundIndex + 1} 回合 · ${clock(time - data.rounds[roundIndex].time_ms)}`
-      : "赛前准备";
+  let roundText = "赛前准备";
+  if (roundIndex >= 0) {
+    const round = data.rounds[roundIndex];
+    let origin = round.time_ms, phase = round.active_ms != null ? "准备中" : "回合计时";
+    if (round.active_ms != null && time >= round.active_ms) {
+      origin = round.active_ms;
+      phase = "交战中（推定）";
+    }
+    if (round.ended_ms != null && time >= round.ended_ms) {
+      origin = round.ended_ms;
+      phase = `已结束 · ${winnerText(round.winner_teams)}`;
+    }
+    roundText = `第 ${roundIndex + 1} 回合 · ${phase} · ${clock(time - origin)}`;
+  }
+  $("round").textContent = roundText;
   for (const p of data.players) {
     const pos = position(p, time),
       state = stateAt(p, time),

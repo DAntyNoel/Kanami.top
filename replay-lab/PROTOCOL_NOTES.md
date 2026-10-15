@@ -57,6 +57,16 @@ UE 的 CompatibleChecksum 逐层纳入父属性名、C++ 类型、结构成员�
 
 序列化依据：[Epic 的 GameplayTagContainer 实现镜像](https://github.com/folgerwang/UnrealEngine/blob/release/Engine/Source/Runtime/GameplayTags/Private/GameplayTagContainer.cpp#L908)，包括 `FGameplayTag::NetSerialize_Packed` 的 InternalAck 回放分支。
 
+## 回合阶段与胜利判定
+
+原容器的 16 条 `BombRound` 是现有回合标记；其附近有全局 `CyGMachine.SyncStateData` 的 139 位同步。每回合均出现前 96 位为 9 的记录，随后转为前 96 位为 10 的记录，后者晚于标记 34.769–35.031 秒。模块只识别这些完整位宽、签名和相邻转换，不据此声称整个自定义状态机已经解码。正式开始取后者的实际时间，标明“推定”；缺失、未知或不相邻时不补固定时间。解除屏障的语义仍未独立确认。
+
+16 条非空 `CyGameState:MulticastWinnerTeam` 通知均带胜方和原因参数，同帧还有 `WinnerTeams` 与 `RoundResult` 属性。另有 15 条空通知用于清空胜方，不能重复记作回合结束。胜方数组按 UE 兼容复制数组读取：packed 数量、元素索引、导出子字段 handle、位长、8 位队伍编号和结束符；只接受完整的当前双队伍布局，未知或不完整内容保留原始记录。16 条 RPC 的队伍编号全部与独立 `WinnerTeams` 复制属性一致，结束原因编号保留而不猜测文字含义。
+
+全部 184 条相关原始记录已回查源文件位区间。第 1 回合标记为 00:53.794，正式开始候选为 01:28.805，胜利通知为 02:11.498。全局 Actor 的状态与通知不属于任何个人；导出使用空 UID，防止 RPC 的 PlayerState 参数污染归属后误标为某位玩家的事件。
+
+`verify_rounds.py` 覆盖缺失/未知状态、实际时间、对象隔离、空与重复通知；`verify_replay.py` 核对原始位数据、阶段边界和独立胜方属性。网页的关键事件、回合阶段筛选及阶段标记均使用这些记录；较旧的 playback.json 不会在浏览器中凭时间推造阶段。
+
 ## 暂不能建立的语义
 
 - 除已通过校验值识别的四项外，重复 `CurrentValue/BaseValue` 仍按组、对象和 handle 标识。属性曲线的形态不能替代属性名元数据。

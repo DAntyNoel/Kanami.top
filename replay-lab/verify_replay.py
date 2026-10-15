@@ -10,6 +10,7 @@ from urllib.request import urlopen
 from decode_replay import read_rows
 from parse_replay import Reader, ParseError, dump
 from combat import ATTRIBUTE_GROUP, resolve_vital_fields
+from rounds import GAME_STATE_CLASS, MACHINE_GROUP, winner_array, signature
 
 
 def verify(source, directory, url=None):
@@ -42,12 +43,19 @@ def verify(source, directory, url=None):
     check('packets_count',packets==manifest['counts']['packets'])
     check('last_frame_equals_duration',previous==manifest['info']['duration_ms'])
     source_checks=multi_checks=field_count=unknown_handles=0
+    actors=json.loads((directory/'actors.json').read_text(encoding='utf-8'))
+    game_states={a['guid'] for a in actors if a.get('path')==GAME_STATE_CLASS}
+    round_source=[]
     for i,row in enumerate(read_rows(directory/'properties.jsonl')):
         if row['kind'] in ('property','rpc_parameter'):
             field_count+=1
             unknown_handles+=row['name'].startswith('handle_')
         spans=row.get('source_spans',[])
-        if spans and (i%997==0 or len(spans)>1):
+        is_round_source=row['actor'] in game_states and row.get('name') in (
+            'SyncStateData','MulticastWinnerTeam','InWinnerTeams','WinnerTeams','RoundResult','NowRound')
+        if is_round_source:
+            round_source.append(row)
+        if spans and (i%997==0 or len(spans)>1 or is_round_source):
             value=0;shift=0
             for span in spans:
                 bit,count=span['bit'],span['count']
@@ -60,6 +68,24 @@ def verify(source, directory, url=None):
             source_checks+=1;multi_checks+=len(spans)>1
     check('property_count_matches',field_count==manifest['counts']['properties'])
     check('all_property_handles_named',unknown_handles==0)
+    active_events=[e for e in playback['timeline'] if e.get('round_phase',{}).get('phase')=='active']
+    end_events=[e for e in playback['timeline'] if e.get('round_phase',{}).get('phase')=='ended']
+    check('round_active_and_end_counts',len(active_events)==len(end_events)==len(playback['rounds']))
+    original_active={(r['time_ms'],r['actor']):r for r in round_source
+        if r.get('group')==MACHINE_GROUP and signature(r)==10}
+    original_winners={r['time_ms']:r for r in round_source if r.get('name')=='InWinnerTeams'}
+    winner_group=next(g for g in groups if g['path'].endswith('BP_PMGameState_BombMatch.BP_PMGameState_BombMatch_C'))
+    winner_child=max(int(h) for h,f in winner_group['fields'].items() if f['name']=='WinnerTeams')
+    replicated_winners={r['time_ms']:winner_array(r,winner_child) for r in round_source if r.get('name')=='WinnerTeams'}
+    for index,(round_,active,end) in enumerate(zip(playback['rounds'],active_events,end_events)):
+        next_time=playback['rounds'][index+1]['time_ms'] if index+1<len(playback['rounds']) else playback['duration_ms']
+        check('round_phase_order_and_boundaries',round_['time_ms']<round_['active_ms']==active['time_ms']<round_['ended_ms']==end['time_ms']<=next_time)
+        check('active_phase_uses_original_sync_record',active['evidence']['raw']==original_active[active['time_ms'],active['actor']]['raw'] and active['round_phase']['confidence']=='inferred')
+        check('round_end_has_original_winner_parameters',any(p.get('raw')==original_winners[end['time_ms']]['raw'] for p in end['parameters'] if p['name']=='InWinnerTeams'))
+        check('winner_matches_independent_replicated_property',round_['winner_teams']==end['round_phase']['winner_teams']==replicated_winners[end['time_ms']])
+        check('round_phase_events_are_global',active['uid'] is None and end['uid'] is None and end['round_phase']['confidence']=='confirmed')
+    check('winner_resets_are_not_round_ends',all('round_phase' not in e for e in playback['timeline']
+        if e.get('name')=='MulticastWinnerTeam' and not e.get('parameters')))
     event_deaths=Counter(e['fields'][1] for e in playback['timeline'] if e.get('group')=='PlayerDeath')
     event_players={e['fields'][1]:e['fields'][0] for e in playback['timeline'] if e.get('group')=='PlayerRespawn'}
     check('players_match_respawn_events',{p['uid']:p['name'] for p in playback['players']}==event_players)
@@ -159,6 +185,7 @@ def verify(source, directory, url=None):
         ability_activations=len(activations),movement_samples=sum(len(p['samples']) for p in playback['players']),
         controller_rotation_records=controller_count,controller_aim_samples=sum(len(p['aim_samples']) for p in playback['players']),
         vital_updates=sum(len(p['vitals']) for p in playback['players']),damage_calls=len(damage_calls),
+        active_phase_candidates=len(active_events),confirmed_round_ends=len(end_events),round_source_bit_checks=len(round_source),
         independent_pitch_pairs=len(pitch_errors),max_pitch_difference_degrees=max(pitch_errors),zero_pitch_pairs_excluded=zero_pairs,
         notes=['Browser visual verification is recorded separately; this audit does not claim to verify rendering.',
                'Unknown protocol content remains explicitly preserved in raw records.'])

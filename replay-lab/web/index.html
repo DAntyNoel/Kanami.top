@@ -56,7 +56,7 @@
           <div class="panel-title">
             <h2>事件记录</h2>
             <select id="event-filter" aria-label="事件类型">
-              <option value="important">关键事件</option><option value="skill">技能激活</option>
+              <option value="important">关键事件</option><option value="round">回合阶段</option><option value="skill">技能激活</option>
               <option value="effect">持续效果</option><option value="damage">伤害记录</option>
               <option value="shot">开火与命中</option><option value="all">全部记录</option>
             </select>
@@ -72,6 +72,7 @@
           <h2>恢复范围</h2>
           <p>根据角色位置和瞄准方向重建二维战术回放。扇形表示视野朝向，角度和距离为示意。底图为全场走位密度，不代表地图墙体或碰撞几何。地图模型、人物模型和动画资源未包含在当前数据中。</p>
           <p>弦化期间玩家标记持续显示为竖椭圆，解除后恢复圆形。侧身不再显示激活波纹；飘飞、贴墙及其他技能保留圈状波纹。</p>
+          <p>回合区分准备开始、正式开始（推定）与胜利判定。正式开始取录像中的全局阶段切换，解除屏障的含义尚未独立确认；胜利判定来自带胜方参数的通知，清空胜方的通知不作为回合结束。</p>
           <p>生命、生命上限、护甲与护甲上限通过录像导出的字段校验值识别。绿色为生命，蓝色为护甲；数值取该时刻最近收到的属性同步，尚无数据时显示“—”。</p>
           <p>伤害记录列出攻击者、目标与武器 / 技能类型。单次命中数值尚未解析；随后 200 ms 内的属性变化仅供对照，可能合并其他命中、治疗或效果。累计伤害增量也可能包含多次命中。</p>
           <h2>本地导入</h2>
@@ -85,10 +86,12 @@
         <output id="clock">00:00.000</output>
         <div class="timeline-track">
           <input id="seek" type="range" min="0" max="1" step="1" value="0" aria-label="回放时间" />
+          <div id="phase-markers" aria-label="正式开始与胜利判定" hidden></div>
           <div id="round-markers" aria-label="回合起点"></div>
         </div>
         <span id="endclock">00:00.000</span>
       </div>
+      <div id="phase-legend" hidden>数字：准备起点 · <span class="active-key">青线：正式开始（推定）</span> · <span class="ended-key">金线：胜利判定</span></div>
       <div class="transport-buttons">
         <div class="playback-actions">
           <button id="previous-round" title="上一回合" aria-label="上一回合">|‹</button>

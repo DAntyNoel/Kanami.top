@@ -11,6 +11,7 @@ from pathlib import Path
 
 from parse_replay import Reader, ParseError, dump
 from combat import enrich_combat
+from rounds import GAME_STATE_CLASS, MACHINE_GROUP, enrich_rounds
 
 
 REFERENCES = set('Owner Instigator PlayerState Controller InstigatorPlayerState InstigatorState AvatarActor OwnerActor '
@@ -132,6 +133,7 @@ def build(directory):
     events = json.loads((directory / 'events.json').read_text(encoding='utf-8'))
     guids = {g['guid']: g for g in json.loads((directory / 'netguids.json').read_text(encoding='utf-8'))}
     actor_map = {a['guid']: a for a in actors}
+    game_states = {a['guid'] for a in actors if a.get('path') == GAME_STATE_CLASS}
     players, ownership, bindings = {}, defaultdict(list), defaultdict(list)
     valid_uids = {e['fields'][1] for e in events if e['group'] == 'PlayerRespawn' and len(e['fields']) >= 2}
     stats, failures = Counter(), []
@@ -256,11 +258,14 @@ def build(directory):
     # is not invented from a cumulative counter or an opaque custom EventData struct.
     pending = None
     abilities, effects = {}, {}
+    round_machine_rows = []
     delta_file = (directory / 'ability-effects.jsonl').open('w',encoding='utf-8')
     for row in read_rows(directory / 'properties.jsonl'):
         if row.get('name') in ('SyncStateData','SyncSwitchData') and row['kind']=='property':
+            if row['actor'] in game_states and row.get('group') == MACHINE_GROUP:
+                round_machine_rows.append(row)
             state=owner(row['actor'],row['time_ms'])
-            if state in players:
+            if state in players and row['actor'] not in game_states:
                 leaf=row['group'].rsplit('.',1)[-1]
                 players[state]['states'].append(dict(time_ms=row['time_ms'],kind='state_raw',uid=players[state]['uid'],
                     actor=row['actor'],object=row['object'],name=f'{leaf}.{row["name"]}',
@@ -308,8 +313,10 @@ def build(directory):
                 timeline.append(pending)
             state = owner(row['actor'],row['time_ms'])
             pending = dict(time_ms=row['time_ms'],kind='rpc',name=row['name'],actor=row['actor'],
-                object=row['object'],uid=players[state]['uid'] if state in players else None,
+                object=row['object'],uid=players[state]['uid'] if state in players and row['actor'] not in game_states else None,
                 parameters=[],source_bit=row.get('source_bit'))
+            if row['actor'] in game_states and row['name'] == 'MulticastWinnerTeam':
+                pending.update({k:row[k] for k in ('bits','raw','source_spans') if k in row})
         elif row['kind'] == 'rpc_parameter' and pending:
             try:
                 value = decode(row)
@@ -343,13 +350,16 @@ def build(directory):
     for player in players.values():
         player['states'].sort(key=lambda s:s['time_ms'])
     attribute_semantics, combat_report = enrich_combat(list(players.values()), timeline, groups)
-    rounds = [e for e in events if e['group']=='BombRound']
+    rounds, round_report = enrich_rounds([e for e in events if e['group']=='BombRound'],
+        timeline, round_machine_rows, game_states, groups, duration)
     bundle = dict(schema='kanami-replay-playback-v1', source=dict(file=manifest['file'],sha256=manifest['sha256']),
         duration_ms=duration, map=manifest['headers'][0]['levels'][0]['name'],
         coordinate_system=dict(units='Unreal centimeters',axes='X/Y horizontal, Z up',yaw='degrees around Z'),
         sample_columns=['time_ms','x','y','z','yaw','pitch','actor'],players=list(players.values()),
         aim_columns=['time_ms','yaw','pitch','actor'],
         timeline=timeline,rounds=rounds,attribute_semantics=attribute_semantics,
+        round_semantics=dict(active_confidence='inferred', end_confidence='confirmed',
+            note='Active phase follows observed global state transitions; barrier release remains inferred. Empty winner notifications reset state and are not round ends.'),
         limitations=['Map collision/geometry and character models are not embedded in this export.',
             'Body yaw comes from ReplicatedMovement. Separate controller aim uses sample-validated signed 16-bit tenths of a degree; raw packed values remain in aim.csv.',
             'Damage total deltas may aggregate hits. Opaque damage EventData is retained with the RPC.',
@@ -358,8 +368,9 @@ def build(directory):
     (directory / 'playback.json').write_text(json.dumps(bundle,ensure_ascii=False,separators=(',',':'),allow_nan=False),encoding='utf-8')
     dump(directory / 'timeline.json', timeline)
     dump(directory / 'combat-report.json', combat_report)
+    dump(directory / 'round-report.json', round_report)
     dump(directory / 'decode-report.json',dict(counts=dict(stats),failures=failures,
-        **bundle['counts'],combat=combat_report['counts'],player_summary=[dict(uid=p['uid'],name=p['name'],samples=len(p['samples']),appearances=len(p['appearances']),stats=p['stats']) for p in players.values()]))
+        **bundle['counts'],combat=combat_report['counts'],round_phases=round_report,player_summary=[dict(uid=p['uid'],name=p['name'],samples=len(p['samples']),appearances=len(p['appearances']),stats=p['stats']) for p in players.values()]))
     print(json.dumps(dict(stats=stats,**bundle['counts']),ensure_ascii=False,indent=2))
 
 

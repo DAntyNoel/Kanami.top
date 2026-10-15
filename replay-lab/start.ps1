@@ -20,7 +20,7 @@ if (-not $needsBuild) {
     $record = Get-Content -LiteralPath $manifest -Raw -Encoding UTF8 | ConvertFrom-Json
     $sourceHash = (Get-FileHash -LiteralPath $ReplayFile -Algorithm SHA256).Hash.ToLowerInvariant()
     $needsBuild = $record.sha256 -ne $sourceHash
-    foreach ($script in @('parse_replay.py', 'decode_replay.py', 'combat.py', 'unreal_names.json')) {
+    foreach ($script in @('parse_replay.py', 'decode_replay.py', 'combat.py', 'rounds.py', 'unreal_names.json')) {
         if ((Get-Item -LiteralPath (Join-Path $PSScriptRoot $script)).LastWriteTimeUtc -gt (Get-Item -LiteralPath $playback).LastWriteTimeUtc) { $needsBuild = $true }
     }
 }
