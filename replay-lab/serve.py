@@ -17,6 +17,9 @@ def assets(data):
         '/index.html': HERE / 'web/index.html',
         '/app.js': HERE / 'web/app.js',
         '/style.css': HERE / 'web/style.css',
+        '/maps/ocarnus.webp': HERE / 'web/maps/ocarnus.webp',
+        '/maps/NOTICE.txt': HERE / 'web/maps/NOTICE.txt',
+        '/maps/GPL-3.0.txt': HERE / 'web/maps/GPL-3.0.txt',
         '/shared/header.js': ROOT / 'res/scripts/header.js',
         '/shared/header.css': ROOT / 'games/shared/game-header.css',
         '/shared/logo.png': ROOT / 'res/images/favicon.png',
@@ -49,7 +52,9 @@ def handler(routes):
             mime = mimetypes.guess_type(target.name)[0] or 'application/octet-stream'
             if target.suffix == '.js':
                 mime = 'text/javascript'
-            self.send_header('Content-Type',mime+'; charset=utf-8' if target.suffix in ('.html','.css','.js','.json') else mime)
+            elif target.suffix == '.webp':
+                mime = 'image/webp'
+            self.send_header('Content-Type',mime+'; charset=utf-8' if target.suffix in ('.html','.css','.js','.json','.txt') else mime)
             self.send_header('Content-Length',str(target.stat().st_size))
             self.send_header('X-Content-Type-Options','nosniff')
             self.send_header('Cache-Control','no-cache')

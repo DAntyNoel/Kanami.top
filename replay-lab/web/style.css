@@ -82,7 +82,10 @@ h2 { margin: 0; font-size: 12px; font-weight: 500; color: var(--muted); }
 .player.team1 .badge { color: var(--gold); border-color: #cda96366; background: #cda96312; }
 .player strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 400; }
 .player small { display: block; margin-top: 5px; font-size: 10px; color: var(--muted); }
+.player-stats { display: grid; gap: 5px; text-align: right; white-space: nowrap; }
 .player .score { color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+.damage-stat { color: var(--blue); font-size: 10px; font-variant-numeric: tabular-nums; }
+.team1 .damage-stat { color: var(--gold); }
 .vital-bars { grid-column: 2 / -1; display: grid; gap: 4px; min-width: 0; }
 .vital-line { display: grid; gap: 3px; font-size: 9px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .vital-line meter { display: block; width: 100%; height: 4px; border: 0; border-radius: 2px; background: #25343d; }
@@ -128,26 +131,30 @@ canvas:active { cursor: grabbing; }
 #source { color: var(--ink); }
 #evidence { white-space: pre-line; }
 .transport { z-index: 90; background: var(--panel); border-top: 1px solid var(--line); padding: 8px 16px 10px; }
-.timeline-row { --timeline-label-width: 70px; --timeline-gap: 12px; --marker-inset: 10px; display: grid; grid-template-columns: var(--timeline-label-width) minmax(0, 1fr) var(--timeline-label-width); align-items: start; gap: var(--timeline-gap); min-width: 0; }
-#clock, #endclock { padding-top: 2px; color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+.timeline-row { display: grid; grid-template-columns: 70px minmax(0, 1fr) 70px; align-items: center; gap: 12px; min-width: 0; }
+#clock, #endclock { color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
 #clock { color: var(--ink); }
 #endclock { text-align: right; }
-.timeline-track { flex: 1; min-width: 0; }
-#seek { display: block; width: 100%; margin: 2px 0 0; height: 14px; accent-color: var(--accent); cursor: ew-resize; }
-#round-markers { position: relative; height: 24px; margin: 0 var(--marker-inset); background: linear-gradient(var(--line),var(--line)) center / 100% 1px no-repeat; }
-#round-markers::before, #phase-markers::before, #phase-markers::after { position: absolute; right: calc(100% + var(--timeline-gap) + var(--marker-inset)); width: var(--timeline-label-width); font-size: 10px; line-height: 20px; white-space: nowrap; }
-#round-markers::before { content: "回合开始"; top: 2px; color: var(--ink); }
-#phase-markers { position: relative; height: 48px; margin: 0 var(--marker-inset); background: repeating-linear-gradient(to bottom,transparent 0,transparent 11px,var(--line) 11px,var(--line) 12px,transparent 12px,transparent 24px); }
-#phase-markers::before { content: "正式开始"; top: 2px; color: var(--accent); }
-#phase-markers::after { content: "胜利判定"; top: 26px; color: var(--gold); }
-#round-markers button, .phase-marker { position: absolute; transform: translateX(-50%); width: 20px; height: 20px; padding: 0; border: 1px solid #64737d; border-radius: 4px; background: #15242d; color: var(--ink); font-size: 9px; font-variant-numeric: tabular-nums; line-height: 18px; }
-#round-markers button { top: 2px; }
-.phase-active { top: 2px; color: var(--accent); border-color: #40c5b877; background: #15312f; }
-.phase-ended { top: 26px; color: var(--gold); border-color: #cda96388; background: #332b20; }
-#round-markers button:hover, #round-markers button:focus-visible, .phase-marker:hover, .phase-marker:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; filter: brightness(1.3); z-index: 1; }
-#phase-legend { color: var(--muted); font-size: 9px; line-height: 1.6; margin: 0 0 5px; }
-.active-key { color: var(--accent); }
-.ended-key { color: var(--gold); }
+.timeline-track { position: relative; min-width: 0; height: 28px; background: #1b252c; border: 1px solid #65717a; border-radius: 3px; }
+#round-segments, #round-markers, #phase-markers { position: absolute; inset: 0; pointer-events: none; }
+#round-segments { display: flex; overflow: hidden; border-radius: 2px; }
+.round-segment { position: absolute; top: 0; bottom: 0; display: grid; place-content: center; color: #dce2e6; font-size: 9px; font-variant-numeric: tabular-nums; }
+.round-segment.odd { background: #26323b; }
+.round-segment.even { background: #46535e; }
+#seek { appearance: none; position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; margin: 0; background: transparent; border: 0; cursor: ew-resize; outline-color: white; }
+#seek::-webkit-slider-runnable-track { height: 100%; background: transparent; }
+#seek::-moz-range-track { height: 100%; background: transparent; }
+#seek::-moz-range-progress { background: transparent; }
+#seek::-webkit-slider-thumb { appearance: none; width: 0; height: 28px; background: transparent; border: 0; }
+#seek::-moz-range-thumb { width: 0; height: 28px; background: transparent; border: 0; }
+#round-markers, #phase-markers { z-index: 2; }
+#round-markers button, .phase-marker { position: absolute; top: 0; bottom: 0; transform: translateX(-50%); width: 5px; padding: 0; border: 0; border-radius: 0; background: transparent; pointer-events: auto; }
+#round-markers button::after, .phase-marker::after { content: ""; position: absolute; top: 0; bottom: 0; left: 2px; width: 1px; background: #fff; }
+.phase-active::after { top: 5px; bottom: 5px; }
+.phase-ended::after { top: 10px; bottom: 0; }
+#round-markers button:hover, #round-markers button:focus-visible, .phase-marker:hover, .phase-marker:focus-visible { background: #ffffff30; outline: 1px solid white; outline-offset: 1px; z-index: 3; }
+#playhead { position: absolute; z-index: 4; top: -4px; bottom: -4px; width: 2px; background: white; transform: translateX(-50%); pointer-events: none; box-shadow: 0 0 3px #000; }
+#phase-legend { color: var(--muted); font-size: 9px; line-height: 1.6; margin: 5px 0; }
 .transport-buttons { display: flex; align-items: center; gap: 14px; }
 .playback-actions, .view-options { display: flex; align-items: center; gap: 6px; }
 .transport-buttons button, .transport-buttons select { font-size: 11px; }
@@ -185,9 +192,8 @@ canvas:active { cursor: grabbing; }
   .map-heading { left: 14px; top: 14px; }
   #canvas-note { right: 135px; font-size: 9px; }
   .transport { position: sticky; bottom: 0; padding: 7px 10px 10px; }
-  .timeline-row { --timeline-label-width: 56px; --timeline-gap: 8px; --marker-inset: 6px; }
-  #round-markers button, .phase-marker { width: 12px; font-size: 8px; }
-  #round-markers::before, #phase-markers::before, #phase-markers::after { font-size: 9px; }
+  .timeline-row { grid-template-columns: 54px minmax(0, 1fr) 54px; gap: 6px; }
+  .round-segment { font-size: 7px; }
   #clock, #endclock { font-size: 9px; }
   .transport-buttons { flex-wrap: wrap; gap: 8px; justify-content: space-between; }
   .playback-actions { gap: 4px; }

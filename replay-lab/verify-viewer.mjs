@@ -17,7 +17,7 @@ const dom = new JSDOM(html, {
 const w = dom.window;
 const canvasCalls = [];
 const fakeContext = new Proxy(
-  Object.fromEntries(["arc", "ellipse"].map((method) => [method, (...args) => canvasCalls.push({ method, args })])),
+  Object.fromEntries(["arc", "ellipse", "fillText", "drawImage", "rotate"].map((method) => [method, (...args) => canvasCalls.push({ method, args, color: fakeContext.fillStyle })])),
   {
     get: (target, key) => target[key] ?? (() => {}),
     set: (target, key, value) => {
@@ -46,21 +46,68 @@ w.ResizeObserver = class {
   }
 };
 w.requestAnimationFrame = () => 0;
+w.Image = class {
+  set src(value) { this.source = value; queueMicrotask(() => this.onload?.()); }
+};
 w.fetch = async () => ({ ok: true, json: async () => playback });
 const wrapped =
   "(async()=>{" +
   code +
-  "\nreturn {clock,position,install,seek,draw,stateAt,statusAt,vitalsAt,eventDetails,isStringified,decodeData:()=>data,timeNow:()=>time,isPlaying:()=>playing};})()";
+  "\nreturn {clock,position,install,seek,draw,animate,stateAt,statusAt,vitalsAt,eventDetails,isStringified,xy,viewState:()=>({activeMap,mapImage,viewBounds,yDirection,camera:{...camera}}),decodeData:()=>data,timeNow:()=>time,isPlaying:()=>playing};})()";
 const api = await w.eval(wrapped);
 const $ = (id) => w.document.getElementById(id);
 assert.equal($("players").children.length, playback.players.length);
 assert.equal($("round-markers").children.length, playback.rounds.length);
 assert.equal($("message").textContent, "");
+assert.equal($("round-segments").children.length, playback.rounds.length);
+for (const [i, segment] of [...$("round-segments").children].entries()) {
+  assert(segment.classList.contains(i % 2 === 0 ? "odd" : "even"));
+  const end = playback.rounds[i + 1]?.time_ms ?? playback.duration_ms;
+  assert(Math.abs(parseFloat(segment.style.left) - playback.rounds[i].time_ms / playback.duration_ms * 100) < 1e-9);
+  assert(Math.abs(parseFloat(segment.style.width) - (end - playback.rounds[i].time_ms) / playback.duration_ms * 100) < 1e-9);
+}
+if (playback.map.includes("Envi_Akns_Bomb")) {
+  await Promise.resolve();
+  const view = api.viewState();
+  assert.equal(view.activeMap.name, "奥卡努斯");
+  assert.equal(view.mapImage.source, "maps/ocarnus.webp");
+  assert.equal(view.yDirection, 1);
+  const topLeft = api.xy(-8500, -8500), bottomRight = api.xy(8500, 8500);
+  assert(topLeft[0] < bottomRight[0] && topLeft[1] < bottomRight[1]);
+  canvasCalls.length = 0;
+  api.draw();
+  const imageCall = canvasCalls.find((c) => c.method === "drawImage");
+  assert.equal(imageCall.args[0], view.mapImage);
+  assert.equal(imageCall.args[3], imageCall.args[4], "fixed map keeps square proportions");
+  const aimPlayer = playback.players.find((p) => p.aim_samples.length);
+  const aimSample = aimPlayer.aim_samples.find((a) => api.position(aimPlayer, a[0])?.actor === a[3]);
+  api.seek(aimSample[0]); canvasCalls.length = 0; api.draw();
+  assert(canvasCalls.some((c) => c.method === "rotate" && Math.abs(c.args[0] - aimSample[1] * Math.PI / 180) < 1e-9), "aim follows image Y direction");
+  const before = api.viewState().camera;
+  const cursorWorld = [before.x + 230 / before.scale, before.y + 80 / before.scale];
+  $("arena").dispatchEvent(new w.WheelEvent("wheel", { clientX: 680, clientY: 380, deltaY: -160, cancelable: true }));
+  const cursorAfter = api.xy(...cursorWorld);
+  assert(Math.abs(cursorAfter[0] - 680) < 1e-9 && Math.abs(cursorAfter[1] - 380) < 1e-9,
+    "zoom preserves the world point under the cursor on the map");
+  $("arena").setPointerCapture = () => {};
+  $("arena").dispatchEvent(new w.MouseEvent("pointerdown", { clientX: 300, clientY: 300 }));
+  $("arena").dispatchEvent(new w.MouseEvent("pointermove", { clientX: 330, clientY: 320 }));
+  const dragged = api.xy(...cursorWorld);
+  assert(Math.abs(dragged[0] - 710) < 1e-9 && Math.abs(dragged[1] - 400) < 1e-9,
+    "map and player coordinates pan in the pointer direction");
+  $("arena").dispatchEvent(new w.MouseEvent("pointerup", { clientX: 330, clientY: 320 }));
+  $("fit").click();
+}
 const begin = api.timeNow();
 $("play").click();
 assert(api.isPlaying());
 $("play").click();
 assert(!api.isPlaying());
+api.seek(begin); $("play").click(); api.animate(200); api.animate(400);
+assert(api.timeNow() > begin);
+assert(Math.abs(parseFloat($("playhead").style.left) - api.timeNow() / playback.duration_ms * 100) < 1e-9,
+  "white playhead moves during continuous playback");
+$("play").click(); api.seek(begin);
 $("forward").click();
 assert.equal(api.timeNow(), begin + 5000);
 $("back").click();
@@ -155,6 +202,18 @@ for (const t of [0, 60000, 114254, 500000, 960000, 1500000, 1900441]) {
   api.seek(t);
   api.draw();
   assert.equal($("clock").textContent, api.clock(t, true));
+  assert(Math.abs(parseFloat($("playhead").style.left) - t / playback.duration_ms * 100) < 1e-9);
+  for (const player of playback.players)
+    assert.equal(player.button.querySelector(".damage-stat").textContent,
+      `伤害 ${Number.isFinite(api.stateAt(player, t).TotalDamage) ? Number(api.stateAt(player, t).TotalDamage.toFixed(2)) : "—"}`);
+}
+for (const team of [0, 1]) {
+  const damage = playback.timeline.find((e) => e.kind === "damage_total_delta" &&
+    playback.players.find((p) => p.uid === e.uid)?.AttributeTeamID === team);
+  assert(damage);
+  api.seek(damage.time_ms + 1); canvasCalls.length = 0; api.draw();
+  assert(canvasCalls.some((c) => c.method === "fillText" && c.args[0] === String(Number(damage.amount.toFixed(2))) &&
+    c.color === ["#40c5b8", "#cda963"][team]), "floating damage has team color and no plus sign");
 }
 api.seek(1900441);
 $("play").click();
@@ -259,6 +318,12 @@ renderedForm(5000, false, false); // returning to 3D also has no ripple
 renderedForm(5300, false, true); // unrelated skills are not excluded by a partial name match
 renderedForm(6100, false, false); // no state leak across appearance intervals
 renderedForm(2100, true, false); // backward seek reconstructs the state
+api.install({ ...playback, map: "/unknown-map", players: [formPlayer], timeline: [] });
+assert.equal(api.viewState().activeMap, null);
+assert.equal(api.viewState().mapImage, null);
+assert($("canvas-note").textContent.includes("暂无固定底图"));
+canvasCalls.length = 0; api.draw();
+assert(!canvasCalls.some((c) => c.method === "drawImage"), "unknown maps never borrow an unrelated image");
 console.log(
   JSON.stringify(
     {
@@ -287,6 +352,9 @@ console.log(
         "phase markers seek/pause and show provenance; winner reset calls excluded from round filter",
         "all three marker types align to recorded time and jump to the exact event",
         "winner and score shown at settlement; scores persist across rounds and reconstruct on backward seek",
+        "single-strip alternating round segments and exact white playhead time",
+        "persistent roster damage and team-colored floating values without plus signs",
+        "fixed map aspect ratio, coordinate direction, aim rotation and unknown-map fallback",
       ],
       limitation:
         "jsdom with canvas stub; not a browser screenshot or visual layout check",

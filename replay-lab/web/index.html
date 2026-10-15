@@ -31,14 +31,14 @@
           <h2>玩家名册</h2><button id="unfollow">取消跟随</button>
         </div>
         <div id="players"></div>
-        <p class="hint">选择玩家以跟随位置并查看状态。右侧数字为当前击杀 / 死亡。</p>
+        <p class="hint">选择玩家以跟随位置并查看状态。名册显示当前击杀 / 死亡与累计伤害。</p>
       </aside>
       <section class="stage">
         <div class="canvas-wrap">
           <canvas id="arena" aria-label="玩家位置、朝向、移动轨迹与事件的二维重建"></canvas>
           <div class="map-heading"><strong id="round">赛前准备</strong><span id="selection"></span></div>
           <div id="message" role="status" aria-live="polite"></div>
-          <div id="canvas-note">底图：全场走位密度 · 扇形：视野方向示意</div>
+          <div id="canvas-note">正在加载地图 · 扇形：视野方向示意</div>
           <div class="map-tools" aria-label="地图视图">
             <button id="zoom-out" aria-label="缩小">−</button>
             <button id="fit">整图</button>
@@ -70,11 +70,12 @@
         <section id="panel-evidence" class="inspector-view evidence" role="tabpanel" aria-labelledby="tab-evidence" hidden>
           <h2>录像信息</h2><p id="source">等待回放数据</p><div id="evidence"></div>
           <h2>恢复范围</h2>
-          <p>根据角色位置和瞄准方向重建二维战术回放。扇形表示视野朝向，角度和距离为示意。底图为全场走位密度，不代表地图墙体或碰撞几何。地图模型、人物模型和动画资源未包含在当前数据中。</p>
+          <p>根据角色位置和瞄准方向重建二维战术回放。扇形表示视野朝向，角度和距离为示意。奥卡努斯使用固定的 1024 × 1024 地图底图，按地图坐标范围对齐人物、轨迹与视野。底图是二维示意，不代表完整碰撞或分层几何。其他地图尚无底图时仅显示坐标网格。人物模型和动画资源未包含在当前数据中。</p>
           <p>弦化期间玩家标记持续显示为竖椭圆，解除后恢复圆形。侧身、飘飞、贴墙以及解除弦化均不显示激活波纹；其他技能保留圈状波纹。</p>
-          <p>回合区分回合开始（准备）、正式开始（推定）与胜利判定。进度条下方三行编号分别定位三类节点，可点击跳转。正式开始取录像中的全局阶段切换，解除屏障的含义尚未独立确认；胜利判定显示胜方和判定后的比分，按每回合一次胜利累计，缺少前序结果时不补造比分。清空胜方的通知不作为回合结束。</p>
+          <p>回合区分回合开始（准备）、正式开始（推定）与胜利判定。单条进度带以深浅底色区分奇偶回合，三类节点均用白色竖线标注在条带上；白色游标标记当前时刻。悬停可查看节点，点击可跳转。正式开始取录像中的全局阶段切换，解除屏障的含义尚未独立确认；胜利判定显示胜方和判定后的比分，按每回合一次胜利累计，缺少前序结果时不补造比分。清空胜方的通知不作为回合结束。</p>
           <p>生命、生命上限、护甲与护甲上限通过录像导出的字段校验值识别。绿色为生命，蓝色为护甲；数值取该时刻最近收到的属性同步，尚无数据时显示“—”。</p>
           <p>伤害记录列出攻击者、目标与武器 / 技能类型。单次命中数值尚未解析；随后 200 ms 内的属性变化仅供对照，可能合并其他命中、治疗或效果。累计伤害增量也可能包含多次命中。</p>
+          <p>地图底图来源：<a href="https://github.com/fsltech-team/Strinova-Map-Assistant" target="_blank" rel="noopener">Strinova Map Assistant</a>。资源来源与许可见 <a href="maps/NOTICE.txt" target="_blank" rel="noopener">地图资源说明</a>。</p>
           <h2>本地导入</h2>
           <p>支持配套解析器生成的 <code>playback.json</code>。文件仅在浏览器内读取，不会上传。原始 <code>.replay</code> 文件需要先运行解析器。</p>
           <p>空格：播放 / 暂停 · 方向键：前后五秒 · 滚轮：缩放 · 拖动：平移</p>
@@ -85,13 +86,15 @@
       <div class="timeline-row">
         <output id="clock">00:00.000</output>
         <div class="timeline-track">
+          <div id="round-segments" aria-hidden="true"></div>
           <input id="seek" type="range" min="0" max="1" step="1" value="0" aria-label="回放时间" />
           <div id="round-markers" aria-label="回合开始跳转"></div>
           <div id="phase-markers" aria-label="正式开始与胜利判定跳转" hidden></div>
+          <div id="playhead" aria-hidden="true"></div>
         </div>
         <span id="endclock">00:00.000</span>
       </div>
-      <div id="phase-legend" hidden>点击编号跳转 · 白：回合开始（准备） · <span class="active-key">青：正式开始（推定）</span> · <span class="ended-key">金：胜利判定</span></div>
+      <div id="phase-legend" hidden>深浅底色区分奇偶回合 · 白线标记回合开始、正式开始（推定）及胜利判定，可悬停查看并点击跳转</div>
       <div class="transport-buttons">
         <div class="playback-actions">
           <button id="previous-round" title="上一回合" aria-label="上一回合">|‹</button>

@@ -1,0 +1,19 @@
+奥卡努斯固定地图底图
+
+文件：ocarnus.webp（1024 × 1024，原图未修改）
+公开来源：Strinova Map Assistant / fsltech-team
+https://github.com/fsltech-team/Strinova-Map-Assistant
+来源版本：77442ade064d1a84be48827a6c6aaf31906e6d7c
+资源索引：src/data/maplist.ts，Ocarnus.blankMap
+原图：https://cdn.sa.net/2025/04/22/pzYjVHbdiL3qn7c.webp
+获取日期：2026-10-15
+SHA-256：789dc959c7acfe2101d95cbb044449fdafaa87f68f7519fd4e1a5ef2727996af
+
+来源项目标注 GPL-3.0，许可证全文附于 GPL-3.0.txt。
+游戏名称、美术和地图的权利归原权利人；此处记录来源，不主张拥有其版权。
+
+世界坐标：X、Y 均为 -8500 到 8500 厘米，原点为图片中心。
+像素坐标：u = (X + 8500) / 17000 × 1024；v = (Y + 8500) / 17000 × 1024。
+X 向右，Y 向下。此范围来自对应地图配置，不按玩家走位范围拉伸。
+当前录像全部 186119 个位置的 99.32% 落在图上非黑色区域（RGB 最大分量 > 60）。
+这只是几何对照，不代表碰撞、楼层或逐像素地图语义的确认。

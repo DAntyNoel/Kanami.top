@@ -18,8 +18,14 @@ let filtered = [],
   timeline = [],
   playerById = new Map(),
   renderedEventCenter = -1;
-let densityLayer = null,
-  densityBounds = null;
+// Fixed map coordinates in Unreal centimetres. Keep image and player transforms shared.
+const mapCatalog = {
+  "/Game/PaperMan/Maps/Envi_Akns/Envi_Akns_Bomb/Envi_Akns": {
+    name: "奥卡努斯", image: "maps/ocarnus.webp",
+    bounds: { minX: -8500, maxX: 8500, minY: -8500, maxY: 8500 },
+  },
+};
+let activeMap = null, mapImage = null, viewBounds = null, yDirection = -1;
 const colors = ["#40c5b8", "#cda963"];
 const vitalLabels = { Health: "生命", HealthMax: "生命上限", Armor: "护甲", ArmorMax: "护甲上限" };
 function number(value) {
@@ -394,8 +400,27 @@ function install(d) {
       bounds.maxY = Math.max(bounds.maxY, s[2]);
     }
   if (!Number.isFinite(bounds.minX)) throw Error("数据中还没有可播放的位置。");
-  makeDensity(bounds);
-  fitted = fitBounds(bounds);
+  activeMap = mapCatalog[d.map] ?? null;
+  yDirection = activeMap ? 1 : -1;
+  mapImage = null;
+  viewBounds = activeMap?.bounds ?? bounds;
+  $("canvas-note").textContent = activeMap
+    ? `${activeMap.name} · 底图加载中 · 扇形：视野示意`
+    : "该地图暂无固定底图 · 扇形：视野示意";
+  if (activeMap) {
+    const image = new Image();
+    image.onload = () => {
+      if (data !== d) return;
+      mapImage = image;
+      $("canvas-note").textContent = `${activeMap.name} · 固定地图底图 · 扇形：视野示意`;
+      draw();
+    };
+    image.onerror = () => {
+      if (data === d) $("canvas-note").textContent = `${activeMap.name} · 底图加载失败 · 扇形：视野示意`;
+    };
+    image.src = activeMap.image;
+  }
+  fitted = fitBounds(viewBounds);
   camera = { ...fitted };
   $("players").replaceChildren();
   const roster = [...d.players].sort((a, b) => (a.AttributeTeamID ?? 0) - (b.AttributeTeamID ?? 0));
@@ -420,7 +445,9 @@ function install(d) {
       line.append(text, meter); bars.append(line);
       p.vitalUi[attribute] = { text, meter };
     }
-    b.append(copy, node("span", "0 / 0", "score"), bars);
+    const stats = node("span", undefined, "player-stats");
+    stats.append(node("span", "0 / 0", "score"), node("span", "伤害 —", "damage-stat"));
+    b.append(copy, stats, bars);
     b.addEventListener("click", () => pick(p));
     p.button = b;
     $("players").append(b);
@@ -429,11 +456,16 @@ function install(d) {
   $("round-select").firstChild.value = "";
   $("round-markers").replaceChildren();
   $("phase-markers").replaceChildren();
+  $("round-segments").replaceChildren();
   d.rounds.forEach((r, i) => {
     const o = node("option", `第 ${i + 1} 回合`);
     o.value = r.time_ms;
     $("round-select").append(o);
-    const b = node("button", String(i + 1));
+    const segment = node("span", String(i + 1), `round-segment ${i % 2 === 0 ? "odd" : "even"}`);
+    segment.style.left = `${r.time_ms / d.duration_ms * 100}%`;
+    segment.style.width = `${((d.rounds[i + 1]?.time_ms ?? d.duration_ms) - r.time_ms) / d.duration_ms * 100}%`;
+    $("round-segments").append(segment);
+    const b = node("button");
     b.title = `第 ${i + 1} 回合 · 回合开始（准备） · ${clock(r.time_ms, true)}`;
     b.setAttribute("aria-label", b.title);
     b.style.left = `${r.time_ms / d.duration_ms * 100}%`;
@@ -446,7 +478,7 @@ function install(d) {
     $("round-markers").append(b);
   });
   for (const event of timeline.filter((e) => e.round_phase)) {
-    const marker = node("button", String(event.round_phase.round_number), `phase-marker phase-${event.round_phase.phase}`);
+    const marker = node("button", undefined, `phase-marker phase-${event.round_phase.phase}`);
     marker.title = `${phaseLabel(event)} · ${clock(event.time_ms, true)}`;
     marker.setAttribute("aria-label", marker.title);
     marker.style.left = `${event.time_ms / d.duration_ms * 100}%`;
@@ -482,9 +514,14 @@ function pick(p) {
 }
 function seek(value) {
   time = Math.max(0, Math.min(data?.duration_ms || 0, Number(value) || 0));
-  $("seek").value = time;
+  updateTimeControls();
   updatePanels(true);
   draw();
+}
+function updateTimeControls() {
+  if (!data) return;
+  $("seek").value = time;
+  $("playhead").style.left = `${time / data.duration_ms * 100}%`;
 }
 function toggle() {
   if (!data) return;
@@ -551,7 +588,7 @@ function renderEvents(force = false) {
 function updatePanels(force = false) {
   if (!data) return;
   $("clock").textContent = clock(time, true);
-  $("seek").value = time;
+  updateTimeControls();
   const roundIndex = upper(data.rounds, time) - 1;
   let roundText = "赛前准备";
   if (roundIndex >= 0) {
@@ -579,6 +616,8 @@ function updatePanels(force = false) {
       ? `${pos.character} · ${life === "dead" ? "已被击败" : life === "alive" ? "在场" : "状态未知"}`
       : "等待上场";
     p.button.querySelector(".score").textContent = `${state.NumKills ?? 0} / ${state.NumDeaths ?? 0}`;
+    p.button.querySelector(".damage-stat").textContent = `伤害 ${number(state.TotalDamage)}`;
+    p.button.querySelector(".damage-stat").title = "累计造成伤害";
     const vitals = vitalsAt(p, time);
     for (const attribute of ["Health", "Armor"]) {
       const current = vitals[attribute], maximum = vitals[attribute + "Max"], ui = p.vitalUi[attribute];
@@ -613,45 +652,8 @@ function updatePanels(force = false) {
 function xy(x, y) {
   return [
     width / 2 + (x - camera.x) * camera.scale,
-    height / 2 - (y - camera.y) * camera.scale,
+    height / 2 + yDirection * (y - camera.y) * camera.scale,
   ];
-}
-function makeDensity(bounds) {
-  densityBounds = bounds;
-  densityLayer = document.createElement("canvas");
-  densityLayer.width = densityLayer.height = 768;
-  const dc = densityLayer.getContext("2d"),
-    bins = new Uint32Array(128 * 128),
-    dx = Math.max(1, bounds.maxX - bounds.minX),
-    dy = Math.max(1, bounds.maxY - bounds.minY);
-  for (const p of data.players)
-    for (const s of p.samples) {
-      const x = Math.max(
-          0,
-          Math.min(127, Math.floor(((s[1] - bounds.minX) / dx) * 128)),
-        ),
-        y = Math.max(
-          0,
-          Math.min(127, Math.floor(((bounds.maxY - s[2]) / dy) * 128)),
-        );
-      bins[y * 128 + x]++;
-    }
-  for (let y = 0; y < 128; y++)
-    for (let x = 0; x < 128; x++) {
-      let count = 0;
-      for (let oy = -1; oy <= 1; oy++)
-        for (let ox = -1; ox <= 1; ox++) {
-          const px = x + ox,
-            py = y + oy;
-          if (px >= 0 && px < 128 && py >= 0 && py < 128)
-            count += bins[py * 128 + px] / (ox === 0 && oy === 0 ? 1 : 4);
-        }
-      if (count) {
-        const alpha = Math.min(0.6, Math.log2(1 + count) / 18);
-        dc.fillStyle = `rgba(106,139,165,${alpha})`;
-        dc.fillRect(x * 6, y * 6, 6, 6);
-      }
-    }
 }
 function draw() {
   ctx.clearRect(0, 0, width, height);
@@ -663,15 +665,14 @@ function draw() {
       camera.y = p.y;
     }
   }
-  if (densityLayer) {
-    const [x, y] = xy(densityBounds.minX, densityBounds.maxY);
-    ctx.drawImage(
-      densityLayer,
-      x,
-      y,
-      (densityBounds.maxX - densityBounds.minX) * camera.scale,
-      (densityBounds.maxY - densityBounds.minY) * camera.scale,
-    );
+  if (mapImage) {
+    const bounds = activeMap.bounds;
+    const [x, y] = xy(bounds.minX, bounds.minY);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(mapImage, x, y,
+      (bounds.maxX - bounds.minX) * camera.scale,
+      (bounds.maxY - bounds.minY) * camera.scale);
   }
   const grid = camera.scale < 0.025 ? 2000 : camera.scale < 0.08 ? 1000 : 500;
   ctx.lineWidth = 1;
@@ -741,7 +742,7 @@ function draw() {
       ctx.arc(0, 0, 18, 0, Math.PI * 2);
       ctx.stroke();
     }
-    const theta = (-(pos.aimYaw ?? pos.yaw) * Math.PI) / 180;
+    const theta = (yDirection * (pos.aimYaw ?? pos.yaw) * Math.PI) / 180;
     ctx.save();
     ctx.rotate(theta);
     ctx.fillStyle = color + "15";
@@ -789,10 +790,12 @@ function draw() {
     const [x, y] = xy(pos.x, pos.y);
     ctx.globalAlpha = 1 - age / 650;
     if (e.kind === "damage_total_delta") {
-      ctx.fillStyle = "#ffe4ad";
+      const player = playerById.get(e.uid);
+      const team = player && (stateAt(player, time).AttributeTeamID ?? player.AttributeTeamID);
+      ctx.fillStyle = colors[team === 1 ? 1 : 0];
       ctx.font = "bold 12px sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText(`+${e.amount}`, x, y - 30 - age * 0.025);
+      ctx.fillText(number(e.amount), x, y - 30 - age * 0.025);
     } else if (e.name === "MulticastNotifyAbilityActivated" &&
         !stringificationAbilities.has(shortPath(e.ability?.path))) {
       ctx.strokeStyle = "#40c5b8";
@@ -827,8 +830,8 @@ function resize() {
   canvas.width = Math.round(width * dpr);
   canvas.height = Math.round(height * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  if (densityBounds) {
-    fitted = fitBounds(densityBounds);
+  if (viewBounds) {
+    fitted = fitBounds(viewBounds);
     if (wasFitted) camera = { ...fitted };
   }
   draw();
@@ -918,7 +921,7 @@ canvas.addEventListener(
       Math.min(0.5, old * Math.exp(-e.deltaY * 0.001)),
     );
     camera.x += mx / old - mx / camera.scale;
-    camera.y -= my / old - my / camera.scale;
+    camera.y += yDirection * (my / old - my / camera.scale);
     following = false;
   },
   { passive: false },
@@ -934,7 +937,7 @@ canvas.addEventListener("pointermove", (e) => {
     dy = e.clientY - drag.y;
   drag.moved ||= Math.abs(dx) + Math.abs(dy) > 2;
   camera.x -= dx / camera.scale;
-  camera.y += dy / camera.scale;
+  camera.y -= yDirection * dy / camera.scale;
   drag.x = e.clientX;
   drag.y = e.clientY;
   following = false;
@@ -982,6 +985,7 @@ function animate(now) {
     }
   }
   lastFrame = now;
+  updateTimeControls();
   draw();
   if (now - lastPanel > 150) {
     updatePanels();
