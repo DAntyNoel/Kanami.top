@@ -112,7 +112,10 @@ def verify(source, directory, url=None):
     if url:
         for route in ('/','/app.js','/style.css','/shared/header.js','/shared/header.css','/shared/logo.png','/shared/kanami.jpg','/playback.json'):
             with urlopen(url.rstrip('/')+route,timeout=30) as response:
-                check('http_'+route,response.status==200 and int(response.headers['Content-Length'])>0)
+                payload=response.read()
+                check('http_'+route,response.status==200 and len(payload)==int(response.headers['Content-Length'])>0)
+                if route=='/playback.json':
+                    check('http_playback_complete_hash',hashlib.sha256(payload).digest()==hashlib.sha256((directory/'playback.json').read_bytes()).digest())
         with urlopen(url.rstrip('/')+'/health') as response:
             check('minimal_health',json.load(response)=={'status':'ok'})
         for route in ('/files/','/../AGENTS.md','/%2e%2e/AGENTS.md','/manifest.json','/properties.jsonl','/__reload','/__reload/state','/__reload/trigger','/.git/config'):
