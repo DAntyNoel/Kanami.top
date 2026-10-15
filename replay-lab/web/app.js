@@ -668,11 +668,14 @@ function draw() {
   if (mapImage) {
     const bounds = activeMap.bounds;
     const [x, y] = xy(bounds.minX, bounds.minY);
+    ctx.save();
+    ctx.globalAlpha = 0.62;
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
     ctx.drawImage(mapImage, x, y,
       (bounds.maxX - bounds.minX) * camera.scale,
       (bounds.maxY - bounds.minY) * camera.scale);
+    ctx.restore();
   }
   const grid = camera.scale < 0.025 ? 2000 : camera.scale < 0.08 ? 1000 : 500;
   ctx.lineWidth = 1;
@@ -716,7 +719,7 @@ function draw() {
       life = statusAt(p, time);
     const [sx, sy] = xy(pos.x, pos.y);
     if ($("trails").checked) {
-      const start = upper(p.samples, time - 6000, (s) => s[0]);
+      const start = upper(p.samples, time - 3000, (s) => s[0]);
       ctx.strokeStyle = color + "55";
       ctx.lineWidth = p === picked ? 2.5 : 1.3;
       ctx.beginPath();
@@ -745,12 +748,17 @@ function draw() {
     const theta = (yDirection * (pos.aimYaw ?? pos.yaw) * Math.PI) / 180;
     ctx.save();
     ctx.rotate(theta);
-    ctx.fillStyle = color + "15";
+    ctx.fillStyle = color + "38";
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.arc(0, 0, 65, -0.42, 0.42);
     ctx.closePath();
     ctx.fill();
+    ctx.strokeStyle = color + "99";
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(0, 0, 65, -0.42, 0.42);
+    ctx.stroke();
     ctx.restore();
     ctx.fillStyle = "#151d2d";
     ctx.strokeStyle = color;
