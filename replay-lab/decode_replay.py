@@ -67,10 +67,17 @@ def decode(row):
     elif name in ('MovementInput', 'LocationOffset', 'RelativeScale3D'):
         value, encoding = r.vector(100, 30), 'FVector_NetQuantize100'
     elif name == 'RemoteViewPitch' and r.end == 8:
-        value, encoding = r.uint(8) * 360 / 256, 'pitch_byte_degrees'
+        # Engine network 14 predates HISTORY_PAWN_REMOTEVIEWPITCH (24).
+        value, encoding = r.uint(8) * 360 / 255, 'legacy_pitch_byte_255_degrees'
     elif name == 'CompressedControllerRotation' and r.end == 32:
-        # Keep raw uint32: custom packing order is not independently established.
-        value, encoding = r.uint(32), 'uint32_packing_unresolved'
+        packed = r.uint(32)
+        yaw, pitch = packed & 65535, packed >> 16
+        yaw = yaw - 65536 if yaw >= 32768 else yaw
+        pitch = pitch - 65536 if pitch >= 32768 else pitch
+        if not (-3600 <= yaw <= 3600 and -3600 <= pitch <= 3600):
+            raise ParseError('controller rotation outside validated signed decimal-degree range')
+        value = dict(yaw=yaw / 10, pitch=pitch / 10, packed=packed)
+        encoding = 'int16_yaw_pitch_tenths_degree_sample_validated'
     elif name and name.startswith('b') and r.end == 1:
         value, encoding = bool(r.bit()), 'bool'
     elif name and 0 < r.end <= 8:
@@ -148,7 +155,7 @@ def build(directory):
         if name == 'PlayerState' and '/Characters/' in row.get('group', ''):
             bindings[actor].append((time, value))
         if 'BP_PlayerState_Bomb' in row.get('group', '') and row['kind'] == 'property':
-            player = players.setdefault(actor, dict(state_actor=actor, stats={}, samples=[], appearances=[], states=[]))
+            player = players.setdefault(actor, dict(state_actor=actor, stats={}, samples=[], aim_samples=[], appearances=[], states=[]))
             if name == 'UID':
                 player['uid'] = value
             elif name == 'PlayerNamePrivate':
@@ -188,15 +195,29 @@ def build(directory):
     timeline, movement_rows, state_rows = [], 0, 0
     cumulative = {}
     aim = {}
-    with (directory / 'movement.csv').open('w', encoding='utf-8-sig', newline='') as csv_file:
+    with (directory / 'movement.csv').open('w', encoding='utf-8-sig', newline='') as csv_file, \
+            (directory / 'aim.csv').open('w', encoding='utf-8-sig', newline='') as aim_file:
         writer = csv.writer(csv_file)
+        aim_writer = csv.writer(aim_file)
         writer.writerow(['time_ms','uid','actor','x_cm','y_cm','z_cm','yaw_deg','pitch_deg','roll_deg','vx_cm_s','vy_cm_s','vz_cm_s'])
+        aim_writer.writerow(['time_ms','uid','actor','yaw_deg','pitch_deg','packed_uint32','source_bit'])
         for row in read_rows(directory / 'decoded-properties.jsonl'):
             time, actor, name, value = row['time_ms'], row['actor'], row.get('name'), row['value']
             state = owner(actor,time)
             player = players.get(state)
             if name == 'RemoteViewPitch':
                 aim[actor] = value
+            if name == 'CompressedControllerRotation':
+                stats['controller_rotation_records'] += 1
+                aim_writer.writerow([time,player['uid'] if player else '',actor,value['yaw'],value['pitch'],value['packed'],row.get('source_bit')])
+                if player and any(a['actor']==actor and a['from_ms']<=time<=a['to_ms'] for a in player['appearances']):
+                    sample = [time,value['yaw'],value['pitch'],actor]
+                    if player['aim_samples'] and player['aim_samples'][-1][0] == time:
+                        player['aim_samples'][-1] = sample
+                    else:
+                        player['aim_samples'].append(sample)
+                else:
+                    stats['controller_rotation_outside_player_character'] += 1
             if name == 'ReplicatedMovement':
                 movement_rows += 1
                 loc, rot, vel = value['location'], value['rotation'], value['velocity']
@@ -324,9 +345,10 @@ def build(directory):
         duration_ms=duration, map=manifest['headers'][0]['levels'][0]['name'],
         coordinate_system=dict(units='Unreal centimeters',axes='X/Y horizontal, Z up',yaw='degrees around Z'),
         sample_columns=['time_ms','x','y','z','yaw','pitch','actor'],players=list(players.values()),
+        aim_columns=['time_ms','yaw','pitch','actor'],
         timeline=timeline,rounds=rounds,
         limitations=['Map collision/geometry and character models are not embedded in this export.',
-            'Body yaw comes from ReplicatedMovement; RemoteViewPitch supplies pitch. Custom controller packing is retained raw.',
+            'Body yaw comes from ReplicatedMovement. Separate controller aim uses sample-validated signed 16-bit tenths of a degree; raw packed values remain in aim.csv.',
             'Damage total deltas may aggregate hits. Opaque damage EventData is retained with the RPC.',
             'Unknown properties and custom state structures remain in properties.jsonl; ability/effect deltas are in ability-effects.jsonl.'],
         counts=dict(movement_records=movement_rows,state_updates=state_rows,timeline=len(timeline),players=len(players)))

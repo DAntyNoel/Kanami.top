@@ -46,6 +46,7 @@ python replay-lab/serve.py --data <输出目录>/playback.json --export <空的�
 | `properties.jsonl` | 所有命名属性、RPC 参数、未知块的精确原始位数据 |
 | `decoded-properties.jsonl` | 已解出的数值、字符串、对象引用、向量及采用的编码 |
 | `movement.csv` | 原始频率的角色 XYZ、身体朝向、俯仰、速度及玩家 UID |
+| `aim.csv` | 控制器偏航/俯仰、原始 uint32、所属玩家和来源位偏移，包含召唤物等对象 |
 | `ability-effects.jsonl` | 技能列表和持续效果的 FastArray 增量，包括增删编号及字段 |
 | `timeline.json` | 事件、具体能力激活、攻击/伤害/投掷物/救援调用、累计伤害增量 |
 | `playback.json` | 浏览器使用的自包含回放数据；每名玩家的位置、角色变化、属性时间线 |
@@ -63,7 +64,8 @@ JSONL 每行一条 JSON，适合逐行分析，避免一次加载数百 MB。`Cu
 
 - 按容器长度、帧、Packet、Bunch、partial Bunch、NetGUID、Actor 和 RepLayout 层级解析。匹配组件实例名时标记 `component_name_alias`；优先使用完整 outer 路径，避免不同目录中同名角色/召唤物混淆。
 - 角色 `ReplicatedMovement` 按位置 ×100、8 位旋转、整数速度解码，初始坐标与独立生成信息相符。坐标单位是 Unreal 厘米，X/Y 为平面、Z 向上。播放器保留原始采样，短间隔插值，跨角色、长间隔和超过 450 cm 的跳变不插值。
-- 身体朝向来自 `ReplicatedMovement`，俯仰来自 `RemoteViewPitch`。`CompressedControllerRotation` 目前只导出原始 uint32，未假定其自定义位排列就是瞄准方向。
+- 身体朝向来自 `ReplicatedMovement`；独立瞄准来自 `CompressedControllerRotation`，样本验证为低 16 位有符号偏航、高 16 位有符号俯仰，均为十分之一度。163,525 条记录可无损回编码；66,137 组同帧非零 `RemoteViewPitch` 对照的最大角差为 1.4059°，符合旧协议的字节量化误差。网络版本 14 的 `RemoteViewPitch` 使用 `byte × 360 / 255`。零值重置帧单列，未作为关联证据。原整数保留在 `aim.csv` 中。
+- `playback.json` 的 `aim_samples` 独立于移动采样，列顺序见 `aim_columns`。只纳入玩家角色有效出场区间，排除拥有者关联的召唤物；网页用浅色长线显示最近一次已收到的瞄准方向，无数据时不补造方向。短线保留身体朝向。
 - 技能激活由 `MulticastNotifyAbilityActivated.Handle` 联结同玩家的 `ActivatableAbilities`，再通过 NetGUID 得到真实能力路径。共享动作、角色 Q/X/被动都保留原名称。激活不代表持续状态已确认结束。
 - `ActiveGameplayEffects` 保留完整增删及效果字段。武器弹药、移动模式编号、觉醒等级、击杀/死亡/助攻、累计伤害和原始状态机数据可按时间查看。`CurrentValue[编号]` 未擅自命名为生命或护甲。
 - 伤害调用包含受作用对象、InstigatedActor、DamageCauser、DamageTypeCDO 和原始 EventData。累计伤害增量单列，可能合并多次命中；不是逐发精确伤害。自定义 EventData 仍待恢复。
@@ -73,7 +75,7 @@ JSONL 每行一条 JSON，适合逐行分析，避免一次加载数百 MB。`Cu
 
 ## 验证
 
-`verify_replay.py` 验证完整帧时间范围、全部玩家关联、死亡事件与计数对应、技能引用、随机间隔字段和所有跨包字段回溯原文件、二进制越界拒绝，并可测试 HTTP 白名单。
+`verify_replay.py` 验证完整帧时间范围、全部玩家关联、死亡事件与计数对应、技能引用、控制器角度回编码和独立俯仰对照、随机间隔字段和所有跨包字段回溯原文件、二进制越界拒绝，并可测试 HTTP 白名单。
 
 网页 DOM 交互验证使用真实生成数据，覆盖加载、播放/暂停、±5 秒、回合跳转、选人、6 类事件筛选、参数显示、多个回放时点和结束后重播。该检查模拟 Canvas，不替代浏览器截图和视觉验收。当前运行环境的浏览器连接不可用，视觉验收仍需补做。
 
@@ -88,4 +90,5 @@ npm run verify:viewer -- ../_replay-inspection/20261015/decoded/playback.json
 ## 协议参考
 
 - [Unreal.Core 回放实现](https://github.com/Shiqan/FortniteReplayDecompressor/blob/76f74c1/src/Unreal.Core/ReplayReader.cs)，参考其 UE 网络归档协议和版本分支。`unreal_names.json` 提取自该项目的 UnrealNames 枚举；许可见 `THIRD_PARTY_LICENSE.txt`。
+- [Epic 开发者对旧版 Pawn 俯仰压缩的说明](https://forums.unrealengine.com/t/serious-shot-replication-problem-video/60712/33)，结合上游网络版本枚举核对旧版 `RemoteViewPitch` 换算。自定义控制器角度的依据为本录像的独立字段对照，详见 [协议核验笔记](PROTOCOL_NOTES.md)。
 - [用户给出的参考播放器](https://tango-orchid-green-juniper.grok.me/)，参考其时间线、玩家跟随和走位密度展示。工作目录保存的参考 `match.json` / `tracks.bin` 属于另一个房间；当前产物没有混用那场对局的位置或统计。

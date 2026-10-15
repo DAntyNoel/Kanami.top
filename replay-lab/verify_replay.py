@@ -73,6 +73,33 @@ def verify(source, directory, url=None):
     check('all_death_events_time_correlated',len(death_matches)==sum(event_deaths.values()))
     activations=[e for e in playback['timeline'] if e.get('name')=='MulticastNotifyAbilityActivated']
     check('all_activations_resolve_to_ability_paths',all(e.get('ability',{}).get('path') for e in activations))
+    # Independent replicated pitch is much coarser than controller rotation.
+    # Zero-valued reset frames are reported separately, not treated as aim evidence.
+    orientation = {}
+    controller_count = 0
+    for row in read_rows(directory/'decoded-properties.jsonl'):
+        if row['name'] not in ('CompressedControllerRotation','RemoteViewPitch'):
+            continue
+        value=row['value']
+        orientation.setdefault((row['time_ms'],row['actor']),{})[row['name']]=value
+        if row['name']=='CompressedControllerRotation':
+            packed=(round(value['yaw']*10)&65535)|((round(value['pitch']*10)&65535)<<16)
+            check('controller_rotation_roundtrips_raw_uint32',packed==value['packed']==int.from_bytes(bytes.fromhex(row['raw']),'little'))
+            controller_count+=1
+    pitch_errors=[]
+    zero_pairs=0
+    for fields in orientation.values():
+        if 'CompressedControllerRotation' not in fields or 'RemoteViewPitch' not in fields:
+            continue
+        if fields['RemoteViewPitch']==0:
+            zero_pairs+=1
+            continue
+        pitch_errors.append(abs((fields['CompressedControllerRotation']['pitch']-fields['RemoteViewPitch']+180)%360-180))
+    check('controller_pitch_matches_independent_nonzero_remote_pitch',len(pitch_errors)>1000 and max(pitch_errors)<1.6)
+    for p in playback['players']:
+        check('all_players_have_controller_aim',bool(p['aim_samples']))
+        check('aim_samples_sorted',all(a[0]<=b[0] for a,b in zip(p['aim_samples'],p['aim_samples'][1:])))
+        check('aim_samples_bound_to_player',all(any(a['actor']==s[3] and a['from_ms']<=s[0]<=a['to_ms'] for a in p['appearances']) for s in p['aim_samples']))
     # Guard rails for binary truncation and invalid FString lengths.
     for value,operation in [(b'\x01',lambda r:r.uint(9)),(b'\xff'*5,lambda r:r.packed()),(b'\xff\xff\xff\x7f',lambda r:r.string())]:
         try:
@@ -98,6 +125,8 @@ def verify(source, directory, url=None):
     report=dict(checks=checks,source_bit_checks=source_checks,multi_packet_span_checks=multi_checks,
         death_event_correlations=len(death_matches),max_death_event_delay_ms=max(death_matches,default=0),
         ability_activations=len(activations),movement_samples=sum(len(p['samples']) for p in playback['players']),
+        controller_rotation_records=controller_count,controller_aim_samples=sum(len(p['aim_samples']) for p in playback['players']),
+        independent_pitch_pairs=len(pitch_errors),max_pitch_difference_degrees=max(pitch_errors),zero_pitch_pairs_excluded=zero_pairs,
         notes=['Browser visual verification is recorded separately; this audit does not claim to verify rendering.',
                'Unknown protocol content remains explicitly preserved in raw records.'])
     dump(directory/'verification.json',report)

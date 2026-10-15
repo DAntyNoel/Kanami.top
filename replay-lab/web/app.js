@@ -111,6 +111,9 @@ function position(p, t) {
     (x) => x.actor === a[6] && x.from_ms <= t && t <= x.to_ms,
   );
   if (!appearance) return null;
+  const aimIndex = upper(p.aim_samples || [], t, (s) => s[0]) - 1;
+  const aim = aimIndex >= 0 ? p.aim_samples[aimIndex] : null;
+  const validAim = aim?.[3] === a[6] && aim[0] >= appearance.from_ms;
   let out = a.slice();
   if (
     b &&
@@ -129,6 +132,8 @@ function position(p, t) {
     z: out[3],
     yaw: out[4],
     pitch: out[5],
+    aimYaw: validAim ? aim[1] : null,
+    aimPitch: validAim ? aim[2] : null,
     actor: out[6],
     index: i,
     character: appearance.character,
@@ -183,6 +188,15 @@ function validate(d) {
         throw Error("轨迹存在无效坐标或时间顺序。");
       previous = s[0];
     }
+    previous = -1;
+    if (p.aim_samples !== undefined && !Array.isArray(p.aim_samples))
+      throw Error("瞄准数据格式无效。");
+    for (const s of p.aim_samples || []) {
+      if (s.length !== 4 || !s.every(Number.isFinite) || s[0] < previous ||
+          s[0] < 0 || s[0] > d.duration_ms || Math.abs(s[1]) > 360 || Math.abs(s[2]) > 360)
+        throw Error("瞄准数据存在无效角度或时间顺序。");
+      previous = s[0];
+    }
   }
   for (const e of d.timeline)
     if (
@@ -230,7 +244,7 @@ function install(d) {
   $("description").textContent =
     `我已找到 ${d.players.length} 位队员 · ${d.counts.movement_records.toLocaleString()} 条位置记录 · ${d.rounds.length} 个回合`;
   $("evidence").textContent =
-    `原文件：${d.source.file}\nSHA-256：${d.source.sha256}\n地图路径：${d.map}\n坐标：Unreal 厘米；X/Y 为水平面，Z 为高度。\n恢复：${d.counts.movement_records.toLocaleString()} 条角色移动，${d.counts.state_updates.toLocaleString()} 条状态变化，${d.counts.timeline.toLocaleString()} 条时间线记录。\n身体朝向来自位置复制；俯仰来自 RemoteViewPitch。每次事件都保留原始参数与位偏移供核对。`;
+    `原文件：${d.source.file}\nSHA-256：${d.source.sha256}\n地图路径：${d.map}\n坐标：Unreal 厘米；X/Y 为水平面，Z 为高度。\n恢复：${d.counts.movement_records.toLocaleString()} 条角色移动，${d.counts.state_updates.toLocaleString()} 条状态变化，${d.counts.timeline.toLocaleString()} 条时间线记录。\n身体朝向来自位置复制；浅色长线独立显示控制器瞄准方向。每次事件都保留原始参数与位偏移供核对。`;
   resize();
   const bounds = {
     minX: Infinity,
@@ -383,7 +397,7 @@ function updatePanels(force = false) {
     $("picked-name").textContent = picked.name;
     $("detail-body").textContent =
       (pos
-        ? `位置 (${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)}) cm\n身体朝向 ${pos.yaw.toFixed(1)}° · 俯仰 ${pos.pitch.toFixed(1)}° · ${pos.character}\n`
+        ? `位置 (${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)}) cm\n身体朝向 ${pos.yaw.toFixed(1)}° · ${pos.character}\n${pos.aimYaw !== null ? `瞄准 ${pos.aimYaw.toFixed(1)}° · 俯仰 ${pos.aimPitch.toFixed(1)}°` : `远端俯仰 ${pos.pitch.toFixed(1)}° · 尚无瞄准数据`}\n`
         : "尚未读取到此刻的位置\n") +
       Object.entries(state)
         .map(
@@ -541,6 +555,15 @@ function draw() {
     ctx.lineTo(23, 0);
     ctx.stroke();
     ctx.restore();
+    if (pos.aimYaw !== null) {
+      const angle = (-pos.aimYaw * Math.PI) / 180;
+      ctx.strokeStyle = "#f9efd9";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(angle) * 12, Math.sin(angle) * 12);
+      ctx.lineTo(Math.cos(angle) * 52, Math.sin(angle) * 52);
+      ctx.stroke();
+    }
     ctx.fillStyle = "#151d2d";
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
@@ -581,7 +604,7 @@ function draw() {
     } else if (/^MulticastAttack/.test(e.name || "")) {
       ctx.strokeStyle = "#ffe4ad";
       ctx.lineWidth = 2;
-      const theta = (-pos.yaw * Math.PI) / 180;
+      const theta = (-(pos.aimYaw ?? pos.yaw) * Math.PI) / 180;
       ctx.beginPath();
       ctx.moveTo(x + Math.cos(theta) * 13, y + Math.sin(theta) * 13);
       ctx.lineTo(x + Math.cos(theta) * 45, y + Math.sin(theta) * 45);

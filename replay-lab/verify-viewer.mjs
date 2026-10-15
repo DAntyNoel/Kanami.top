@@ -90,6 +90,13 @@ const s = p.samples.find((s, i) => i > 0 && s[0] > p.samples[i - 1][0]);
 const pos = api.position(p, s[0]);
 assert.equal(pos.x, s[1]);
 assert.equal(pos.y, s[2]);
+const aim = p.aim_samples.find((a) => api.position(p, a[0])?.actor === a[3]);
+assert(aim, "real replay has a bound controller direction");
+const aimed = api.position(p, aim[0]);
+assert.equal(aimed.aimYaw, aim[1]);
+assert.equal(aimed.aimPitch, aim[2]);
+assert.equal(api.position({ ...p, aim_samples: [] }, aim[0]).aimYaw, null);
+assert.equal(api.position({ ...p, aim_samples: [[aim[0], 12, 34, -1]] }, aim[0]).aimYaw, null);
 console.log(
   JSON.stringify(
     {
@@ -108,6 +115,7 @@ console.log(
         "restart at end",
         "reject invalid import",
         "exact sample positioning",
+        "independent controller aim and missing/other-actor fallback",
       ],
       limitation:
         "jsdom with canvas stub; not a browser screenshot or visual layout check",
