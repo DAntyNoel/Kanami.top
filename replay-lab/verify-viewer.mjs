@@ -49,7 +49,7 @@ w.fetch = async () => ({ ok: true, json: async () => playback });
 const wrapped =
   "(async()=>{" +
   code +
-  "\nreturn {clock,position,install,seek,draw,stateAt,statusAt,decodeData:()=>data,timeNow:()=>time,isPlaying:()=>playing};})()";
+  "\nreturn {clock,position,install,seek,draw,stateAt,statusAt,vitalsAt,eventDetails,decodeData:()=>data,timeNow:()=>time,isPlaying:()=>playing};})()";
 const api = await w.eval(wrapped);
 const $ = (id) => w.document.getElementById(id);
 assert.equal($("players").children.length, playback.players.length);
@@ -108,6 +108,23 @@ assert.equal(aimed.aimYaw, aim[1]);
 assert.equal(aimed.aimPitch, aim[2]);
 assert.equal(api.position({ ...p, aim_samples: [] }, aim[0]).aimYaw, null);
 assert.equal(api.position({ ...p, aim_samples: [[aim[0], 12, 34, -1]] }, aim[0]).aimYaw, null);
+if (p.vitals?.length) {
+  const sample = p.vitals.find((v) => v.attribute === "Health");
+  api.seek(sample.time_ms);
+  assert.equal(api.vitalsAt(p, sample.time_ms).Health, sample.value);
+  assert.equal(api.vitalsAt(p, sample.time_ms - 1).Health, undefined);
+  assert.equal(p.vitalUi.Health.meter.value, sample.value);
+  const damage = playback.timeline.find((e) => e.combat?.target_uid && e.combat.nearby_vital_syncs.length);
+  assert(api.eventDetails(damage).includes("单次命中伤害：未解析"));
+  assert(api.eventDetails(damage).includes("200 ms"));
+  assert(!api.eventDetails(damage).includes("undefined"));
+  const oldFile = { ...p, vitalIndex: new Map() };
+  assert.deepEqual(Object.keys(api.vitalsAt(oldFile, sample.time_ms)), []);
+} else {
+  assert.equal(p.vitalIndex.size, 0);
+  assert.equal(p.vitalUi.Health.meter.hidden, true);
+  assert.equal(p.vitalUi.Armor.meter.hidden, true);
+}
 console.log(
   JSON.stringify(
     {
@@ -129,6 +146,7 @@ console.log(
         "reject invalid import",
         "exact sample positioning",
         "independent controller aim and missing/other-actor fallback",
+        "vital lookup and unknown/missing-data handling; damage caveats when present",
       ],
       limitation:
         "jsdom with canvas stub; not a browser screenshot or visual layout check",

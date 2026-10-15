@@ -15,6 +15,21 @@
 
 这些检查可通过 `verify_replay.py` 重跑。精确整数、来源位偏移和完整原字段用于后续版本核对。
 
+## 生命与护甲：通过字段校验值恢复
+
+UE 的 CompatibleChecksum 逐层纳入父属性名、C++ 类型、结构成员名与静态数组索引。依照该算法，对 `FGameplayAttributeData` 的两个 float 成员分别回算，得到下表；全部八个导出字段与原录像精确相等。因此这四项的语义不再依赖属性曲线推测。
+
+| 属性 | BaseValue handle / checksum | CurrentValue handle / checksum |
+| --- | --- | --- |
+| Health | 2 / 674980314 | 3 / 1941375516 |
+| HealthMax | 4 / 761730184 | 5 / 3309114295 |
+| Armor | 6 / 2482061864 | 7 / 1641239401 |
+| ArmorMax | 8 / 1057181181 | 9 / 538822671 |
+
+实现只对 `/Script/PMGame.CyCharacterAttributeSet` 中实际匹配校验值的字段命名，不固定依赖 handle。网页仅使用对应玩家 PlayerState 自身的 CurrentValue；拥有者关联的召唤物属性不纳入玩家血条。数据尚未收到时保留未知，数值零不等同于已经死亡。
+
+算法依据：[Epic 的 RepLayout 实现镜像](https://github.com/folgerwang/UnrealEngine/blob/release/Engine/Source/Runtime/Engine/Private/RepLayout.cpp#L292)、[FCrc::StrCrc32 实现镜像](https://github.com/folgerwang/UnrealEngine/blob/release/Engine/Source/Runtime/Core/Public/Misc/Crc.h#L23)。`verify_combat.py` 对照原录像校验值并覆盖不匹配拒绝、handle 移动和召唤物隔离。
+
 ## 自定义逐命中伤害：尚未采用
 
 `CyLifeComponent:MulticastDamageEventData.EventData` 的完整结构尚未确定。已探索 3,515 条可关联玩家的调用，其中 2,534 条具有字节前缀 `000000000400000000000000`。对这部分记录，零基位偏移 98 的 16 位无符号整数除以 100，与许多独立属性扣减吻合。
@@ -25,6 +40,6 @@
 
 ## 暂不能建立的语义
 
-- 重复 `CurrentValue/BaseValue` 只按组、对象和 handle 标识。属性曲线的形态不能替代属性名元数据。
+- 除已通过校验值识别的四项外，重复 `CurrentValue/BaseValue` 仍按组、对象和 handle 标识。属性曲线的形态不能替代属性名元数据。
 - 能力激活、效果获得和移除可以还原；共享侧身、贴墙、飘飞等状态的精确结束语义，不能仅从技能名推定。
 - 未映射块和跨包区间全部保留。后续应从 NetGUID outer、导出组和真实对象生命周期继续定位，避免用近似同名组强行读取。

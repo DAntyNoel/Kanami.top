@@ -10,6 +10,7 @@ import math
 from pathlib import Path
 
 from parse_replay import Reader, ParseError, dump
+from combat import enrich_combat
 
 
 REFERENCES = set('Owner Instigator PlayerState Controller InstigatorPlayerState InstigatorState AvatarActor OwnerActor '
@@ -248,7 +249,8 @@ def build(directory):
                 # Exported child names repeat. Handle must remain part of the key.
                 leaf=row['group'].rsplit('.',1)[-1]
                 player['states'].append(dict(time_ms=time,kind='attribute',uid=player['uid'],actor=actor,
-                    object=row['object'],name=f'{leaf}.{name}[{row["handle"]}]',value=value,source_bit=row.get('source_bit')))
+                    object=row['object'],group=row['group'],handle=row['handle'],
+                    name=f'{leaf}.{name}[{row["handle"]}]',value=value,source_bit=row.get('source_bit')))
                 state_rows += 1
     # Keep RPC invocation plus its named parameters. An exact per-hit damage amount
     # is not invented from a cumulative counter or an opaque custom EventData struct.
@@ -340,13 +342,14 @@ def build(directory):
     timeline.sort(key=lambda e:e['time_ms'])
     for player in players.values():
         player['states'].sort(key=lambda s:s['time_ms'])
+    attribute_semantics, combat_report = enrich_combat(list(players.values()), timeline, groups)
     rounds = [e for e in events if e['group']=='BombRound']
     bundle = dict(schema='kanami-replay-playback-v1', source=dict(file=manifest['file'],sha256=manifest['sha256']),
         duration_ms=duration, map=manifest['headers'][0]['levels'][0]['name'],
         coordinate_system=dict(units='Unreal centimeters',axes='X/Y horizontal, Z up',yaw='degrees around Z'),
         sample_columns=['time_ms','x','y','z','yaw','pitch','actor'],players=list(players.values()),
         aim_columns=['time_ms','yaw','pitch','actor'],
-        timeline=timeline,rounds=rounds,
+        timeline=timeline,rounds=rounds,attribute_semantics=attribute_semantics,
         limitations=['Map collision/geometry and character models are not embedded in this export.',
             'Body yaw comes from ReplicatedMovement. Separate controller aim uses sample-validated signed 16-bit tenths of a degree; raw packed values remain in aim.csv.',
             'Damage total deltas may aggregate hits. Opaque damage EventData is retained with the RPC.',
@@ -354,8 +357,9 @@ def build(directory):
         counts=dict(movement_records=movement_rows,state_updates=state_rows,timeline=len(timeline),players=len(players)))
     (directory / 'playback.json').write_text(json.dumps(bundle,ensure_ascii=False,separators=(',',':'),allow_nan=False),encoding='utf-8')
     dump(directory / 'timeline.json', timeline)
+    dump(directory / 'combat-report.json', combat_report)
     dump(directory / 'decode-report.json',dict(counts=dict(stats),failures=failures,
-        **bundle['counts'],player_summary=[dict(uid=p['uid'],name=p['name'],samples=len(p['samples']),appearances=len(p['appearances']),stats=p['stats']) for p in players.values()]))
+        **bundle['counts'],combat=combat_report['counts'],player_summary=[dict(uid=p['uid'],name=p['name'],samples=len(p['samples']),appearances=len(p['appearances']),stats=p['stats']) for p in players.values()]))
     print(json.dumps(dict(stats=stats,**bundle['counts']),ensure_ascii=False,indent=2))
 
 

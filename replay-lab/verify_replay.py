@@ -9,6 +9,7 @@ from urllib.request import urlopen
 
 from decode_replay import read_rows
 from parse_replay import Reader, ParseError, dump
+from combat import ATTRIBUTE_GROUP, resolve_vital_fields
 
 
 def verify(source, directory, url=None):
@@ -22,6 +23,11 @@ def verify(source, directory, url=None):
         if not condition:
             raise AssertionError(name)
         checks[name]=True
+    groups=json.loads((directory/'netfields.json').read_text(encoding='utf-8'))
+    semantics=resolve_vital_fields(groups)
+    check('vital_field_checksums_match_exports',playback['attribute_semantics']==semantics)
+    vital_fields={f['handle']:f['attribute'] for f in semantics if f['member']=='CurrentValue'}
+    check('four_vital_attributes_identified',set(vital_fields.values())=={'Health','HealthMax','Armor','ArmorMax'})
     check('source_hash_matches',hashlib.sha256(raw).hexdigest()==manifest['sha256']==playback['source']['sha256'])
     check('zero_protocol_errors',not any(v for k,v in manifest['counts'].items() if k.endswith('_errors')))
     check('zero_decode_errors',not decoded['failures'] and not any(v for k,v in decoded['counts'].items() if k.endswith('_errors')))
@@ -77,7 +83,11 @@ def verify(source, directory, url=None):
     # Zero-valued reset frames are reported separately, not treated as aim evidence.
     orientation = {}
     controller_count = 0
+    original_vitals={}
+    player_states={p['state_actor'] for p in playback['players']}
     for row in read_rows(directory/'decoded-properties.jsonl'):
+        if row['name']=='CurrentValue' and row.get('group')==ATTRIBUTE_GROUP and row['actor'] in player_states and row.get('handle') in vital_fields:
+            original_vitals[(row['actor'],row['time_ms'],row['object'],row['handle'])]=row['value']
         if row['name'] not in ('CompressedControllerRotation','RemoteViewPitch'):
             continue
         value=row['value']
@@ -100,6 +110,25 @@ def verify(source, directory, url=None):
         check('all_players_have_controller_aim',bool(p['aim_samples']))
         check('aim_samples_sorted',all(a[0]<=b[0] for a,b in zip(p['aim_samples'],p['aim_samples'][1:])))
         check('aim_samples_bound_to_player',all(any(a['actor']==s[3] and a['from_ms']<=s[0]<=a['to_ms'] for a in p['appearances']) for s in p['aim_samples']))
+        check('all_players_have_vitals',bool(p['vitals']) and set(s['attribute'] for s in p['vitals'])==set(vital_fields.values()))
+        check('vital_samples_sorted',all(a['time_ms']<=b['time_ms'] for a,b in zip(p['vitals'],p['vitals'][1:])))
+        for sample in p['vitals']:
+            check('vitals_match_authoritative_player_state',sample['actor']==p['state_actor'] and
+                vital_fields[sample['handle']]==sample['attribute'] and
+                original_vitals[(sample['actor'],sample['time_ms'],sample['object'],sample['handle'])]==sample['value'])
+        for death in (e for e in playback['timeline'] if e.get('group')=='PlayerDeath' and e['fields'][1]==p['uid']):
+            latest={s['attribute']:s['value'] for s in p['vitals'] if s['time_ms']<=death['time_ms']+150}
+            check('death_events_correlate_with_zero_health_and_armor',latest['Health']==latest['Armor']==0)
+    damage_calls=[e for e in playback['timeline'] if e.get('name')=='MulticastDamageEventData']
+    for event in damage_calls:
+        combat=event['combat']
+        check('per_hit_amount_not_invented',combat['amount'] is None)
+        if combat['target_uid']:
+            target=next(p for p in playback['players'] if p['uid']==combat['target_uid'])
+            check('damage_target_is_actual_player_character',any(a['actor']==event['actor'] and a['from_ms']<=event['time_ms']<=a['to_ms'] for a in target['appearances']))
+            check('nearby_vital_sync_window',all(s['uid']==target['uid'] and 0<=s['time_ms']-event['time_ms']<=200 for s in combat['nearby_vital_syncs']))
+        else:
+            check('owned_object_damage_has_no_player_vital_attribution',not combat['nearby_vital_syncs'])
     # Guard rails for binary truncation and invalid FString lengths.
     for value,operation in [(b'\x01',lambda r:r.uint(9)),(b'\xff'*5,lambda r:r.packed()),(b'\xff\xff\xff\x7f',lambda r:r.string())]:
         try:
@@ -129,6 +158,7 @@ def verify(source, directory, url=None):
         death_event_correlations=len(death_matches),max_death_event_delay_ms=max(death_matches,default=0),
         ability_activations=len(activations),movement_samples=sum(len(p['samples']) for p in playback['players']),
         controller_rotation_records=controller_count,controller_aim_samples=sum(len(p['aim_samples']) for p in playback['players']),
+        vital_updates=sum(len(p['vitals']) for p in playback['players']),damage_calls=len(damage_calls),
         independent_pitch_pairs=len(pitch_errors),max_pitch_difference_degrees=max(pitch_errors),zero_pitch_pairs_excluded=zero_pairs,
         notes=['Browser visual verification is recorded separately; this audit does not claim to verify rendering.',
                'Unknown protocol content remains explicitly preserved in raw records.'])

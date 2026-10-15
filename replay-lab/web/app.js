@@ -21,6 +21,48 @@ let filtered = [],
 let densityLayer = null,
   densityBounds = null;
 const colors = ["#40c5b8", "#cda963"];
+const vitalLabels = { Health: "生命", HealthMax: "生命上限", Armor: "护甲", ArmorMax: "护甲上限" };
+function number(value) {
+  return Number.isFinite(value) ? String(Number(value.toFixed(2))) : "—";
+}
+function vitalsAt(p, t) {
+  const values = {};
+  for (const [key, entries] of p.vitalIndex || []) {
+    const index = upper(entries, t) - 1;
+    if (index >= 0) values[key] = entries[index].value;
+  }
+  return values;
+}
+function vitalText(values) {
+  return `生命 ${number(values.Health)} / ${number(values.HealthMax)}\n护甲 ${number(values.Armor)} / ${number(values.ArmorMax)}`;
+}
+function vitalChangeText(event) {
+  return event.changes.map((change) => `${vitalLabels[change.attribute]} ${number(change.before)} → ${number(change.after)}（${change.delta > 0 ? "+" : ""}${number(change.delta)}）`).join(" · ");
+}
+function damageType(path) {
+  return shortPath(path || "").replace(/^BP_/, "").replace(/DamageType/, "").replace(/_+/g, "_").replace(/^_|_$/g, "") || "未知类型";
+}
+function damageTarget(combat) {
+  return combat.target_uid ? name(combat.target_uid)
+    : combat.target_owner_uid ? `${name(combat.target_owner_uid)}的附属对象` : `场景对象 #${combat.target_actor}`;
+}
+function damageAttacker(combat) {
+  return combat.attacker_uid ? name(combat.attacker_uid) : "未知攻击者";
+}
+function eventDetails(event) {
+  let summary = "";
+  if (event.combat) {
+    const combat = event.combat;
+    summary = `攻击者：${damageAttacker(combat)}\n受击目标：${damageTarget(combat)}\n武器 / 技能类型：${damageType(combat.damage_type)}\n单次命中伤害：未解析\n`;
+    if (combat.nearby_vital_syncs.length) {
+      summary += "\n随后 200 ms 内的属性同步（可能合并其他命中、治疗或效果）：\n" + combat.nearby_vital_syncs
+        .map((sync) => `${clock(sync.time_ms, true)}  ${vitalChangeText(sync)}`).join("\n") + "\n";
+    } else summary += "\n随后 200 ms 内无生命 / 护甲变化记录。\n";
+  } else if (event.kind === "vital_change") {
+    summary = `${name(event.uid)}\n${vitalChangeText(event)}\n属性同步不等同于单次命中，可能包含多次伤害、治疗或其他效果。\n`;
+  }
+  return (summary ? summary + "\n原始记录\n" : "") + JSON.stringify(event, null, 2);
+}
 const stateLabels = {
   ReplicatedMovementMode: "移动模式编号",
   AmmoRemain: "备用弹药",
@@ -140,6 +182,8 @@ function position(p, t) {
   };
 }
 function label(e) {
+  if (e.kind === "vital_change") return `${name(e.uid)} · ${vitalChangeText(e)}`;
+  if (e.combat) return `${damageAttacker(e.combat)} → ${damageTarget(e.combat)} · ${damageType(e.combat.damage_type)}（数值未解析）`;
   if (e.kind.startsWith("effect_"))
     return `${name(e.uid)} · ${{ effect_added: "效果获得", effect_updated: "效果更新", effect_removed: "效果移除" }[e.kind]} ${shortPath(e.effect || "未命名效果")}`;
   if (e.kind === "event") {
@@ -197,6 +241,14 @@ function validate(d) {
         throw Error("瞄准数据存在无效角度或时间顺序。");
       previous = s[0];
     }
+    if (p.vitals !== undefined && !Array.isArray(p.vitals)) throw Error("生命与护甲数据格式无效。");
+    previous = -1;
+    for (const s of p.vitals || []) {
+      if (!(s.attribute in vitalLabels) || !Number.isFinite(s.value) || s.value < 0 ||
+          !Number.isFinite(s.time_ms) || s.time_ms < previous || s.time_ms < 0 || s.time_ms > d.duration_ms)
+        throw Error("生命与护甲数据存在无效数值或时间顺序。");
+      previous = s.time_ms;
+    }
   }
   for (const e of d.timeline)
     if (
@@ -216,6 +268,11 @@ function install(d) {
   timeline = [...d.timeline].sort((a, b) => a.time_ms - b.time_ms);
   playerById = new Map(d.players.map((p) => [p.uid, p]));
   for (const p of d.players) {
+    p.vitalIndex = new Map();
+    for (const sample of p.vitals || []) {
+      if (!p.vitalIndex.has(sample.attribute)) p.vitalIndex.set(sample.attribute, []);
+      p.vitalIndex.get(sample.attribute).push(sample);
+    }
     p.stateIndex = new Map();
     for (const s of p.states) {
       if (!p.stateIndex.has(s.name)) p.stateIndex.set(s.name, []);
@@ -275,7 +332,18 @@ function install(d) {
     b.append(node("span", String(i + 1).padStart(2, "0"), "badge"));
     const copy = node("span");
     copy.append(node("strong", p.name), node("small", "等待上场"));
-    b.append(copy, node("span", "0 / 0", "score"));
+    const bars = node("span", undefined, "vital-bars");
+    p.vitalUi = {};
+    for (const attribute of ["Health", "Armor"]) {
+      const line = node("span", undefined, `vital-line ${attribute.toLowerCase()}`);
+      const text = node("span", `${vitalLabels[attribute]} —`);
+      const meter = node("meter");
+      meter.min = 0; meter.max = 1; meter.value = 0;
+      meter.setAttribute("aria-label", vitalLabels[attribute]);
+      line.append(text, meter); bars.append(line);
+      p.vitalUi[attribute] = { text, meter };
+    }
+    b.append(copy, node("span", "0 / 0", "score"), bars);
     b.addEventListener("click", () => pick(p));
     p.button = b;
     $("players").append(b);
@@ -342,7 +410,7 @@ function filterEvents() {
       (type === "skill" && e.name === "MulticastNotifyAbilityActivated") ||
       (type === "effect" && e.kind.startsWith("effect_")) ||
       (type === "damage" &&
-        (e.kind === "damage_total_delta" ||
+        (e.kind === "damage_total_delta" || e.kind === "vital_change" ||
           e.name === "MulticastDamageEventData")) ||
       (type === "shot" && /^MulticastAttack/.test(e.name || "")),
   );
@@ -399,17 +467,26 @@ function updatePanels(force = false) {
       ? `${pos.character} · ${life === "dead" ? "已被击败" : life === "alive" ? "在场" : "状态未知"}`
       : "等待上场";
     p.button.querySelector(".score").textContent = `${state.NumKills ?? 0} / ${state.NumDeaths ?? 0}`;
+    const vitals = vitalsAt(p, time);
+    for (const attribute of ["Health", "Armor"]) {
+      const current = vitals[attribute], maximum = vitals[attribute + "Max"], ui = p.vitalUi[attribute];
+      ui.text.textContent = `${vitalLabels[attribute]} ${number(current)} / ${number(maximum)}`;
+      ui.meter.max = maximum > 0 ? maximum : 1;
+      ui.meter.value = Number.isFinite(current) ? current : 0;
+      ui.meter.hidden = !Number.isFinite(current) || !(maximum > 0);
+      ui.meter.title = ui.text.textContent;
+    }
   }
   if (selectedEvent) {
     $("picked-name").textContent =
       `${clock(selectedEvent.time_ms, true)} · ${label(selectedEvent)}`;
-    $("detail-body").textContent = JSON.stringify(selectedEvent, null, 2);
+    $("detail-body").textContent = eventDetails(selectedEvent);
   } else if (picked) {
     const state = stateAt(picked, time),
       pos = position(picked, time);
     $("picked-name").textContent = picked.name;
     $("detail-body").textContent =
-      (pos
+      vitalText(vitalsAt(picked, time)) + `\n累计造成伤害 ${number(state.TotalDamage)}\n\n` + (pos
         ? `位置 (${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)}) cm\n身体朝向 ${pos.yaw.toFixed(1)}° · ${pos.character}\n${pos.aimYaw !== null ? `瞄准 ${pos.aimYaw.toFixed(1)}° · 俯仰 ${pos.aimPitch.toFixed(1)}°` : `远端俯仰 ${pos.pitch.toFixed(1)}° · 尚无瞄准数据`}\n`
         : "尚未读取到此刻的位置\n") +
       Object.entries(state)
@@ -592,6 +669,15 @@ function draw() {
     ctx.font = "10px sans-serif";
     ctx.fillStyle = "#e4e5f3";
     ctx.fillText(p.name, 0, 22);
+    const vitals = vitalsAt(p, time);
+    for (const [attribute, y, color] of [["Health", 31, "#67c69d"], ["Armor", 36, "#82b7df"]]) {
+      const current = vitals[attribute], maximum = vitals[attribute + "Max"];
+      if (!Number.isFinite(current) || !(maximum > 0)) continue;
+      ctx.fillStyle = "#14232b";
+      ctx.fillRect(-18, y, 36, 3);
+      ctx.fillStyle = color;
+      ctx.fillRect(-18, y, 36 * Math.max(0, Math.min(1, current / maximum)), 3);
+    }
     ctx.restore();
   });
   const ti = upper(timeline, time);
