@@ -20,7 +20,7 @@ let filtered = [],
   renderedEventCenter = -1;
 let densityLayer = null,
   densityBounds = null;
-const colors = ["#71d9ee", "#ff91ae"];
+const colors = ["#40c5b8", "#cda963"];
 const stateLabels = {
   ReplicatedMovementMode: "移动模式编号",
   AmmoRemain: "备用弹药",
@@ -39,7 +39,7 @@ const stateLabels = {
   AttributeTeamID: "队伍编号",
 };
 const eventLabels = {
-  PlayerRespawn: "重新出发",
+  PlayerRespawn: "角色出生",
   PlayerDeath: "被击败",
   PlayerInjured: "受伤 / 倒地事件",
   BombRound: "回合开始",
@@ -145,7 +145,7 @@ function label(e) {
   if (e.kind === "event") {
     if (e.group === "PlayerDeath")
       return `${e.fields[0]} ← ${e.fields[2] || "未知"} · 被击败`;
-    if (e.group === "PlayerRespawn") return `${e.fields[0]} · 重新出发`;
+    if (e.group === "PlayerRespawn") return `${e.fields[0]} · 角色出生`;
     if (e.group === "PlayerInjured")
       return `${e.fields[0]} ← ${e.fields[2] || "未知"} · 受伤事件`;
     return `${eventLabels[e.group] || e.group} ${e.metadata || ""}`;
@@ -166,7 +166,7 @@ function validate(d) {
     !Number.isFinite(d.duration_ms) ||
     d.duration_ms <= 0
   )
-    throw Error("这份文件还不是我认识的 playback.json，请先运行配套解析器。");
+    throw Error("回放格式无效。请选择配套解析器生成的 playback.json。");
   if (!d.players.some((p) => p.samples?.length))
     throw Error("数据中还没有可播放的位置。");
   for (const p of d.players) {
@@ -242,7 +242,7 @@ function install(d) {
   $("endclock").textContent = clock(d.duration_ms, true);
   $("seek").max = d.duration_ms;
   $("description").textContent =
-    `我已找到 ${d.players.length} 位队员 · ${d.counts.movement_records.toLocaleString()} 条位置记录 · ${d.rounds.length} 个回合`;
+    `${d.players.length} 名玩家 · ${d.rounds.length} 个回合 · ${d.counts.movement_records.toLocaleString()} 条位置记录`;
   $("evidence").textContent =
     `原文件：${d.source.file}\nSHA-256：${d.source.sha256}\n地图路径：${d.map}\n坐标：Unreal 厘米；X/Y 为水平面，Z 为高度。\n恢复：${d.counts.movement_records.toLocaleString()} 条角色移动，${d.counts.state_updates.toLocaleString()} 条状态变化，${d.counts.timeline.toLocaleString()} 条时间线记录。\n身体朝向来自位置复制；浅色长线独立显示控制器瞄准方向。每次事件都保留原始参数与位偏移供核对。`;
   resize();
@@ -261,23 +261,21 @@ function install(d) {
     }
   if (!Number.isFinite(bounds.minX)) throw Error("数据中还没有可播放的位置。");
   makeDensity(bounds);
-  fitted = {
-    x: (bounds.minX + bounds.maxX) / 2,
-    y: (bounds.minY + bounds.maxY) / 2,
-    scale: Math.min(
-      (width - 90) / Math.max(1, bounds.maxX - bounds.minX),
-      (height - 90) / Math.max(1, bounds.maxY - bounds.minY),
-    ),
-  };
+  fitted = fitBounds(bounds);
   camera = { ...fitted };
   $("players").replaceChildren();
-  d.players.forEach((p, i) => {
+  const roster = [...d.players].sort((a, b) => (a.AttributeTeamID ?? 0) - (b.AttributeTeamID ?? 0));
+  let previousTeam = null;
+  roster.forEach((p) => {
+    const i = d.players.indexOf(p), team = p.AttributeTeamID ?? 0;
     const b = node("button", undefined, "player");
     b.dataset.uid = p.uid;
+    if (team !== previousTeam) b.dataset.teamLabel = team === 1 ? "金方" : "蓝方";
+    previousTeam = team;
     b.append(node("span", String(i + 1).padStart(2, "0"), "badge"));
     const copy = node("span");
     copy.append(node("strong", p.name), node("small", "等待上场"));
-    b.append(copy);
+    b.append(copy, node("span", "0 / 0", "score"));
     b.addEventListener("click", () => pick(p));
     p.button = b;
     $("players").append(b);
@@ -291,6 +289,7 @@ function install(d) {
     $("round-select").append(o);
     const b = node("button", String(i + 1));
     b.title = `第 ${i + 1} 回合 · ${clock(r.time_ms)}`;
+    b.style.left = `${r.time_ms / d.duration_ms * 100}%`;
     b.addEventListener("click", () => seek(r.time_ms));
     $("round-markers").append(b);
   });
@@ -298,13 +297,25 @@ function install(d) {
   const first = d.players.map((p) => p.samples[0]?.[0]).filter(Number.isFinite);
   seek(first.length ? Math.max(...first) : 0);
   $("message").textContent = "";
-  $("play").textContent = "和我一起回看";
+  $("play").textContent = "播放";
+  $("picked-name").textContent = "未选择玩家或事件";
+  $("detail-body").textContent = "选择玩家查看状态，或选择事件查看原始参数。";
+  showPanel("events");
+}
+function showPanel(panel) {
+  document.querySelectorAll("[data-panel]").forEach((tab) => {
+    const active = tab.dataset.panel === panel;
+    tab.setAttribute("aria-selected", String(active));
+    tab.tabIndex = active ? 0 : -1;
+    $(tab.getAttribute("aria-controls")).hidden = !active;
+  });
 }
 function pick(p) {
   picked = p;
   following = true;
   selectedEvent = null;
   updatePanels(true);
+  showPanel("details");
 }
 function seek(value) {
   time = Math.max(0, Math.min(data?.duration_ms || 0, Number(value) || 0));
@@ -316,7 +327,7 @@ function toggle() {
   if (!data) return;
   if (time >= data.duration_ms) seek(0);
   playing = !playing;
-  $("play").textContent = playing ? "让我暂停一下" : "和我一起回看";
+  $("play").textContent = playing ? "暂停" : "播放";
 }
 function filterEvents() {
   const type = $("event-filter").value;
@@ -358,15 +369,16 @@ function renderEvents(force = false) {
     b.append(node("small", clock(e.time_ms, true)), node("span", label(e)));
     b.addEventListener("click", () => {
       playing = false;
-      $("play").textContent = "和我一起回看";
+      $("play").textContent = "播放";
       selectedEvent = e;
       seek(e.time_ms);
       renderEvents(true);
+      showPanel("details");
     });
     list.append(b);
   }
   if (!filtered.length)
-    list.append(node("p", "这个分类里，我还没有读到事件。", "hint"));
+    list.append(node("p", "此分类暂无事件。", "hint"));
 }
 function updatePanels(force = false) {
   if (!data) return;
@@ -386,6 +398,7 @@ function updatePanels(force = false) {
     p.button.querySelector("small").textContent = pos
       ? `${pos.character} · ${life === "dead" ? "已被击败" : life === "alive" ? "在场" : "状态未知"}`
       : "等待上场";
+    p.button.querySelector(".score").textContent = `${state.NumKills ?? 0} / ${state.NumDeaths ?? 0}`;
   }
   if (selectedEvent) {
     $("picked-name").textContent =
@@ -533,7 +546,7 @@ function draw() {
     ctx.translate(sx, sy);
     ctx.globalAlpha = life === "dead" ? 0.32 : 1;
     if (p === picked) {
-      ctx.strokeStyle = "#dfcfff";
+      ctx.strokeStyle = "#d7eeea";
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.arc(0, 0, 18, 0, Math.PI * 2);
@@ -596,7 +609,7 @@ function draw() {
       ctx.textAlign = "center";
       ctx.fillText(`+${e.amount}`, x, y - 30 - age * 0.025);
     } else if (e.name === "MulticastNotifyAbilityActivated") {
-      ctx.strokeStyle = "#c6b0ff";
+      ctx.strokeStyle = "#40c5b8";
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(x, y, 14 + age * 0.04, 0, Math.PI * 2);
@@ -617,7 +630,18 @@ function draw() {
     ? `${picked.name} · ${pos.character}\nX ${pos.x.toFixed(1)}  Y ${pos.y.toFixed(1)}  Z ${pos.z.toFixed(1)}\n朝向 ${pos.yaw.toFixed(1)}°`
     : "";
 }
+function fitBounds(bounds) {
+  return {
+    x: (bounds.minX + bounds.maxX) / 2,
+    y: (bounds.minY + bounds.maxY) / 2,
+    scale: Math.min(
+      Math.max(1, width - 90) / Math.max(1, bounds.maxX - bounds.minX),
+      Math.max(1, height - 90) / Math.max(1, bounds.maxY - bounds.minY),
+    ),
+  };
+}
 function resize() {
+  const wasFitted = camera.x === fitted.x && camera.y === fitted.y && camera.scale === fitted.scale;
   const box = canvas.parentElement.getBoundingClientRect();
   width = box.width;
   height = box.height;
@@ -625,6 +649,10 @@ function resize() {
   canvas.width = Math.round(width * dpr);
   canvas.height = Math.round(height * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (densityBounds) {
+    fitted = fitBounds(densityBounds);
+    if (wasFitted) camera = { ...fitted };
+  }
   draw();
 }
 new ResizeObserver(resize).observe(canvas.parentElement);
@@ -643,6 +671,32 @@ $("round-select").addEventListener("change", (e) => {
   }
 });
 $("event-filter").addEventListener("change", filterEvents);
+document.querySelectorAll("[data-panel]").forEach((tab, index, tabs) => {
+  tab.addEventListener("click", () => showPanel(tab.dataset.panel));
+  tab.addEventListener("keydown", (event) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1
+      : (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+    showPanel(tabs[next].dataset.panel);
+    tabs[next].focus();
+  });
+});
+function jumpRound(direction) {
+  if (!data?.rounds.length) return;
+  const index = direction > 0 ? upper(data.rounds, time)
+    : upper(data.rounds, time - 1) - 1;
+  selectedEvent = null;
+  seek(data.rounds[Math.max(0, Math.min(data.rounds.length - 1, index))].time_ms);
+}
+$("previous-round").addEventListener("click", () => jumpRound(-1));
+$("next-round").addEventListener("click", () => jumpRound(1));
+function zoom(factor) {
+  camera.scale = Math.max(0.005, Math.min(0.5, camera.scale * factor));
+  draw();
+}
+$("zoom-in").addEventListener("click", () => zoom(1.25));
+$("zoom-out").addEventListener("click", () => zoom(0.8));
 $("fit").addEventListener("click", () => {
   following = false;
   camera = { ...fitted };
@@ -746,7 +800,7 @@ function animate(now) {
     );
     if (time === data.duration_ms) {
       playing = false;
-      $("play").textContent = "和我一起回看";
+      $("play").textContent = "播放";
     }
   }
   lastFrame = now;
@@ -762,10 +816,10 @@ try {
   const response = await fetch("playback.json");
   if (!response.ok)
     throw Error(
-      "我还没有找到 playback.json。你可以用右上角按钮交给我一份已解析的回放。",
+      "未找到 playback.json。可通过右上角“导入回放”选择已解析的数据文件。",
     );
   install(await response.json());
 } catch (error) {
   $("message").textContent = error.message;
-  $("description").textContent = "准备好数据后，就和我一起回看吧。";
+  $("description").textContent = "等待导入回放数据";
 }

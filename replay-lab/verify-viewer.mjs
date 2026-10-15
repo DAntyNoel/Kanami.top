@@ -67,14 +67,25 @@ assert.equal(api.timeNow(), begin);
 $("round-select").value = String(playback.rounds[5].time_ms);
 $("round-select").dispatchEvent(new w.Event("change"));
 assert.equal(api.timeNow(), playback.rounds[5].time_ms);
+$("next-round").click();
+assert.equal(api.timeNow(), playback.rounds[6].time_ms);
+$("previous-round").click();
+assert.equal(api.timeNow(), playback.rounds[5].time_ms);
 $("players").firstElementChild.click();
 assert.equal($("picked-name").textContent, playback.players[0].name);
+assert.equal($("panel-details").hidden, false);
+assert.equal($("tab-details").getAttribute("aria-selected"), "true");
+$("tab-evidence").click();
+assert.equal($("panel-evidence").hidden, false);
+assert.equal($("panel-details").hidden, true);
 for (const kind of ["important", "skill", "effect", "damage", "shot", "all"]) {
+  $("tab-events").click();
   $("event-filter").value = kind;
   $("event-filter").dispatchEvent(new w.Event("change"));
   assert($("event-list").querySelector("button"));
   $("event-list").querySelector("button").click();
   assert($("detail-body").textContent.includes("time_ms"));
+  assert.equal($("panel-details").hidden, false);
 }
 for (const t of [0, 60000, 114254, 500000, 960000, 1500000, 1900441]) {
   api.seek(t);
@@ -108,7 +119,9 @@ console.log(
         "play/pause",
         "seek +/-5s",
         "round jump",
+        "previous/next round controls",
         "follow player",
+        "event, detail and data panel navigation",
         "all 6 event filters",
         "event details",
         "7 timeline render points",
