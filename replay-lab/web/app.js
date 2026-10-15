@@ -27,6 +27,33 @@ const mapCatalog = {
 };
 let activeMap = null, mapImage = null, viewBounds = null, yDirection = -1;
 const colors = ["#40c5b8", "#cda963"];
+const charactersById = new Map(), charactersByName = new Map(), portraits = new Map();
+function characterInfo(raw) {
+  return charactersByName.get(String(raw ?? "").toLowerCase()) ?? null;
+}
+function characterName(raw) {
+  return characterInfo(raw)?.name ?? raw ?? "未知角色";
+}
+function characterAt(player, pos, t) {
+  // A selected role can change before the character Actor changes. The actual
+  // appearance must win, so portraits cannot jump to the next role too early.
+  return pos ? characterInfo(pos.character) : charactersById.get(stateAt(player, t).SelectRoleId) ?? null;
+}
+async function loadCharacters() {
+  const response = await fetch("characters/manifest.json");
+  if (!response.ok) return;
+  for (const role of await response.json()) {
+    if (!Number.isInteger(role.id) || typeof role.name !== "string" ||
+        !Array.isArray(role.aliases) || role.portrait !== `characters/icons/${role.id}.png`) continue;
+    charactersById.set(role.id, role);
+    for (const alias of [...role.aliases, role.name])
+      charactersByName.set(String(alias).toLowerCase(), role);
+    const entry = { image: new Image(), ready: false };
+    portraits.set(role.id, entry);
+    entry.image.onload = () => { entry.ready = true; draw(); };
+    entry.image.src = role.portrait;
+  }
+}
 const vitalLabels = { Health: "生命", HealthMax: "生命上限", Armor: "护甲", ArmorMax: "护甲上限" };
 function number(value) {
   return Number.isFinite(value) ? String(Number(value.toFixed(2))) : "—";
@@ -434,7 +461,13 @@ function install(d) {
     b.dataset.uid = p.uid;
     if (team !== previousTeam) b.dataset.teamLabel = team === 1 ? "金方" : "蓝方";
     previousTeam = team;
-    b.append(node("span", String(i + 1).padStart(2, "0"), "badge"));
+    const badge = node("span", undefined, "badge");
+    p.portraitUi = node("img");
+    p.portraitUi.hidden = true;
+    p.portraitUi.alt = "";
+    p.portraitUi.addEventListener("error", () => { p.portraitUi.hidden = true; });
+    badge.append(p.portraitUi, node("span", String(i + 1).padStart(2, "0"), "player-number"));
+    b.append(badge);
     const copy = node("span");
     copy.append(node("strong", p.name), node("small", "等待上场"));
     const bars = node("span", undefined, "vital-bars");
@@ -613,11 +646,21 @@ function updatePanels(force = false) {
     const pos = position(p, time),
       state = stateAt(p, time),
       life = statusAt(p, time),
-      team = state.AttributeTeamID ?? p.AttributeTeamID ?? 0;
+      team = state.AttributeTeamID ?? p.AttributeTeamID ?? 0,
+      role = characterAt(p, pos, time);
     p.button.className = `player team${team === 1 ? 1 : 0}${picked === p ? " active" : ""}${life === "dead" ? " dead" : ""}`;
     p.button.querySelector("small").textContent = pos
-      ? `${pos.character} · ${life === "dead" ? "已被击败" : life === "alive" ? "在场" : "状态未知"}`
-      : "等待上场";
+      ? `${characterName(pos.character)} · ${life === "dead" ? "已被击败" : life === "alive" ? "在场" : "状态未知"}`
+      : role ? `${role.name} · 等待上场` : "等待上场";
+    p.button.querySelector("small").title = role ? `${role.name} · ${role.english} · 内部名 ${role.internal} · ID ${role.id}` : "";
+    const roleKey = String(role?.id ?? "");
+    if (p.portraitUi.dataset.roleId !== roleKey) {
+      p.portraitUi.dataset.roleId = roleKey;
+      p.portraitUi.hidden = !role;
+      p.portraitUi.alt = role?.name ?? "";
+      if (role) p.portraitUi.src = role.portrait;
+      else p.portraitUi.removeAttribute("src");
+    }
     p.button.querySelector(".score").textContent = `${state.NumKills ?? 0} / ${state.NumDeaths ?? 0}`;
     p.button.querySelector(".damage-stat").textContent = `伤害 ${number(state.TotalDamage)}`;
     p.button.querySelector(".damage-stat").title = "累计造成伤害";
@@ -641,7 +684,7 @@ function updatePanels(force = false) {
     $("picked-name").textContent = picked.name;
     $("detail-body").textContent =
       vitalText(vitalsAt(picked, time)) + `\n累计造成伤害 ${number(state.TotalDamage)}\n\n` + (pos
-        ? `位置 (${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)}) cm\n身体朝向 ${pos.yaw.toFixed(1)}° · ${pos.character}\n${pos.aimYaw !== null ? `瞄准 ${pos.aimYaw.toFixed(1)}° · 俯仰 ${pos.aimPitch.toFixed(1)}°` : `远端俯仰 ${pos.pitch.toFixed(1)}° · 尚无瞄准数据`}\n`
+        ? `角色 ${characterName(pos.character)}（${pos.character}）\n位置 (${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)}) cm\n身体朝向 ${pos.yaw.toFixed(1)}°\n${pos.aimYaw !== null ? `瞄准 ${pos.aimYaw.toFixed(1)}° · 俯仰 ${pos.aimPitch.toFixed(1)}°` : `远端俯仰 ${pos.pitch.toFixed(1)}° · 尚无瞄准数据`}\n`
         : "尚未读取到此刻的位置\n") +
       Object.entries(state)
         .map(
@@ -771,12 +814,19 @@ function draw() {
       ctx.ellipse(0, 0, 6, 12, 0, 0, Math.PI * 2);
     else ctx.arc(0, 0, 10, 0, Math.PI * 2);
     ctx.fill();
+    const portrait = portraits.get(characterAt(p, pos, time)?.id);
+    if (portrait?.ready) {
+      ctx.save();
+      ctx.clip();
+      ctx.drawImage(portrait.image, -12, -12, 24, 24);
+      ctx.restore();
+    }
     ctx.stroke();
     ctx.fillStyle = color;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.font = "bold 9px sans-serif";
-    ctx.fillText(String(i + 1), 0, 0);
+    ctx.fillText(String(i + 1), portrait?.ready ? 14 : 0, portrait?.ready ? 10 : 0);
     ctx.font = "10px sans-serif";
     ctx.fillStyle = "#e4e5f3";
     ctx.fillText(p.name, 0, 22);
@@ -819,7 +869,7 @@ function draw() {
   ctx.globalAlpha = 1;
   const pos = picked && positions.get(picked.uid);
   $("selection").textContent = pos
-    ? `${picked.name} · ${pos.character}\nX ${pos.x.toFixed(1)}  Y ${pos.y.toFixed(1)}  Z ${pos.z.toFixed(1)}\n朝向 ${pos.yaw.toFixed(1)}°`
+    ? `${picked.name} · ${characterName(pos.character)}\nX ${pos.x.toFixed(1)}  Y ${pos.y.toFixed(1)}  Z ${pos.z.toFixed(1)}\n朝向 ${pos.yaw.toFixed(1)}°`
     : "";
 }
 function fitBounds(bounds) {
@@ -1006,6 +1056,7 @@ function animate(now) {
 }
 requestAnimationFrame(animate);
 try {
+  await loadCharacters().catch(() => {});
   const response = await fetch("playback.json");
   if (!response.ok)
     throw Error(

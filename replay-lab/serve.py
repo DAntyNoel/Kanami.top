@@ -12,7 +12,7 @@ ROOT = HERE.parent
 
 
 def assets(data):
-    return {
+    routes = {
         '/': HERE / 'web/index.html',
         '/index.html': HERE / 'web/index.html',
         '/app.js': HERE / 'web/app.js',
@@ -20,12 +20,25 @@ def assets(data):
         '/maps/ocarnus.webp': HERE / 'web/maps/ocarnus.webp',
         '/maps/NOTICE.txt': HERE / 'web/maps/NOTICE.txt',
         '/maps/GPL-3.0.txt': HERE / 'web/maps/GPL-3.0.txt',
+        '/characters/manifest.json': HERE / 'web/characters/manifest.json',
+        '/characters/sources.json': HERE / 'web/characters/sources.json',
+        '/characters/NOTICE.txt': HERE / 'web/characters/NOTICE.txt',
         '/shared/header.js': ROOT / 'res/scripts/header.js',
         '/shared/header.css': ROOT / 'games/shared/game-header.css',
         '/shared/logo.png': ROOT / 'res/images/favicon.png',
         '/shared/kanami.jpg': ROOT / 'res/images/lovekanami.jpg',
         '/playback.json': Path(data).resolve(),
     }
+    with (HERE / 'web/characters/manifest.json').open(encoding='utf-8') as file:
+        for role in json.load(file):
+            role_id = role.get('id')
+            if type(role_id) is not int or role_id <= 0:
+                raise ValueError('invalid character asset ID')
+            route = f'/characters/icons/{role_id}.png'
+            if role.get('portrait') != route.lstrip('/'):
+                raise ValueError('invalid character portrait path')
+            routes[route] = HERE / 'web' / route.lstrip('/')
+    return routes
 
 
 def handler(routes):

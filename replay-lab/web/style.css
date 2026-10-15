@@ -78,7 +78,9 @@ h2 { margin: 0; font-size: 12px; font-weight: 500; color: var(--muted); }
 .player[data-team-label]::before { content: attr(data-team-label); position: absolute; top: -25px; left: 8px; color: var(--muted); font-size: 11px; }
 .player.active { background: #192831; border-color: #30464f; }
 .player:hover { background: #15252e; }
-.player .badge { display: grid; place-content: center; width: 31px; height: 31px; border: 1px solid #40c5b866; color: var(--blue); background: #40c5b812; border-radius: 50%; font-size: 11px; }
+.player .badge { position: relative; display: grid; place-content: center; width: 31px; height: 31px; border: 1px solid #40c5b866; color: var(--blue); background: #40c5b812; border-radius: 50%; font-size: 11px; }
+.player .badge img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+.player .badge img:not([hidden]) + .player-number { position: absolute; right: -4px; bottom: -4px; min-width: 15px; padding: 1px 2px; border-radius: 6px; background: #0d1922; font-size: 8px; text-align: center; }
 .player.team1 .badge { color: var(--gold); border-color: #cda96366; background: #cda96312; }
 .player strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 400; }
 .player small { display: block; margin-top: 5px; font-size: 10px; color: var(--muted); }

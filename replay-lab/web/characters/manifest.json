@@ -1,0 +1,238 @@
+[
+  {
+    "id": 101,
+    "name": "米雪儿",
+    "english": "Michele",
+    "internal": "Michele",
+    "aliases": [
+      "Michele",
+      "Michelle"
+    ],
+    "portrait": "characters/icons/101.png"
+  },
+  {
+    "id": 105,
+    "name": "奥黛丽",
+    "english": "Audrey",
+    "internal": "Audrey",
+    "aliases": [
+      "Audrey"
+    ],
+    "portrait": "characters/icons/105.png"
+  },
+  {
+    "id": 107,
+    "name": "玛德蕾娜",
+    "english": "Maddelena",
+    "internal": "Maddelena",
+    "aliases": [
+      "Maddelena"
+    ],
+    "portrait": "characters/icons/107.png"
+  },
+  {
+    "id": 108,
+    "name": "信",
+    "english": "Nobunaga",
+    "internal": "Nobunaga",
+    "aliases": [
+      "Nobunaga"
+    ],
+    "portrait": "characters/icons/108.png"
+  },
+  {
+    "id": 109,
+    "name": "令",
+    "english": "Reiichi",
+    "internal": "Reiichi",
+    "aliases": [
+      "Reiichi"
+    ],
+    "portrait": "characters/icons/109.png"
+  },
+  {
+    "id": 110,
+    "name": "白墨",
+    "english": "Bai Mo",
+    "internal": "MoBai",
+    "aliases": [
+      "MoBai",
+      "Bai Mo",
+      "BaiMo"
+    ],
+    "portrait": "characters/icons/110.png"
+  },
+  {
+    "id": 112,
+    "name": "绯莎",
+    "english": "Fuchsia",
+    "internal": "Fuchsia",
+    "aliases": [
+      "Fuchsia"
+    ],
+    "portrait": "characters/icons/112.png"
+  },
+  {
+    "id": 115,
+    "name": "芙拉薇娅",
+    "english": "Flavia",
+    "internal": "Flavia",
+    "aliases": [
+      "Flavia"
+    ],
+    "portrait": "characters/icons/115.png"
+  },
+  {
+    "id": 119,
+    "name": "艾卡",
+    "english": "Eika",
+    "internal": "Aika",
+    "aliases": [
+      "Aika",
+      "Eika"
+    ],
+    "portrait": "characters/icons/119.png"
+  },
+  {
+    "id": 120,
+    "name": "珐格兰丝",
+    "english": "Fragrans",
+    "internal": "Fragrans",
+    "aliases": [
+      "Fragrans"
+    ],
+    "portrait": "characters/icons/120.png"
+  },
+  {
+    "id": 121,
+    "name": "忧雾",
+    "english": "Yugiri",
+    "internal": "Yugiri",
+    "aliases": [
+      "Yugiri"
+    ],
+    "portrait": "characters/icons/121.png"
+  },
+  {
+    "id": 122,
+    "name": "玛拉",
+    "english": "Mara",
+    "internal": "Mara",
+    "aliases": [
+      "Mara"
+    ],
+    "portrait": "characters/icons/122.png"
+  },
+  {
+    "id": 123,
+    "name": "蕾欧娜",
+    "english": "Leona",
+    "internal": "Leona",
+    "aliases": [
+      "Leona"
+    ],
+    "portrait": "characters/icons/123.png"
+  },
+  {
+    "id": 124,
+    "name": "心夏",
+    "english": "Kokona",
+    "internal": "KokonaShiki",
+    "aliases": [
+      "KokonaShiki",
+      "Kokona"
+    ],
+    "portrait": "characters/icons/124.png"
+  },
+  {
+    "id": 125,
+    "name": "千代",
+    "english": "Chiyo",
+    "internal": "Chiyo",
+    "aliases": [
+      "Chiyo"
+    ],
+    "portrait": "characters/icons/125.png"
+  },
+  {
+    "id": 126,
+    "name": "诺诺",
+    "english": "Nora",
+    "internal": "Nora",
+    "aliases": [
+      "Nora"
+    ],
+    "portrait": "characters/icons/126.png"
+  },
+  {
+    "id": 128,
+    "name": "拉薇",
+    "english": "Lawine",
+    "internal": "Lawine",
+    "aliases": [
+      "Lawine"
+    ],
+    "portrait": "characters/icons/128.png"
+  },
+  {
+    "id": 130,
+    "name": "汐",
+    "english": "Cielle",
+    "internal": "Cielle",
+    "aliases": [
+      "Cielle"
+    ],
+    "portrait": "characters/icons/130.png"
+  },
+  {
+    "id": 131,
+    "name": "伊薇特",
+    "english": "Yvette",
+    "internal": "Yvette",
+    "aliases": [
+      "Yvette"
+    ],
+    "portrait": "characters/icons/131.png"
+  },
+  {
+    "id": 132,
+    "name": "明",
+    "english": "Ming",
+    "internal": "Ming",
+    "aliases": [
+      "Ming"
+    ],
+    "portrait": "characters/icons/132.png"
+  },
+  {
+    "id": 133,
+    "name": "梅瑞狄斯",
+    "english": "Meredith",
+    "internal": "Meredith",
+    "aliases": [
+      "Meredith"
+    ],
+    "portrait": "characters/icons/133.png"
+  },
+  {
+    "id": 137,
+    "name": "香奈美",
+    "english": "Kanami",
+    "internal": "Kanami",
+    "aliases": [
+      "Kanami"
+    ],
+    "portrait": "characters/icons/137.png"
+  },
+  {
+    "id": 146,
+    "name": "星绘",
+    "english": "Celestia",
+    "internal": "HuiXing",
+    "aliases": [
+      "HuiXing",
+      "Celestia"
+    ],
+    "portrait": "characters/icons/146.png"
+  }
+]

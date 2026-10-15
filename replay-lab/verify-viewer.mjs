@@ -9,6 +9,7 @@ if (!process.argv[2])
 const html = await fs.readFile(root + "replay-lab/web/index.html", "utf8");
 const code = await fs.readFile(root + "replay-lab/web/app.js", "utf8");
 const playback = JSON.parse(await fs.readFile(process.argv[2], "utf8"));
+const characters = JSON.parse(await fs.readFile(root + "replay-lab/web/characters/manifest.json", "utf8"));
 const dom = new JSDOM(html, {
   url: "http://127.0.0.1:8766/",
   runScripts: "outside-only",
@@ -49,16 +50,45 @@ w.requestAnimationFrame = () => 0;
 w.Image = class {
   set src(value) { this.source = value; queueMicrotask(() => this.onload?.()); }
 };
-w.fetch = async () => ({ ok: true, json: async () => playback });
+w.fetch = async (url) => ({ ok: true, json: async () => url === "characters/manifest.json" ? characters : playback });
 const wrapped =
   "(async()=>{" +
   code +
-  "\nreturn {clock,position,install,seek,draw,animate,stateAt,statusAt,vitalsAt,eventDetails,isStringified,xy,viewState:()=>({activeMap,mapImage,viewBounds,yDirection,camera:{...camera}}),decodeData:()=>data,timeNow:()=>time,isPlaying:()=>playing};})()";
+  "\nreturn {clock,position,install,seek,draw,animate,stateAt,statusAt,vitalsAt,eventDetails,isStringified,characterInfo,characterAt,xy,viewState:()=>({activeMap,mapImage,viewBounds,yDirection,camera:{...camera}}),decodeData:()=>data,timeNow:()=>time,isPlaying:()=>playing};})()";
 const api = await w.eval(wrapped);
 const $ = (id) => w.document.getElementById(id);
 assert.equal($("players").children.length, playback.players.length);
 assert.equal($("round-markers").children.length, playback.rounds.length);
 assert.equal($("message").textContent, "");
+for (const player of playback.players) {
+  for (const appearance of player.appearances) {
+    const role = api.characterInfo(appearance.character);
+    assert(role, `mapped replay character: ${appearance.character}`);
+    assert.equal(role.id, api.stateAt(player, appearance.from_ms).SelectRoleId,
+      "internal character name agrees with independently replicated role ID");
+    api.seek(appearance.from_ms);
+    assert.equal(player.portraitUi.dataset.roleId, String(role.id));
+    assert.equal(player.portraitUi.getAttribute("src"), role.portrait);
+    assert(player.button.querySelector("small").textContent.startsWith(role.name + " ·"));
+  }
+}
+for (const [alias, name] of [["Nora", "诺诺"], ["Cielle", "汐"], ["Aika", "艾卡"],
+  ["Eika", "艾卡"], ["MoBai", "白墨"], ["BaiMo", "白墨"], ["Celestia", "星绘"],
+  ["HuiXing", "星绘"], ["KokonaShiki", "心夏"], ["Michelle", "米雪儿"]])
+  assert.equal(api.characterInfo(alias).name, name);
+assert.equal(api.characterInfo("unknown-new-character"), null);
+const rolePlayer = playback.players.find((p) => p.appearances.length > 1);
+const firstAppearance = rolePlayer.appearances[0], secondAppearance = rolePlayer.appearances[1];
+api.seek(secondAppearance.from_ms);
+api.seek(firstAppearance.from_ms);
+assert.equal(rolePlayer.portraitUi.dataset.roleId, String(api.characterInfo(firstAppearance.character).id),
+  "backward seek restores the earlier character portrait");
+assert.equal(api.characterAt(rolePlayer, { character: firstAppearance.character }, secondAppearance.from_ms).id,
+  api.characterInfo(firstAppearance.character).id, "actual Actor wins over a different selected role ID");
+await Promise.resolve();
+canvasCalls.length = 0; api.draw();
+assert(canvasCalls.some((c) => c.method === "drawImage" && /characters\/icons\//.test(c.args[0].source ?? "")),
+  "map markers render actual role portraits");
 assert.equal($("round-segments").children.length, playback.rounds.length);
 for (const [i, segment] of [...$("round-segments").children].entries()) {
   assert(segment.classList.contains(i % 2 === 0 ? "odd" : "even"));
@@ -355,6 +385,7 @@ console.log(
         "single-strip alternating round segments and exact white playhead time",
         "persistent roster damage and team-colored floating values without plus signs",
         "fixed map aspect ratio, coordinate direction, aim rotation and unknown-map fallback",
+        "role ID/name/portrait agreement, aliases, character swaps and backward seek",
       ],
       limitation:
         "jsdom with canvas stub; not a browser screenshot or visual layout check",
