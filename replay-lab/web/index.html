@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>香奈美 · 交锋回响</title>
+    <link rel="icon" href="shared/logo.png" />
+    <link rel="stylesheet" href="shared/header.css" />
+    <link rel="stylesheet" href="style.css" />
+    <script src="shared/header.js" defer></script>
+    <script src="app.js" type="module"></script>
+  </head>
+  <body>
+    <header class="game-header">
+      <a class="game-logo" href="https://kanami.top/"
+        ><img src="shared/logo.png" alt="香奈美" /><span>香奈美应援站</span></a
+      >
+      <div class="game-header-copy"><h1>交锋回响 · 陪我重看这一场</h1></div>
+      <nav class="game-header-actions">
+        <button id="import">交给我一份回放</button
+        ><a href="https://kanami.top/resource/">我的星光收藏室</a>
+      </nav>
+    </header>
+    <input id="file" type="file" accept="application/json,.json" hidden />
+    <main>
+      <section class="intro">
+        <img src="shared/kanami.jpg" alt="香奈美" class="portrait" />
+        <div>
+          <p class="eyebrow">把每一步，留在回响里</p>
+          <h2>这一次，让我陪你看清。</h2>
+          <p id="description">我正在读取录像里的位置、朝向与交锋时刻……</p>
+        </div>
+        <div class="record">
+          <span>录像档案</span><strong id="duration">—</strong
+          ><small id="source">等待回放数据</small>
+        </div>
+      </section>
+      <div id="message" role="status" aria-live="polite"></div>
+      <section class="workspace" aria-label="我的战术回放台">
+        <aside class="roster panel">
+          <div class="panel-title">
+            <h3>与我一起追踪</h3>
+            <button id="unfollow">看全场</button>
+          </div>
+          <div id="players"></div>
+          <p class="hint">点选一位队员，我会跟随他的视角位置。</p>
+        </aside>
+        <section class="stage panel">
+          <div class="stage-heading">
+            <div>
+              <span class="eyebrow">战术俯瞰</span
+              ><strong id="round">尚未开始</strong>
+            </div>
+            <div class="view-tools">
+              <label
+                ><input id="trails" type="checkbox" checked /> 留下足迹</label
+              ><button id="fit">帮我归位</button>
+            </div>
+          </div>
+          <div class="canvas-wrap">
+            <canvas
+              id="arena"
+              aria-label="队员位置、朝向、移动轨迹与交锋事件的二维重建"
+            ></canvas>
+            <div id="canvas-note">
+              底图来自全场走位密度 · 滚轮缩放，拖动画布平移
+            </div>
+            <div id="selection"></div>
+          </div>
+          <div class="transport">
+            <div class="timeline-labels">
+              <output id="clock">00:00.000</output
+              ><span id="endclock">00:00.000</span>
+            </div>
+            <input
+              id="seek"
+              type="range"
+              min="0"
+              max="1"
+              step="1"
+              value="0"
+              aria-label="回放时间"
+            />
+            <div id="round-markers" aria-label="回合起点"></div>
+            <div class="transport-buttons">
+              <button id="back" title="后退五秒">−5 秒</button
+              ><button id="play" class="primary">和我一起回看</button
+              ><button id="forward" title="前进五秒">+5 秒</button
+              ><label
+                >速度
+                <select id="speed">
+                  <option value="0.25">0.25×</option>
+                  <option value="0.5">0.5×</option>
+                  <option value="1" selected>1×</option>
+                  <option value="2">2×</option>
+                  <option value="4">4×</option>
+                  <option value="8">8×</option>
+                  <option value="16">16×</option>
+                </select></label
+              ><select id="round-select" aria-label="跳转回合">
+                <option>选择回合</option>
+              </select>
+            </div>
+          </div>
+        </section>
+        <aside class="events panel">
+          <div class="panel-title">
+            <h3>我记下的交锋</h3>
+            <select id="event-filter" aria-label="事件类型">
+              <option value="important">关键事件</option>
+              <option value="skill">技能激活</option>
+              <option value="effect">持续效果</option>
+              <option value="damage">伤害记录</option>
+              <option value="shot">开火与命中</option>
+              <option value="all">全部记录</option>
+            </select>
+          </div>
+          <div id="event-list"></div>
+        </aside>
+      </section>
+      <section class="details panel">
+        <div class="panel-title">
+          <h3>我读到的此刻</h3>
+          <span id="picked-name">点选队员或事件，查看细节</span>
+        </div>
+        <div id="detail-body">
+          空格播放 / 暂停 · ← → 跳转五秒 · 点击右侧事件回到那个瞬间
+        </div>
+      </section>
+      <details class="evidence panel">
+        <summary>让我说明，这份回放恢复了什么</summary>
+        <div id="evidence"></div>
+        <p>
+          我用角色位置与朝向重建二维战术回放。原录像里的地图模型、碰撞几何和动画资源没有包含在这些数据中，画布以全场走位密度和坐标网格显示，密度底图不代表真实墙体。累计伤害的变化可能合并多次命中；具体技能、状态与伤害参数可在事件细节中查看，尚未确认的结构保留原始数据。
+        </p>
+        <p>
+          导入只在你的浏览器中读取
+          <code>playback.json</code
+          >，不会上传文件。录像原文件请先运行配套解析器。
+        </p>
+      </details>
+    </main>
+    <footer>香奈美的交锋回响 · 我会记住每一次并肩。</footer>
+  </body>
+</html>

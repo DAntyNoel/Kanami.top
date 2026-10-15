@@ -1,0 +1,11 @@
+{
+  "name": "kanami-replay-lab",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "verify:viewer": "node verify-viewer.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "30.1.2"
+  }
+}

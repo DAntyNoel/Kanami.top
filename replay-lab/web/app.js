@@ -1,0 +1,748 @@
+const $ = (id) => document.getElementById(id);
+const canvas = $("arena"),
+  ctx = canvas.getContext("2d");
+let data,
+  time = 0,
+  playing = false,
+  speed = 1,
+  picked = null,
+  following = false,
+  selectedEvent = null;
+let camera = { x: 0, y: 0, scale: 0.035 },
+  fitted = { ...camera },
+  width = 1,
+  height = 1,
+  lastFrame = 0,
+  lastPanel = 0;
+let filtered = [],
+  timeline = [],
+  playerById = new Map(),
+  renderedEventCenter = -1;
+let densityLayer = null,
+  densityBounds = null;
+const colors = ["#71d9ee", "#ff91ae"];
+const stateLabels = {
+  ReplicatedMovementMode: "移动模式编号",
+  AmmoRemain: "备用弹药",
+  AmmoInMagazine: "弹匣弹药",
+  MagazineState: "弹匣状态编号",
+  ArousalLevel: "觉醒等级",
+  TotalDamage: "累计伤害",
+  TotalRealDamage: "TotalRealDamage 原字段",
+  NumKills: "击杀",
+  NumDeaths: "死亡",
+  NumAssist: "助攻",
+  bIsSpectator: "观战状态",
+  bBleeding: "流血状态",
+  Rescuer: "救援者对象",
+  SelectRoleId: "角色编号",
+  AttributeTeamID: "队伍编号",
+};
+const eventLabels = {
+  PlayerRespawn: "重新出发",
+  PlayerDeath: "被击败",
+  PlayerInjured: "受伤 / 倒地事件",
+  BombRound: "回合开始",
+  WatchStart: "录像开始",
+};
+const rpcLabels = {
+  MulticastNotifyAbilityActivated: "能力激活",
+  MulticastDamageEventData: "伤害调用",
+  MulticastAttackActor: "攻击命中调用",
+  MulticastAttackMiss: "攻击落空",
+  MulticastAttackMulti: "多目标攻击",
+  MulticastProjectile: "发射投掷物",
+  MulticastProjectileExplode: "投掷物爆炸",
+  MulticastNotifySuccessRescue: "救援成功",
+  MulticastBombEvent: "炸弹事件",
+  MulticastBombFound: "发现炸弹",
+  MulticastWinnerTeam: "回合胜方",
+  MulticastPlayerJumped: "跳跃",
+};
+function clock(ms, precise = false) {
+  ms = Math.max(0, Math.round(ms));
+  const sec = Math.floor(ms / 1000);
+  return `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}${precise ? "." + String(ms % 1000).padStart(3, "0") : ""}`;
+}
+function upper(arr, t, get = (x) => x.time_ms) {
+  let lo = 0,
+    hi = arr.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >>> 1;
+    if (get(arr[mid]) <= t) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+function node(tag, text, cls) {
+  const n = document.createElement(tag);
+  if (text !== undefined) n.textContent = text;
+  if (cls) n.className = cls;
+  return n;
+}
+function shortPath(path = "") {
+  return path
+    .replace(/^Default__/, "")
+    .replace(/_C$/, "")
+    .split("/")
+    .pop();
+}
+function name(uid) {
+  return playerById.get(uid)?.name || uid || "场景对象";
+}
+function statusAt(p, t) {
+  const i = upper(p.life, t) - 1;
+  return i >= 0 ? p.life[i].state : "unknown";
+}
+function stateAt(p, t) {
+  const result = {};
+  for (const [key, values] of p.stateIndex) {
+    const i = upper(values, t) - 1;
+    if (i >= 0) result[key] = values[i].value;
+  }
+  return result;
+}
+function position(p, t) {
+  const i = upper(p.samples, t, (s) => s[0]) - 1;
+  if (i < 0) return null;
+  const a = p.samples[i],
+    b = p.samples[i + 1];
+  const appearance = p.appearances.find(
+    (x) => x.actor === a[6] && x.from_ms <= t && t <= x.to_ms,
+  );
+  if (!appearance) return null;
+  let out = a.slice();
+  if (
+    b &&
+    b[6] === a[6] &&
+    b[0] > a[0] &&
+    b[0] - a[0] < 2000 &&
+    Math.hypot(b[1] - a[1], b[2] - a[2]) < 450
+  ) {
+    const f = (t - a[0]) / (b[0] - a[0]);
+    for (let j = 1; j <= 3; j++) out[j] = a[j] + (b[j] - a[j]) * f;
+    out[4] = a[4] + (((b[4] - a[4] + 540) % 360) - 180) * f;
+  }
+  return {
+    x: out[1],
+    y: out[2],
+    z: out[3],
+    yaw: out[4],
+    pitch: out[5],
+    actor: out[6],
+    index: i,
+    character: appearance.character,
+  };
+}
+function label(e) {
+  if (e.kind.startsWith("effect_"))
+    return `${name(e.uid)} · ${{ effect_added: "效果获得", effect_updated: "效果更新", effect_removed: "效果移除" }[e.kind]} ${shortPath(e.effect || "未命名效果")}`;
+  if (e.kind === "event") {
+    if (e.group === "PlayerDeath")
+      return `${e.fields[0]} ← ${e.fields[2] || "未知"} · 被击败`;
+    if (e.group === "PlayerRespawn") return `${e.fields[0]} · 重新出发`;
+    if (e.group === "PlayerInjured")
+      return `${e.fields[0]} ← ${e.fields[2] || "未知"} · 受伤事件`;
+    return `${eventLabels[e.group] || e.group} ${e.metadata || ""}`;
+  }
+  if (e.kind === "damage_total_delta")
+    return `${name(e.uid)} · 累计伤害 +${e.amount}`;
+  if (e.ability) return `${name(e.uid)} · ${shortPath(e.ability.path)}`;
+  return `${name(e.uid)} · ${rpcLabels[e.name] || e.name}`;
+}
+function validate(d) {
+  if (
+    !d?.source ||
+    !d?.counts ||
+    !Array.isArray(d?.rounds) ||
+    d?.schema !== "kanami-replay-playback-v1" ||
+    !Array.isArray(d.players) ||
+    !Array.isArray(d.timeline) ||
+    !Number.isFinite(d.duration_ms) ||
+    d.duration_ms <= 0
+  )
+    throw Error("这份文件还不是我认识的 playback.json，请先运行配套解析器。");
+  if (!d.players.some((p) => p.samples?.length))
+    throw Error("数据中还没有可播放的位置。");
+  for (const p of d.players) {
+    if (
+      !Array.isArray(p.samples) ||
+      !Array.isArray(p.states) ||
+      !Array.isArray(p.appearances)
+    )
+      throw Error("队员数据缺少轨迹或状态。");
+    let previous = -1;
+    for (const s of p.samples) {
+      if (
+        s.length !== 7 ||
+        !s.every(Number.isFinite) ||
+        s[0] < previous ||
+        s[0] < 0 ||
+        s[0] > d.duration_ms
+      )
+        throw Error("轨迹存在无效坐标或时间顺序。");
+      previous = s[0];
+    }
+  }
+  for (const e of d.timeline)
+    if (
+      !Number.isFinite(e.time_ms) ||
+      e.time_ms < 0 ||
+      e.time_ms > d.duration_ms
+    )
+      throw Error("事件时间超出了录像范围。");
+}
+function install(d) {
+  validate(d);
+  data = d;
+  playing = false;
+  picked = null;
+  following = false;
+  selectedEvent = null;
+  timeline = [...d.timeline].sort((a, b) => a.time_ms - b.time_ms);
+  playerById = new Map(d.players.map((p) => [p.uid, p]));
+  for (const p of d.players) {
+    p.stateIndex = new Map();
+    for (const s of p.states) {
+      if (!p.stateIndex.has(s.name)) p.stateIndex.set(s.name, []);
+      p.stateIndex.get(s.name).push(s);
+    }
+    p.life = [];
+    for (const e of timeline) {
+      if (
+        e.kind === "event" &&
+        e.fields?.[1] === p.uid &&
+        (e.group === "PlayerRespawn" || e.group === "PlayerDeath")
+      )
+        p.life.push({
+          time_ms: e.time_ms,
+          state: e.group === "PlayerDeath" ? "dead" : "alive",
+        });
+    }
+    p.states.sort((a, b) => a.time_ms - b.time_ms);
+    for (const entries of p.stateIndex.values())
+      entries.sort((a, b) => a.time_ms - b.time_ms);
+  }
+  $("source").textContent = d.source.file;
+  $("duration").textContent = clock(d.duration_ms);
+  $("endclock").textContent = clock(d.duration_ms, true);
+  $("seek").max = d.duration_ms;
+  $("description").textContent =
+    `我已找到 ${d.players.length} 位队员 · ${d.counts.movement_records.toLocaleString()} 条位置记录 · ${d.rounds.length} 个回合`;
+  $("evidence").textContent =
+    `原文件：${d.source.file}\nSHA-256：${d.source.sha256}\n地图路径：${d.map}\n坐标：Unreal 厘米；X/Y 为水平面，Z 为高度。\n恢复：${d.counts.movement_records.toLocaleString()} 条角色移动，${d.counts.state_updates.toLocaleString()} 条状态变化，${d.counts.timeline.toLocaleString()} 条时间线记录。\n身体朝向来自位置复制；俯仰来自 RemoteViewPitch。每次事件都保留原始参数与位偏移供核对。`;
+  resize();
+  const bounds = {
+    minX: Infinity,
+    maxX: -Infinity,
+    minY: Infinity,
+    maxY: -Infinity,
+  };
+  for (const p of d.players)
+    for (const s of p.samples) {
+      bounds.minX = Math.min(bounds.minX, s[1]);
+      bounds.maxX = Math.max(bounds.maxX, s[1]);
+      bounds.minY = Math.min(bounds.minY, s[2]);
+      bounds.maxY = Math.max(bounds.maxY, s[2]);
+    }
+  if (!Number.isFinite(bounds.minX)) throw Error("数据中还没有可播放的位置。");
+  makeDensity(bounds);
+  fitted = {
+    x: (bounds.minX + bounds.maxX) / 2,
+    y: (bounds.minY + bounds.maxY) / 2,
+    scale: Math.min(
+      (width - 90) / Math.max(1, bounds.maxX - bounds.minX),
+      (height - 90) / Math.max(1, bounds.maxY - bounds.minY),
+    ),
+  };
+  camera = { ...fitted };
+  $("players").replaceChildren();
+  d.players.forEach((p, i) => {
+    const b = node("button", undefined, "player");
+    b.dataset.uid = p.uid;
+    b.append(node("span", String(i + 1).padStart(2, "0"), "badge"));
+    const copy = node("span");
+    copy.append(node("strong", p.name), node("small", "等待上场"));
+    b.append(copy);
+    b.addEventListener("click", () => pick(p));
+    p.button = b;
+    $("players").append(b);
+  });
+  $("round-select").replaceChildren(node("option", "选择回合"));
+  $("round-select").firstChild.value = "";
+  $("round-markers").replaceChildren();
+  d.rounds.forEach((r, i) => {
+    const o = node("option", `第 ${i + 1} 回合`);
+    o.value = r.time_ms;
+    $("round-select").append(o);
+    const b = node("button", String(i + 1));
+    b.title = `第 ${i + 1} 回合 · ${clock(r.time_ms)}`;
+    b.addEventListener("click", () => seek(r.time_ms));
+    $("round-markers").append(b);
+  });
+  filterEvents();
+  const first = d.players.map((p) => p.samples[0]?.[0]).filter(Number.isFinite);
+  seek(first.length ? Math.max(...first) : 0);
+  $("message").textContent = "";
+  $("play").textContent = "和我一起回看";
+}
+function pick(p) {
+  picked = p;
+  following = true;
+  selectedEvent = null;
+  updatePanels(true);
+}
+function seek(value) {
+  time = Math.max(0, Math.min(data?.duration_ms || 0, Number(value) || 0));
+  $("seek").value = time;
+  updatePanels(true);
+  draw();
+}
+function toggle() {
+  if (!data) return;
+  if (time >= data.duration_ms) seek(0);
+  playing = !playing;
+  $("play").textContent = playing ? "让我暂停一下" : "和我一起回看";
+}
+function filterEvents() {
+  const type = $("event-filter").value;
+  filtered = timeline.filter(
+    (e) =>
+      type === "all" ||
+      (type === "important" &&
+        ((e.kind === "event" && e.group !== "PlayerRespawn") ||
+          ["MulticastNotifySuccessRescue", "MulticastBombEvent"].includes(
+            e.name,
+          ))) ||
+      (type === "skill" && e.name === "MulticastNotifyAbilityActivated") ||
+      (type === "effect" && e.kind.startsWith("effect_")) ||
+      (type === "damage" &&
+        (e.kind === "damage_total_delta" ||
+          e.name === "MulticastDamageEventData")) ||
+      (type === "shot" && /^MulticastAttack/.test(e.name || "")),
+  );
+  renderedEventCenter = -1;
+  renderEvents(true);
+}
+function renderEvents(force = false) {
+  const center = upper(filtered, time);
+  if (!force && Math.abs(center - renderedEventCenter) < 3) return;
+  renderedEventCenter = center;
+  const start = Math.max(0, center - 8),
+    end = Math.min(filtered.length, start + 35);
+  const list = $("event-list");
+  list.replaceChildren();
+  for (let i = start; i < end; i++) {
+    const e = filtered[i],
+      b = node(
+        "button",
+        undefined,
+        "event" +
+          (e.time_ms > time ? " future" : "") +
+          (e === selectedEvent ? " selected" : ""),
+      );
+    b.append(node("small", clock(e.time_ms, true)), node("span", label(e)));
+    b.addEventListener("click", () => {
+      playing = false;
+      $("play").textContent = "和我一起回看";
+      selectedEvent = e;
+      seek(e.time_ms);
+      renderEvents(true);
+    });
+    list.append(b);
+  }
+  if (!filtered.length)
+    list.append(node("p", "这个分类里，我还没有读到事件。", "hint"));
+}
+function updatePanels(force = false) {
+  if (!data) return;
+  $("clock").textContent = clock(time, true);
+  $("seek").value = time;
+  const roundIndex = upper(data.rounds, time) - 1;
+  $("round").textContent =
+    roundIndex >= 0
+      ? `第 ${roundIndex + 1} 回合 · ${clock(time - data.rounds[roundIndex].time_ms)}`
+      : "赛前准备";
+  for (const p of data.players) {
+    const pos = position(p, time),
+      state = stateAt(p, time),
+      life = statusAt(p, time),
+      team = state.AttributeTeamID ?? p.AttributeTeamID ?? 0;
+    p.button.className = `player team${team === 1 ? 1 : 0}${picked === p ? " active" : ""}${life === "dead" ? " dead" : ""}`;
+    p.button.querySelector("small").textContent = pos
+      ? `${pos.character} · ${life === "dead" ? "已被击败" : life === "alive" ? "在场" : "状态未知"}`
+      : "等待上场";
+  }
+  if (selectedEvent) {
+    $("picked-name").textContent =
+      `${clock(selectedEvent.time_ms, true)} · ${label(selectedEvent)}`;
+    $("detail-body").textContent = JSON.stringify(selectedEvent, null, 2);
+  } else if (picked) {
+    const state = stateAt(picked, time),
+      pos = position(picked, time);
+    $("picked-name").textContent = picked.name;
+    $("detail-body").textContent =
+      (pos
+        ? `位置 (${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)}) cm\n身体朝向 ${pos.yaw.toFixed(1)}° · 俯仰 ${pos.pitch.toFixed(1)}° · ${pos.character}\n`
+        : "尚未读取到此刻的位置\n") +
+      Object.entries(state)
+        .map(
+          ([k, v]) =>
+            `${stateLabels[k] || k}：${typeof v === "object" ? JSON.stringify(v) : v}`,
+        )
+        .join("\n");
+  }
+  renderEvents(force);
+}
+function xy(x, y) {
+  return [
+    width / 2 + (x - camera.x) * camera.scale,
+    height / 2 - (y - camera.y) * camera.scale,
+  ];
+}
+function makeDensity(bounds) {
+  densityBounds = bounds;
+  densityLayer = document.createElement("canvas");
+  densityLayer.width = densityLayer.height = 768;
+  const dc = densityLayer.getContext("2d"),
+    bins = new Uint32Array(128 * 128),
+    dx = Math.max(1, bounds.maxX - bounds.minX),
+    dy = Math.max(1, bounds.maxY - bounds.minY);
+  for (const p of data.players)
+    for (const s of p.samples) {
+      const x = Math.max(
+          0,
+          Math.min(127, Math.floor(((s[1] - bounds.minX) / dx) * 128)),
+        ),
+        y = Math.max(
+          0,
+          Math.min(127, Math.floor(((bounds.maxY - s[2]) / dy) * 128)),
+        );
+      bins[y * 128 + x]++;
+    }
+  for (let y = 0; y < 128; y++)
+    for (let x = 0; x < 128; x++) {
+      let count = 0;
+      for (let oy = -1; oy <= 1; oy++)
+        for (let ox = -1; ox <= 1; ox++) {
+          const px = x + ox,
+            py = y + oy;
+          if (px >= 0 && px < 128 && py >= 0 && py < 128)
+            count += bins[py * 128 + px] / (ox === 0 && oy === 0 ? 1 : 4);
+        }
+      if (count) {
+        const alpha = Math.min(0.6, Math.log2(1 + count) / 18);
+        dc.fillStyle = `rgba(106,139,165,${alpha})`;
+        dc.fillRect(x * 6, y * 6, 6, 6);
+      }
+    }
+}
+function draw() {
+  ctx.clearRect(0, 0, width, height);
+  if (!data) return;
+  if (picked && following) {
+    const p = position(picked, time);
+    if (p) {
+      camera.x = p.x;
+      camera.y = p.y;
+    }
+  }
+  if (densityLayer) {
+    const [x, y] = xy(densityBounds.minX, densityBounds.maxY);
+    ctx.drawImage(
+      densityLayer,
+      x,
+      y,
+      (densityBounds.maxX - densityBounds.minX) * camera.scale,
+      (densityBounds.maxY - densityBounds.minY) * camera.scale,
+    );
+  }
+  const grid = camera.scale < 0.025 ? 2000 : camera.scale < 0.08 ? 1000 : 500;
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = "#abb5e90e";
+  ctx.fillStyle = "#8490b050";
+  ctx.font = "9px sans-serif";
+  const x0 = camera.x - width / 2 / camera.scale,
+    y0 = camera.y - height / 2 / camera.scale;
+  for (
+    let x = Math.floor(x0 / grid) * grid;
+    x < x0 + width / camera.scale;
+    x += grid
+  ) {
+    const [sx] = xy(x, 0);
+    ctx.beginPath();
+    ctx.moveTo(sx, 0);
+    ctx.lineTo(sx, height);
+    ctx.stroke();
+    ctx.fillText(`${x / 100}m`, sx + 4, height - 35);
+  }
+  for (
+    let y = Math.floor(y0 / grid) * grid;
+    y < y0 + height / camera.scale;
+    y += grid
+  ) {
+    const [, sy] = xy(0, y);
+    ctx.beginPath();
+    ctx.moveTo(0, sy);
+    ctx.lineTo(width, sy);
+    ctx.stroke();
+    ctx.fillText(`${y / 100}m`, 7, sy - 4);
+  }
+  const positions = new Map();
+  data.players.forEach((p, i) => {
+    const pos = position(p, time);
+    if (!pos) return;
+    positions.set(p.uid, pos);
+    const state = stateAt(p, time),
+      color =
+        colors[(state.AttributeTeamID ?? p.AttributeTeamID) === 1 ? 1 : 0],
+      life = statusAt(p, time);
+    const [sx, sy] = xy(pos.x, pos.y);
+    if ($("trails").checked) {
+      const start = upper(p.samples, time - 6000, (s) => s[0]);
+      ctx.strokeStyle = color + "55";
+      ctx.lineWidth = p === picked ? 2.5 : 1.3;
+      ctx.beginPath();
+      let prev = null;
+      for (let j = start; j <= pos.index; j++) {
+        const s = p.samples[j];
+        if (s[6] !== pos.actor) continue;
+        const [x, y] = xy(s[1], s[2]);
+        if (!prev || Math.hypot(s[1] - prev[1], s[2] - prev[2]) > 450)
+          ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+        prev = s;
+      }
+      ctx.stroke();
+    }
+    ctx.save();
+    ctx.translate(sx, sy);
+    ctx.globalAlpha = life === "dead" ? 0.32 : 1;
+    if (p === picked) {
+      ctx.strokeStyle = "#dfcfff";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(0, 0, 18, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    const theta = (-pos.yaw * Math.PI) / 180;
+    ctx.save();
+    ctx.rotate(theta);
+    ctx.fillStyle = color + "15";
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, 65, -0.42, 0.42);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(4, 0);
+    ctx.lineTo(23, 0);
+    ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = "#151d2d";
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = "bold 9px sans-serif";
+    ctx.fillText(String(i + 1), 0, 0);
+    ctx.font = "10px sans-serif";
+    ctx.fillStyle = "#e4e5f3";
+    ctx.fillText(p.name, 0, 22);
+    ctx.restore();
+  });
+  const ti = upper(timeline, time);
+  for (let i = Math.max(0, ti - 70); i < ti; i++) {
+    const e = timeline[i],
+      age = time - e.time_ms;
+    if (age > 650 || !e.uid) continue;
+    const pos = positions.get(e.uid);
+    if (!pos) continue;
+    const [x, y] = xy(pos.x, pos.y);
+    ctx.globalAlpha = 1 - age / 650;
+    if (e.kind === "damage_total_delta") {
+      ctx.fillStyle = "#ffe4ad";
+      ctx.font = "bold 12px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(`+${e.amount}`, x, y - 30 - age * 0.025);
+    } else if (e.name === "MulticastNotifyAbilityActivated") {
+      ctx.strokeStyle = "#c6b0ff";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(x, y, 14 + age * 0.04, 0, Math.PI * 2);
+      ctx.stroke();
+    } else if (/^MulticastAttack/.test(e.name || "")) {
+      ctx.strokeStyle = "#ffe4ad";
+      ctx.lineWidth = 2;
+      const theta = (-pos.yaw * Math.PI) / 180;
+      ctx.beginPath();
+      ctx.moveTo(x + Math.cos(theta) * 13, y + Math.sin(theta) * 13);
+      ctx.lineTo(x + Math.cos(theta) * 45, y + Math.sin(theta) * 45);
+      ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+  const pos = picked && positions.get(picked.uid);
+  $("selection").textContent = pos
+    ? `${picked.name} · ${pos.character}\nX ${pos.x.toFixed(1)}  Y ${pos.y.toFixed(1)}  Z ${pos.z.toFixed(1)}\n朝向 ${pos.yaw.toFixed(1)}°`
+    : "";
+}
+function resize() {
+  const box = canvas.parentElement.getBoundingClientRect();
+  width = box.width;
+  height = box.height;
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  draw();
+}
+new ResizeObserver(resize).observe(canvas.parentElement);
+$("play").addEventListener("click", toggle);
+$("back").addEventListener("click", () => seek(time - 5000));
+$("forward").addEventListener("click", () => seek(time + 5000));
+$("seek").addEventListener("input", (e) => {
+  selectedEvent = null;
+  seek(e.target.value);
+});
+$("speed").addEventListener("change", (e) => (speed = Number(e.target.value)));
+$("round-select").addEventListener("change", (e) => {
+  if (e.target.value !== "") {
+    selectedEvent = null;
+    seek(e.target.value);
+  }
+});
+$("event-filter").addEventListener("change", filterEvents);
+$("fit").addEventListener("click", () => {
+  following = false;
+  camera = { ...fitted };
+});
+$("unfollow").addEventListener("click", () => {
+  picked = null;
+  following = false;
+  camera = { ...fitted };
+  updatePanels(true);
+});
+document.addEventListener("keydown", (e) => {
+  if (
+    ["INPUT", "SELECT", "TEXTAREA", "BUTTON"].includes(
+      document.activeElement?.tagName,
+    )
+  )
+    return;
+  if (e.code === "Space") {
+    e.preventDefault();
+    toggle();
+  }
+  if (e.code === "ArrowLeft") {
+    e.preventDefault();
+    seek(time - 5000);
+  }
+  if (e.code === "ArrowRight") {
+    e.preventDefault();
+    seek(time + 5000);
+  }
+});
+canvas.addEventListener(
+  "wheel",
+  (e) => {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect(),
+      mx = e.clientX - rect.left - width / 2,
+      my = e.clientY - rect.top - height / 2,
+      old = camera.scale;
+    camera.scale = Math.max(
+      0.005,
+      Math.min(0.5, old * Math.exp(-e.deltaY * 0.001)),
+    );
+    camera.x += mx / old - mx / camera.scale;
+    camera.y -= my / old - my / camera.scale;
+    following = false;
+  },
+  { passive: false },
+);
+let drag = null;
+canvas.addEventListener("pointerdown", (e) => {
+  drag = { x: e.clientX, y: e.clientY, moved: false };
+  canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener("pointermove", (e) => {
+  if (!drag) return;
+  const dx = e.clientX - drag.x,
+    dy = e.clientY - drag.y;
+  drag.moved ||= Math.abs(dx) + Math.abs(dy) > 2;
+  camera.x -= dx / camera.scale;
+  camera.y += dy / camera.scale;
+  drag.x = e.clientX;
+  drag.y = e.clientY;
+  following = false;
+});
+canvas.addEventListener("pointerup", (e) => {
+  if (drag && !drag.moved && data) {
+    const rect = canvas.getBoundingClientRect();
+    let best = null,
+      dist = 24;
+    for (const p of data.players) {
+      const pos = position(p, time);
+      if (!pos) continue;
+      const [x, y] = xy(pos.x, pos.y),
+        d = Math.hypot(x - e.clientX + rect.left, y - e.clientY + rect.top);
+      if (d < dist) {
+        best = p;
+        dist = d;
+      }
+    }
+    if (best) pick(best);
+  }
+  drag = null;
+});
+canvas.addEventListener("pointercancel", () => (drag = null));
+$("import").addEventListener("click", () => $("file").click());
+$("file").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    install(JSON.parse(await file.text()));
+  } catch (error) {
+    $("message").textContent = error.message;
+  }
+  e.target.value = "";
+});
+function animate(now) {
+  if (playing && data) {
+    time = Math.min(
+      data.duration_ms,
+      time + Math.min(250, now - lastFrame) * speed,
+    );
+    if (time === data.duration_ms) {
+      playing = false;
+      $("play").textContent = "和我一起回看";
+    }
+  }
+  lastFrame = now;
+  draw();
+  if (now - lastPanel > 150) {
+    updatePanels();
+    lastPanel = now;
+  }
+  requestAnimationFrame(animate);
+}
+requestAnimationFrame(animate);
+try {
+  const response = await fetch("playback.json");
+  if (!response.ok)
+    throw Error(
+      "我还没有找到 playback.json。你可以用右上角按钮交给我一份已解析的回放。",
+    );
+  install(await response.json());
+} catch (error) {
+  $("message").textContent = error.message;
+  $("description").textContent = "准备好数据后，就和我一起回看吧。";
+}
