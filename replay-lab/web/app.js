@@ -26,7 +26,7 @@ const mapCatalog = {
   },
 };
 let activeMap = null, mapImage = null, viewBounds = null, yDirection = -1;
-const colors = ["#40c5b8", "#cda963"];
+const colors = ["#40c5b8", "#ef6464"];
 const charactersById = new Map(), charactersByName = new Map(), portraits = new Map();
 function characterInfo(raw) {
   return charactersByName.get(String(raw ?? "").toLowerCase()) ?? null;
@@ -86,14 +86,14 @@ function damageAttacker(combat) {
   return combat.attacker_uid ? name(combat.attacker_uid) : "未知攻击者";
 }
 function winnerText(teams = []) {
-  return teams.length ? teams.map((team) => team === 1 ? "金方" : "蓝方").join("、") + "胜利" : "胜方未解析";
+  return teams.length ? teams.map((team) => team === 1 ? "红方" : "蓝方").join("、") + "胜利" : "胜方未解析";
 }
 function validScore(score) {
   return Array.isArray(score) && score.length === 2 &&
     score.every((value) => Number.isInteger(value) && value >= 0);
 }
 function scoreText(score) {
-  return validScore(score) ? `比分 蓝方 ${score[0]} : ${score[1]} 金方` : "比分未知";
+  return validScore(score) ? `比分 蓝方 ${score[0]} : ${score[1]} 红方` : "比分未知";
 }
 function phaseLabel(event, includeScore = true) {
   const phase = event.round_phase;
@@ -459,7 +459,7 @@ function install(d) {
     const i = d.players.indexOf(p), team = p.AttributeTeamID ?? 0;
     const b = node("button", undefined, "player");
     b.dataset.uid = p.uid;
-    if (team !== previousTeam) b.dataset.teamLabel = team === 1 ? "金方" : "蓝方";
+    if (team !== previousTeam) b.dataset.teamLabel = team === 1 ? "红方" : "蓝方";
     previousTeam = team;
     const badge = node("span", undefined, "badge");
     p.portraitUi = node("img");

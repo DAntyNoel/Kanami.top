@@ -206,19 +206,19 @@ if (playback.rounds[0].active_ms != null) {
   assert.equal(api.timeNow(), first.ended_ms);
   assert($("detail-body").textContent.includes("带胜方参数"));
   if (first.score_after) {
-    assert($("detail-body").textContent.includes("判定后：比分 蓝方 0 : 1 金方"));
-    assert($("picked-name").textContent.includes("金方胜利 · 比分 蓝方 0 : 1 金方"));
+    assert($("detail-body").textContent.includes("判定后：比分 蓝方 0 : 1 红方"));
+    assert($("picked-name").textContent.includes("红方胜利 · 比分 蓝方 0 : 1 红方"));
     api.seek(first.ended_ms - 1);
-    assert($("round").textContent.includes("比分 蓝方 0 : 0 金方"));
+    assert($("round").textContent.includes("比分 蓝方 0 : 0 红方"));
     api.seek(first.ended_ms);
-    assert($("round").textContent.includes("比分 蓝方 0 : 1 金方"));
+    assert($("round").textContent.includes("比分 蓝方 0 : 1 红方"));
     api.seek(second.time_ms);
-    assert($("round").textContent.includes("比分 蓝方 0 : 1 金方"));
+    assert($("round").textContent.includes("比分 蓝方 0 : 1 红方"));
     api.seek(playback.duration_ms);
     const finalScore = playback.rounds.at(-1).score_after;
-    assert($("round").textContent.includes(`比分 蓝方 ${finalScore[0]} : ${finalScore[1]} 金方`));
+    assert($("round").textContent.includes(`比分 蓝方 ${finalScore[0]} : ${finalScore[1]} 红方`));
     api.seek(first.time_ms);
-    assert($("round").textContent.includes("比分 蓝方 0 : 0 金方"));
+    assert($("round").textContent.includes("比分 蓝方 0 : 0 红方"));
   }
   $("round-markers").firstElementChild.click();
   assert.equal(api.timeNow(), first.time_ms);
@@ -243,7 +243,7 @@ for (const team of [0, 1]) {
   assert(damage);
   api.seek(damage.time_ms + 1); canvasCalls.length = 0; api.draw();
   assert(canvasCalls.some((c) => c.method === "fillText" && c.args[0] === String(Number(damage.amount.toFixed(2))) &&
-    c.color === ["#40c5b8", "#cda963"][team]), "floating damage has team color and no plus sign");
+    c.color === ["#40c5b8", "#ef6464"][team]), "floating damage has team color and no plus sign");
 }
 api.seek(1900441);
 $("play").click();
