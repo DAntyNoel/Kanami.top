@@ -4,17 +4,19 @@
 
 界面参考弦录播放器，使用深色三栏布局：左侧玩家名册、中间回放画布、右侧动态/状态详情/数据说明，底部固定时间轴与播放控制。该工具使用客观功能文案，不使用角色第一人称或宣传文案。
 
-## 直接使用当前样本
+## 启动与分发
 
 从仓库根目录运行：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\replay-lab\start.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\replay-lab\start.ps1 -ReplayFile "<录像.replay>"
 ```
 
-打开 <http://127.0.0.1:8766/>。首次运行会生成解析文件，之后会复用原文件 SHA-256 和代码时间戳一致的产物。`-Rebuild` 可强制重新解析，`-ReplayFile` 可指定其他同格式录像，`-Port` 可换端口。原始录像保持不变。
+打开 <http://127.0.0.1:8766/>。首次运行会生成解析文件，之后会复用原文件及解析程序内容 SHA-256 一致的产物。`-Rebuild` 可强制重新解析，`-Port` 可换端口，`-OutputDirectory` 指定解析目录。原始录像保持不变。未传文件时，自动读取 `replay-lab/input/` 中唯一的 `.replay` 或 `playback.json`。
 
-当前录像：`_replay-inspection/20261015/1.18.3.7_751028091756896271_1791469576_3vhtlakx.replay`。输出：同目录的 `decoded/`。这些录像、玩家明细及约 1 GB 的展开数据由仓库现有忽略规则留在本机，代码单独提交。
+跨平台入口为 `python replay-lab/run.py <录像.replay或playback.json>`；默认解析输出在 `replay-lab/output/<录像文件名>/`。使用 `--export <空目录>` 可直接解析并导出静态网页，不启动服务。原有底层解析、解码和服务命令仍可单独使用。
+
+使用 `python replay-lab/bundle.py --out <分发包.zip>` 生成独立 ZIP，包含所需共享资源、角色与地图资源、Windows 启动入口及使用说明。使用 `--verify <分发包.zip>` 校验成员和逐文件 SHA-256。分发使用显式白名单，不包含本机对局数据。完整接收者说明见 [分发与部署说明](DISTRIBUTION.md)。
 
 ## 分步运行
 

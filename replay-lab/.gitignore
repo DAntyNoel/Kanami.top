@@ -1,4 +1,6 @@
 output/
+input/*
+!input/README.txt
 *.log
 *.pyc
 __pycache__/
